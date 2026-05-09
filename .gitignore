@@ -1,0 +1,24 @@
+# Binaries
+bin/
+*.exe
+
+# Test binary
+*.test
+
+# Output of go coverage
+*.out
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+
+# sqlite
+*.db
+*.db-journal
+
+# Environment
+.env
