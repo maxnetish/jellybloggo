@@ -115,6 +115,11 @@ const docTemplate = `{
         },
         "/api/auth/user": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Returns user info if authenticated, or null if not.",
                 "produces": [
                     "application/json"
@@ -247,6 +252,14 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Type \"Bearer\" followed by a space and JWT token.",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

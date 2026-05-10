@@ -5,7 +5,6 @@ go 1.25.0
 require (
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/golang-jwt/jwt/v5 v5.3.1
-	github.com/golang-migrate/migrate/v4 v4.19.1
 	github.com/joho/godotenv v1.5.1
 	github.com/swaggo/http-swagger/v2 v2.0.2
 	github.com/swaggo/swag v1.16.6
@@ -24,7 +23,6 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-sqlite3 v1.14.22 // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/swaggo/files/v2 v2.0.0 // indirect

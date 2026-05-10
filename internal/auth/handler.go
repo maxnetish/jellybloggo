@@ -171,6 +171,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 // @Summary Get current user
 // @Description Returns user info if authenticated, or null if not.
 // @Tags auth
+// @Security BearerAuth
 // @Produce json
 // @Success 200 {object} UserResponse
 // @Router /api/auth/user [get]

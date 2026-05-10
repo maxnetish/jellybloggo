@@ -16,6 +16,8 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id int) (*User, error)
 	// SetRoles replaces all roles for a user. Role names must be valid (admin, author, reader).
 	SetRoles(ctx context.Context, userID int, roles []string) error
+	// HasRole checks if any user has the specified role.
+	HasRole(ctx context.Context, roleName string) (bool, error)
 }
 
 type userRepository struct {
@@ -169,4 +171,20 @@ func (r *userRepository) addRoleToUserTx(ctx context.Context, tx *sql.Tx, userID
 	}
 
 	return nil
+}
+
+func (r *userRepository) HasRole(ctx context.Context, roleName string) (bool, error) {
+	var exists bool
+	err := r.db.QueryRowContext(ctx,
+		`SELECT EXISTS(
+			SELECT 1 FROM user_roles ur 
+			JOIN roles r ON ur.role_id = r.id 
+			WHERE r.name = ?
+		)`,
+		roleName,
+	).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to check role: %w", err)
+	}
+	return exists, nil
 }

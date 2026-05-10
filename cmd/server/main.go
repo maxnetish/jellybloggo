@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"net/http"
@@ -25,6 +26,10 @@ import (
 // @description A lightweight web server backend built with Go
 // @host localhost:8080
 // @BasePath /
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 
 var db *sql.DB
 var userRepo users.UserRepository
@@ -45,6 +50,12 @@ func main() {
 	defer db.Close()
 
 	userRepo = users.NewUserRepository(db)
+
+	if adminLogin := os.Getenv("ADMIN_LOGIN"); adminLogin != "" {
+		if err := users.BootstrapAdmin(context.Background(), userRepo, adminLogin, os.Getenv("ADMIN_PASSWORD")); err != nil {
+			log.Fatalf("Admin bootstrap failed: %v", err)
+		}
+	}
 
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {

@@ -143,6 +143,8 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/auth.UserResponse'
+      security:
+      - BearerAuth: []
       summary: Get current user
       tags:
       - auth
@@ -159,4 +161,10 @@ paths:
       summary: Health check
       tags:
       - health
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
