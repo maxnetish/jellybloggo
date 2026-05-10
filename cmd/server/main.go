@@ -60,7 +60,6 @@ func main() {
 		TokenExpiry:   tokenExpiry,
 		RefreshExpiry: refreshExpiry,
 	})
-	authHandler := auth.NewAuthHandler(authService, userRepo)
 
 	r := chi.NewRouter()
 
@@ -72,16 +71,7 @@ func main() {
 
 	r.Mount("/swagger", httpSwagger.WrapHandler)
 
-	r.Route("/api/auth", func(r chi.Router) {
-		r.Post("/login", authHandler.Login)
-		r.Post("/refresh", authHandler.Refresh)
-		r.Post("/logout", authHandler.Logout)
-
-		r.Group(func(r chi.Router) {
-			r.Use(auth.JWTMiddleware(authService))
-			r.Get("/user", authHandler.GetUser)
-		})
-	})
+	r.Mount("/api/auth", auth.NewRouter(authService, userRepo))
 
 	log.Println("Server starting on :8080")
 	if err := http.ListenAndServe(":8080", r); err != nil {
