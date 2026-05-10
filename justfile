@@ -1,7 +1,12 @@
-build:
+set export
+
+swag:
+    $(go env GOPATH)/bin/swag init -g cmd/server/main.go -o internal/docs
+
+build: swag
     go build -o bin/server ./cmd/server
 
-run:
+run: swag
     go run ./cmd/server
 
 test:
