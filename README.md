@@ -35,6 +35,14 @@ just run
 
 Server starts on `http://localhost:8080`.
 
+### Swagger UI
+
+API documentation is available at:
+
+```
+http://localhost:8080/swagger/index.html
+```
+
 ## Test
 
 ```bash
