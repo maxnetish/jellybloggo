@@ -49,7 +49,7 @@ func NewAuthService(
 func (s *AuthService) Login(ctx context.Context, login, password string) (string, *users.User, error) {
 	user, err := s.userRepo.GetByLogin(ctx, login)
 	if err != nil {
-		return "", nil, fmt.Errorf("failed to get user: %w", err)
+		return "", nil, ErrInvalidCredentials
 	}
 	if user == nil {
 		return "", nil, ErrInvalidCredentials

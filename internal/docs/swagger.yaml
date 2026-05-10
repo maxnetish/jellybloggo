@@ -1,8 +1,63 @@
 basePath: /
 definitions:
+  auth.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  auth.LoginRequest:
+    properties:
+      login:
+        description: User login (email or username)
+        type: string
+      password:
+        description: User password
+        type: string
+    type: object
+  auth.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      user:
+        $ref: '#/definitions/users.User'
+    type: object
+  auth.RefreshResponse:
+    properties:
+      access_token:
+        type: string
+      user:
+        $ref: '#/definitions/users.User'
+    type: object
+  auth.UserResponse:
+    properties:
+      user:
+        $ref: '#/definitions/users.User'
+    type: object
   health.Response:
     properties:
       status:
+        type: string
+    type: object
+  users.Role:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+  users.User:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      login:
+        type: string
+      roles:
+        items:
+          $ref: '#/definitions/users.Role'
+        type: array
+      updated_at:
         type: string
     type: object
 host: localhost:8080
@@ -12,6 +67,85 @@ info:
   title: Jellybloggo API
   version: "1.0"
 paths:
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates user with login and password. Returns access token
+        and sets refresh token cookie.
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.LoginResponse'
+        "400":
+          description: Invalid request body
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "401":
+          description: Invalid credentials
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      summary: Login user
+      tags:
+      - auth
+  /api/auth/logout:
+    post:
+      description: Invalidates refresh token and clears cookie.
+      responses:
+        "204":
+          description: No Content
+      summary: Logout user
+      tags:
+      - auth
+  /api/auth/refresh:
+    post:
+      description: Exchanges valid refresh token cookie for new access token. Implements
+        token rotation.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.RefreshResponse'
+        "401":
+          description: Missing, invalid, or expired refresh token
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      summary: Refresh access token
+      tags:
+      - auth
+  /api/auth/user:
+    get:
+      description: Returns user info if authenticated, or null if not.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.UserResponse'
+      summary: Get current user
+      tags:
+      - auth
   /health:
     get:
       description: Возвращает статус работоспособности сервера

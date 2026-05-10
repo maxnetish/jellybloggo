@@ -30,6 +30,19 @@ func NewAuthHandler(service *AuthService, userRepo users.UserRepository) *AuthHa
 	}
 }
 
+// Login authenticates user with login and password.
+// Returns access token in JSON body and refresh token in HTTP-only cookie.
+// @Summary Login user
+// @Description Authenticates user with login and password. Returns access token and sets refresh token cookie.
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body LoginRequest true "Login credentials"
+// @Success 200 {object} LoginResponse
+// @Failure 400 {object} ErrorResponse "Invalid request body"
+// @Failure 401 {object} ErrorResponse "Invalid credentials"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /api/auth/login [post]
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -70,6 +83,16 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Refresh exchanges valid refresh token cookie for new access token.
+// Returns new access token in JSON body and rotates refresh token cookie.
+// @Summary Refresh access token
+// @Description Exchanges valid refresh token cookie for new access token. Implements token rotation.
+// @Tags auth
+// @Produce json
+// @Success 200 {object} RefreshResponse
+// @Failure 401 {object} ErrorResponse "Missing, invalid, or expired refresh token"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /api/auth/refresh [post]
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie(RefreshTokenCookie)
 	if err != nil {
@@ -120,6 +143,12 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Logout invalidates refresh token cookie and logs out the user.
+// @Summary Logout user
+// @Description Invalidates refresh token and clears cookie.
+// @Tags auth
+// @Success 204 "No Content"
+// @Router /api/auth/logout [post]
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	cookie, err := r.Cookie(RefreshTokenCookie)
 	if err == nil {
@@ -136,6 +165,15 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// GetUser returns current user info.
+// If JWT token is provided and valid, returns user data.
+// If no token or invalid token, returns 200 with null user.
+// @Summary Get current user
+// @Description Returns user info if authenticated, or null if not.
+// @Tags auth
+// @Produce json
+// @Success 200 {object} UserResponse
+// @Router /api/auth/user [get]
 func (h *AuthHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(ContextKeyUserID).(int)
 	if !ok || userID == 0 {
@@ -160,19 +198,19 @@ func JWTMiddleware(service *AuthService) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
-				http.Error(w, `{"error":"missing authorization header"}`, http.StatusUnauthorized)
+				next.ServeHTTP(w, r)
 				return
 			}
 
 			parts := strings.SplitN(authHeader, " ", 2)
 			if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-				http.Error(w, `{"error":"invalid authorization header format"}`, http.StatusUnauthorized)
+				next.ServeHTTP(w, r)
 				return
 			}
 
 			userID, err := service.ValidateAccessToken(parts[1])
 			if err != nil {
-				http.Error(w, `{"error":"invalid token"}`, http.StatusUnauthorized)
+				next.ServeHTTP(w, r)
 				return
 			}
 

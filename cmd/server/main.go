@@ -76,12 +76,10 @@ func main() {
 		r.Post("/login", authHandler.Login)
 		r.Post("/refresh", authHandler.Refresh)
 		r.Post("/logout", authHandler.Logout)
-	})
 
-	r.Route("/api", func(r chi.Router) {
 		r.Group(func(r chi.Router) {
 			r.Use(auth.JWTMiddleware(authService))
-			r.Get("/auth/user", authHandler.GetUser)
+			r.Get("/user", authHandler.GetUser)
 		})
 	})
 
