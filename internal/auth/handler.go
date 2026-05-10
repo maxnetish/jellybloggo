@@ -2,91 +2,203 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/maxnetish/jellybloggo/internal/users"
 )
 
-// ContextKeyUserID - ключ для хранения userID в контексте запроса.
-// Используется для передачи данных между middleware и handlers.
-const ContextKeyUserID = "userID"
+const (
+	ContextKeyUserID = "userID"
+	ContextKeyUser   = "user"
 
-// JWTMiddleware проверяет JWT токен в заголовке Authorization.
-// Возвращает 401 если токен отсутствует или невалиден.
-// Этот middleware - ШАБЛОН, требует доработки (проверка подписи, expiry и т.д.)
-// @Security BearerAuth
-func JWTMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Получаем заголовок Authorization из запроса
-		// Формат: "Bearer <token>"
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			http.Error(w, "missing authorization header", http.StatusUnauthorized)
+	RefreshTokenCookie = "refresh_token"
+	CookieMaxAge       = 7 * 24 * 60 * 60
+)
+
+type AuthHandler struct {
+	service  *AuthService
+	userRepo users.UserRepository
+}
+
+func NewAuthHandler(service *AuthService, userRepo users.UserRepository) *AuthHandler {
+	return &AuthHandler{
+		service:  service,
+		userRepo: userRepo,
+	}
+}
+
+func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
+	var req LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+	accessToken, user, err := h.service.Login(ctx, req.Login, req.Password)
+	if err != nil {
+		if errors.Is(err, ErrInvalidCredentials) {
+			http.Error(w, `{"error":"invalid credentials"}`, http.StatusUnauthorized)
 			return
 		}
+		http.Error(w, `{"error":"internal error"}`, http.StatusInternalServerError)
+		return
+	}
 
-		// SplitN разделяет строку на 2 части по первому пробелу
-		// "Bearer token123" -> ["Bearer", "token123"]
-		// SplitN безопасен, не паникует если разделителя нет
-		parts := strings.SplitN(authHeader, " ", 2)
-		if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-			http.Error(w, "invalid authorization header format", http.StatusUnauthorized)
-			return
-		}
+	refreshToken, err := h.service.CreateRefreshToken(ctx, user.ID)
+	if err != nil {
+		http.Error(w, `{"error":"internal error"}`, http.StatusInternalServerError)
+		return
+	}
 
-		tokenString := parts[1]
+	http.SetCookie(w, &http.Cookie{
+		Name:     RefreshTokenCookie,
+		Value:    refreshToken,
+		MaxAge:   CookieMaxAge,
+		HttpOnly: true,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
+	})
 
-		// ParseUnverified парсит токен БЕЗ проверки подписи
-		// Подходит для извлечения данных (sub, exp, etc.) на этапе отладки
-		// В продакшене использовать Parse() с ключом
-		token, _, err := new(jwt.Parser).ParseUnverified(tokenString, jwt.MapClaims{})
-		if err != nil || token == nil {
-			http.Error(w, "invalid token", http.StatusUnauthorized)
-			return
-		}
-
-		// Извлекаем claim "sub" (subject = user ID) из токена
-		// jwt.MapClaims - это map[string]interface{}, содержит все claims
-		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			if sub, ok := claims["sub"].(string); ok {
-				// context.WithValue создаёт новый контекст с переданным значением
-				// r.WithContext заменяет контекст в запросе
-				// Теперь обработчик может получить userID через r.Context().Value(ContextKeyUserID)
-				ctx := context.WithValue(r.Context(), ContextKeyUserID, sub)
-				r = r.WithContext(ctx)
-			}
-		}
-
-		// Вызываем следующий обработчик в цепочке
-		// Это важно: middleware должен вызвать next.ServeHTTP()
-		next.ServeHTTP(w, r)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(LoginResponse{
+		AccessToken: accessToken,
+		User:        user,
 	})
 }
 
-// ProtectedHandler возвращает информацию о текущем пользователе.
-// Требует валидный JWT токен (проверяется JWTMiddleware).
-// @Summary Protected endpoint
-// @Description Возвращает ID текущего пользователя из JWT
-// @Tags auth
-// @Security BearerAuth
-// @Produce json
-// @Success 200 {object} ProtectedResponse
-// @Failure 401 {object} ErrorResponse
-// @Router /api/protected [get]
-func ProtectedHandler(w http.ResponseWriter, r *http.Request) {
-	// Получаем userID из контекста, который был установлен JWTMiddleware
-	userID := r.Context().Value(ContextKeyUserID)
+func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie(RefreshTokenCookie)
+	if err != nil {
+		http.Error(w, `{"error":"missing refresh token"}`, http.StatusUnauthorized)
+		return
+	}
+
+	ctx := r.Context()
+	accessToken, user, err := h.service.Refresh(ctx, cookie.Value)
+	if err != nil {
+		if errors.Is(err, ErrRefreshTokenExpired) {
+			http.SetCookie(w, &http.Cookie{
+				Name:   RefreshTokenCookie,
+				Value:  "",
+				MaxAge: -1,
+				Path:   "/",
+			})
+			http.Error(w, `{"error":"refresh token expired"}`, http.StatusUnauthorized)
+			return
+		}
+		if errors.Is(err, ErrRefreshTokenInvalid) {
+			http.Error(w, `{"error":"invalid refresh token"}`, http.StatusUnauthorized)
+			return
+		}
+		http.Error(w, `{"error":"internal error"}`, http.StatusInternalServerError)
+		return
+	}
+
+	newRefreshToken, err := h.service.CreateRefreshToken(ctx, user.ID)
+	if err != nil {
+		http.Error(w, `{"error":"internal error"}`, http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     RefreshTokenCookie,
+		Value:    newRefreshToken,
+		MaxAge:   CookieMaxAge,
+		HttpOnly: true,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
+	})
+
 	w.Header().Set("Content-Type", "application/json")
-	// Для простоты используем w.Write + строка
-	// В реальном коде лучше json.NewEncoder(w).Encode()
-	w.Write([]byte(`{"user_id":"` + userID.(string) + `"}`))
+	json.NewEncoder(w).Encode(RefreshResponse{
+		AccessToken: accessToken,
+		User:        user,
+	})
 }
 
-type ProtectedResponse struct {
-	UserID string `json:"user_id"`
+func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie(RefreshTokenCookie)
+	if err == nil {
+		h.service.Logout(r.Context(), cookie.Value)
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:   RefreshTokenCookie,
+		Value:  "",
+		MaxAge: -1,
+		Path:   "/",
+	})
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
-type ErrorResponse struct {
-	Error string `json:"error"`
+func (h *AuthHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(ContextKeyUserID).(int)
+	if !ok || userID == 0 {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(UserResponse{User: nil})
+		return
+	}
+
+	user, err := h.userRepo.GetByID(r.Context(), userID)
+	if err != nil || user == nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(UserResponse{User: nil})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(UserResponse{User: user})
+}
+
+func JWTMiddleware(service *AuthService) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authHeader := r.Header.Get("Authorization")
+			if authHeader == "" {
+				http.Error(w, `{"error":"missing authorization header"}`, http.StatusUnauthorized)
+				return
+			}
+
+			parts := strings.SplitN(authHeader, " ", 2)
+			if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
+				http.Error(w, `{"error":"invalid authorization header format"}`, http.StatusUnauthorized)
+				return
+			}
+
+			userID, err := service.ValidateAccessToken(parts[1])
+			if err != nil {
+				http.Error(w, `{"error":"invalid token"}`, http.StatusUnauthorized)
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), ContextKeyUserID, userID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
+func UserMiddleware(userRepo users.UserRepository) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			userID, ok := r.Context().Value(ContextKeyUserID).(int)
+			if !ok || userID == 0 {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			user, err := userRepo.GetByID(r.Context(), userID)
+			if err != nil || user == nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), ContextKeyUser, user)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
 }

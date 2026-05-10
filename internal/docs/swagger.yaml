@@ -1,15 +1,5 @@
 basePath: /
 definitions:
-  auth.ErrorResponse:
-    properties:
-      error:
-        type: string
-    type: object
-  auth.ProtectedResponse:
-    properties:
-      user_id:
-        type: string
-    type: object
   health.Response:
     properties:
       status:
@@ -22,25 +12,6 @@ info:
   title: Jellybloggo API
   version: "1.0"
 paths:
-  /api/protected:
-    get:
-      description: Возвращает ID текущего пользователя из JWT
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/auth.ProtectedResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/auth.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Protected endpoint
-      tags:
-      - auth
   /health:
     get:
       description: Возвращает статус работоспособности сервера

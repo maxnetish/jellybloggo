@@ -42,6 +42,9 @@ Create a `.env` file to configure the application:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `DB_PATH` | `./data/jellybloggo.sqlite` | Path to SQLite database file |
+| `JWT_SECRET` | `default-secret-change-me` | Secret key for signing JWT access tokens |
+| `TOKEN_EXPIRY` | `15m` | Access token lifetime (e.g., `15m`, `1h`) |
+| `REFRESH_EXPIRY` | `168h` | Refresh token lifetime (e.g., `168h` = 7 days) |
 
 ### Swagger UI
 

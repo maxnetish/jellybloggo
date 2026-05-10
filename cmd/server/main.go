@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -45,36 +46,59 @@ func main() {
 
 	userRepo = users.NewUserRepository(db)
 
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		jwtSecret = "default-secret-change-me"
+	}
+
+	tokenExpiry := getDurationEnv("TOKEN_EXPIRY", 15*time.Minute)
+	refreshExpiry := getDurationEnv("REFRESH_EXPIRY", 168*time.Hour)
+
+	refreshTokenRepo := auth.NewRefreshTokenRepository(db)
+	authService := auth.NewAuthService(userRepo, refreshTokenRepo, auth.AuthConfig{
+		JWTSecret:     jwtSecret,
+		TokenExpiry:   tokenExpiry,
+		RefreshExpiry: refreshExpiry,
+	})
+	authHandler := auth.NewAuthHandler(authService, userRepo)
+
 	r := chi.NewRouter()
 
-	// middleware - это функции, которые выполняются ДО или ПОСЛЕ обработчика
-	// Они применяются ко ВСЕМ маршрутам в роутере
-	// Logger - логирует каждый запрос (метод, путь, статус, время)
 	r.Use(middleware.Logger)
-	// Recoverer - перехватывает паники и возвращает 500 вместо краша сервера
 	r.Use(middleware.Recoverer)
-	// RequestID - добавляет уникальный ID к каждому запросу (для трейсинга)
 	r.Use(middleware.RequestID)
 
-	// Регистрируем маршруты
-	// Простые маршруты регистрируются через r.Method(path, handler)
 	r.Get("/health", health.Handler)
 
-	// Mount подключает вложенный роутер по префиксу пути
-	// Все запросы к /swagger/* будут обрабатываться httpSwagger
 	r.Mount("/swagger", httpSwagger.WrapHandler)
 
-	// Route создаёт подроутер с префиксом /api
-	// Все маршруты внутри будут иметь префикс /api
+	r.Route("/api/auth", func(r chi.Router) {
+		r.Post("/login", authHandler.Login)
+		r.Post("/refresh", authHandler.Refresh)
+		r.Post("/logout", authHandler.Logout)
+	})
+
 	r.Route("/api", func(r chi.Router) {
-		// Use применяет middleware ТОЛЬКО к маршрутам внутри этого Route
-		// JWTMiddleware будет выполняться для /api/protected
-		r.Use(auth.JWTMiddleware)
-		r.Get("/protected", auth.ProtectedHandler)
+		r.Group(func(r chi.Router) {
+			r.Use(auth.JWTMiddleware(authService))
+			r.Get("/auth/user", authHandler.GetUser)
+		})
 	})
 
 	log.Println("Server starting on :8080")
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func getDurationEnv(key string, defaultVal time.Duration) time.Duration {
+	val := os.Getenv(key)
+	if val == "" {
+		return defaultVal
+	}
+	d, err := time.ParseDuration(val)
+	if err != nil {
+		return defaultVal
+	}
+	return d
 }
