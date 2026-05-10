@@ -1,15 +1,20 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/joho/godotenv"
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 
 	"github.com/maxnetish/jellybloggo/internal/auth"
+	"github.com/maxnetish/jellybloggo/internal/database"
 	"github.com/maxnetish/jellybloggo/internal/health"
+	"github.com/maxnetish/jellybloggo/internal/users"
 
 	_ "github.com/maxnetish/jellybloggo/internal/docs"
 )
@@ -20,9 +25,26 @@ import (
 // @host localhost:8080
 // @BasePath /
 
+var db *sql.DB
+var userRepo users.UserRepository
+
 func main() {
-	// Создаём новый роутер chi
-	// chi - это легкий роутер, следующий стилю стандартной библиотеки net/http
+	godotenv.Load()
+
+	dsn := os.Getenv("DB_PATH")
+	if dsn == "" {
+		dsn = "./data/jellybloggo.sqlite"
+	}
+
+	var err error
+	db, err = database.New(dsn)
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer db.Close()
+
+	userRepo = users.NewUserRepository(db)
+
 	r := chi.NewRouter()
 
 	// middleware - это функции, которые выполняются ДО или ПОСЛЕ обработчика

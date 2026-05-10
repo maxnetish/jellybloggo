@@ -35,6 +35,14 @@ just run
 
 Server starts on `http://localhost:8080`.
 
+### Environment Variables
+
+Create a `.env` file to configure the application:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DB_PATH` | `./data/jellybloggo.sqlite` | Path to SQLite database file |
+
 ### Swagger UI
 
 API documentation is available at:
