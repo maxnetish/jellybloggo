@@ -18,6 +18,7 @@ bin/
 
 # sqlite
 *.db
+*.sqlite
 *.db-journal
 
 # Environment
