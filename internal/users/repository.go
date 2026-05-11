@@ -21,6 +21,8 @@ type UserRepository interface {
 	UpdatePassword(ctx context.Context, userID int, passwordHash string) error
 	// List returns a paginated, filtered, sorted list of users and the total count.
 	List(ctx context.Context, params ListParams) ([]*User, int, error)
+	// Delete removes a user by ID. Cascade deletes user_roles and refresh_tokens.
+	Delete(ctx context.Context, userID int) error
 	// HasRole checks if any user has the specified role.
 	HasRole(ctx context.Context, roleName string) (bool, error)
 }
@@ -276,6 +278,18 @@ func (r *userRepository) List(ctx context.Context, params ListParams) ([]*User, 
 	}
 
 	return users, total, nil
+}
+
+func (r *userRepository) Delete(ctx context.Context, userID int) error {
+	result, err := r.db.ExecContext(ctx, "DELETE FROM users WHERE id = ?", userID)
+	if err != nil {
+		return fmt.Errorf("failed to delete user: %w", err)
+	}
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("user not found")
+	}
+	return nil
 }
 
 func (r *userRepository) HasRole(ctx context.Context, roleName string) (bool, error) {

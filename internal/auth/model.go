@@ -23,21 +23,21 @@ type LoginRequest struct {
 // New users have no roles — roles are assigned by an administrator later.
 type RegisterRequest struct {
 	// User login. Must be unique.
-	// Required.
-	Login string `json:"login" v8:"required"`
+	// Required. Maximum 100 characters.
+	Login string `json:"login" v8:"required,max=100"`
 	// User password.
-	// Required. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character.
-	Password string `json:"password" v8:"required,passwd"`
+	// Required. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character. Maximum 128 characters.
+	Password string `json:"password" v8:"required,passwd,max=128"`
 }
 
 // ChangePasswordRequest is used to change the current user's password.
 type ChangePasswordRequest struct {
 	// Current password for verification.
-	// Required.
-	CurrentPassword string `json:"current_password" v8:"required"`
+	// Required. Maximum 128 characters.
+	CurrentPassword string `json:"current_password" v8:"required,max=128"`
 	// New password.
-	// Required. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character.
-	NewPassword string `json:"new_password" v8:"required,passwd"`
+	// Required. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character. Maximum 128 characters.
+	NewPassword string `json:"new_password" v8:"required,passwd,max=128"`
 }
 
 // UpdateRolesRequest is used by an admin to change roles for a user.

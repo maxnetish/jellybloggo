@@ -302,6 +302,55 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes the current user. With ?login=target deletes a specific user (admin only).",
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Delete user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Target user login (admin only)",
+                        "name": "login",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "User not found or invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden (admin required)",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/api/users": {
@@ -415,11 +464,11 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "current_password": {
-                    "description": "Current password for verification.\nRequired.",
+                    "description": "Current password for verification.\nRequired. Maximum 128 characters.",
                     "type": "string"
                 },
                 "new_password": {
-                    "description": "New password.\nRequired. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character.",
+                    "description": "New password.\nRequired. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character. Maximum 128 characters.",
                     "type": "string"
                 }
             }
@@ -483,11 +532,11 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "login": {
-                    "description": "User login. Must be unique.\nRequired.",
+                    "description": "User login. Must be unique.\nRequired. Maximum 100 characters.",
                     "type": "string"
                 },
                 "password": {
-                    "description": "User password.\nRequired. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character.",
+                    "description": "User password.\nRequired. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character. Maximum 128 characters.",
                     "type": "string"
                 }
             }

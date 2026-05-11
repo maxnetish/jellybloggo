@@ -360,6 +360,66 @@ func (h *AuthHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(UserResponse{User: user})
 }
 
+// DeleteUser deletes the current user account, or a target user (admin only).
+// @Summary Delete user
+// @Description Deletes the current user. With ?login=target deletes a specific user (admin only).
+// @Tags auth
+// @Security BearerAuth
+// @Param login query string false "Target user login (admin only)"
+// @Success 204 "No Content"
+// @Failure 400 {object} ErrorResponse "User not found or invalid request"
+// @Failure 401 {object} ErrorResponse "Not authenticated"
+// @Failure 403 {object} ErrorResponse "Forbidden (admin required)"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /api/auth/user [delete]
+func (h *AuthHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(ContextKeyUserID).(int)
+	if !ok || userID == 0 {
+		validation.RespondJSON(w, http.StatusUnauthorized, validation.ErrorResponse{
+			Error: "not authenticated",
+			Code:  "NOT_AUTHENTICATED",
+		})
+		return
+	}
+
+	targetLogin := strings.TrimSpace(r.URL.Query().Get("login"))
+	if len(targetLogin) > 100 {
+		validation.RespondJSON(w, http.StatusBadRequest, validation.ErrorResponse{
+			Error: "Validation failed",
+			Code:  "VALIDATION_ERROR",
+			Details: []validation.FieldError{
+				{Field: "login", Tag: "max", Message: "login query too long"},
+			},
+		})
+		return
+	}
+
+	ctx := r.Context()
+	if err := h.service.DeleteUser(ctx, userID, targetLogin); err != nil {
+		if errors.Is(err, ErrForbidden) {
+			validation.RespondJSON(w, http.StatusForbidden, validation.ErrorResponse{
+				Error: "forbidden",
+				Code:  "FORBIDDEN",
+			})
+			return
+		}
+		if errors.Is(err, ErrUserNotFound) {
+			validation.RespondJSON(w, http.StatusBadRequest, validation.ErrorResponse{
+				Error: "user not found",
+				Code:  "USER_NOT_FOUND",
+			})
+			return
+		}
+		validation.RespondJSON(w, http.StatusInternalServerError, validation.ErrorResponse{
+			Error: "internal error",
+			Code:  "INTERNAL_ERROR",
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func JWTMiddleware(service *AuthService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -196,6 +196,32 @@ func (s *AuthService) UpdateRoles(ctx context.Context, actorUserID int, targetLo
 	return nil
 }
 
+func (s *AuthService) DeleteUser(ctx context.Context, actorUserID int, targetLogin string) error {
+	actor, err := s.userRepo.GetByID(ctx, actorUserID)
+	if err != nil {
+		return fmt.Errorf("failed to get actor: %w", err)
+	}
+	if actor == nil {
+		return ErrInvalidCredentials
+	}
+
+	if targetLogin != "" {
+		if !actor.HasRole("admin") {
+			return ErrForbidden
+		}
+		target, err := s.userRepo.GetByLogin(ctx, targetLogin)
+		if err != nil {
+			return ErrUserNotFound
+		}
+		if target == nil {
+			return ErrUserNotFound
+		}
+		return s.userRepo.Delete(ctx, target.ID)
+	}
+
+	return s.userRepo.Delete(ctx, actorUserID)
+}
+
 func (s *AuthService) ValidateAccessToken(tokenString string) (int, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

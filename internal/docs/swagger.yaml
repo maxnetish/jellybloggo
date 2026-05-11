@@ -5,12 +5,12 @@ definitions:
       current_password:
         description: |-
           Current password for verification.
-          Required.
+          Required. Maximum 128 characters.
         type: string
       new_password:
         description: |-
           New password.
-          Required. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character.
+          Required. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character. Maximum 128 characters.
         type: string
     type: object
   auth.ErrorResponse:
@@ -63,12 +63,12 @@ definitions:
       login:
         description: |-
           User login. Must be unique.
-          Required.
+          Required. Maximum 100 characters.
         type: string
       password:
         description: |-
           User password.
-          Required. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character.
+          Required. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character. Maximum 128 characters.
         type: string
     type: object
   auth.UpdateRolesRequest:
@@ -369,6 +369,38 @@ paths:
       tags:
       - auth
   /api/auth/user:
+    delete:
+      description: Deletes the current user. With ?login=target deletes a specific
+        user (admin only).
+      parameters:
+      - description: Target user login (admin only)
+        in: query
+        name: login
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: User not found or invalid request
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "401":
+          description: Not authenticated
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "403":
+          description: Forbidden (admin required)
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Delete user
+      tags:
+      - auth
     get:
       description: Returns user info if authenticated, or null if not.
       produces:
