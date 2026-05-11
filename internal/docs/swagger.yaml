@@ -45,6 +45,19 @@ definitions:
       user:
         $ref: '#/definitions/users.User'
     type: object
+  auth.RegisterRequest:
+    properties:
+      login:
+        description: |-
+          User login. Must be unique.
+          Required.
+        type: string
+      password:
+        description: |-
+          User password.
+          Required. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character.
+        type: string
+    type: object
   auth.UserResponse:
     properties:
       user:
@@ -173,6 +186,41 @@ paths:
           schema:
             $ref: '#/definitions/auth.ErrorResponse'
       summary: Refresh access token
+      tags:
+      - auth
+  /api/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account with the given login and password, then
+        returns access token and sets refresh token cookie. New users have no roles.
+      parameters:
+      - description: Registration credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.LoginResponse'
+        "400":
+          description: Validation failed
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "409":
+          description: Login already taken
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      summary: Register a new user
       tags:
       - auth
   /api/auth/user:

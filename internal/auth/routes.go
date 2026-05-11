@@ -12,6 +12,7 @@ func NewRouter(service *AuthService, userRepo users.UserRepository) *chi.Mux {
 	handler := NewAuthHandler(service, userRepo)
 
 	r.Post("/login", handler.Login)
+	r.Post("/register", handler.Register)
 	r.Post("/refresh", handler.Refresh)
 	r.Post("/logout", handler.Logout)
 

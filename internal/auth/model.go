@@ -19,6 +19,17 @@ type LoginRequest struct {
 	Password string `json:"password" v8:"required,min=8"`
 }
 
+// RegisterRequest is used for user registration.
+// New users have no roles — roles are assigned by an administrator later.
+type RegisterRequest struct {
+	// User login. Must be unique.
+	// Required.
+	Login string `json:"login" v8:"required"`
+	// User password.
+	// Required. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character.
+	Password string `json:"password" v8:"required,passwd"`
+}
+
 type LoginResponse struct {
 	AccessToken string       `json:"access_token"`
 	User        *users.User  `json:"user"`

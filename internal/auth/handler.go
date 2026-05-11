@@ -92,6 +92,58 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Register creates a new user account and logs them in automatically.
+// New users have no roles assigned — an administrator grants roles later.
+// @Summary Register a new user
+// @Description Creates a new user account with the given login and password, then returns access token and sets refresh token cookie. New users have no roles.
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param request body RegisterRequest true "Registration credentials"
+// @Success 200 {object} LoginResponse
+// @Failure 400 {object} ErrorResponse "Validation failed"
+// @Failure 409 {object} ErrorResponse "Login already taken"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /api/auth/register [post]
+func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
+	var req RegisterRequest
+	if err := validation.DecodeAndValidate(r, &req); err != nil {
+		validation.WriteValidationError(w, err)
+		return
+	}
+
+	ctx := r.Context()
+	accessToken, refreshToken, user, err := h.service.Register(ctx, req.Login, req.Password)
+	if err != nil {
+		if errors.Is(err, ErrDuplicateLogin) {
+			validation.RespondJSON(w, http.StatusConflict, validation.ErrorResponse{
+				Error: "login already taken",
+				Code:  "DUPLICATE_LOGIN",
+			})
+			return
+		}
+		validation.RespondJSON(w, http.StatusInternalServerError, validation.ErrorResponse{
+			Error: "internal error",
+			Code:  "INTERNAL_ERROR",
+		})
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     RefreshTokenCookie,
+		Value:    refreshToken,
+		MaxAge:   CookieMaxAge,
+		HttpOnly: true,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	validation.RespondJSON(w, http.StatusOK, LoginResponse{
+		AccessToken: accessToken,
+		User:        user,
+	})
+}
+
 // Refresh exchanges valid refresh token cookie for new access token.
 // Returns new access token in JSON body and rotates refresh token cookie.
 // @Summary Refresh access token

@@ -16,6 +16,7 @@ var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrRefreshTokenExpired = errors.New("refresh token expired")
 	ErrRefreshTokenInvalid = errors.New("invalid refresh token")
+	ErrDuplicateLogin = errors.New("login already taken")
 )
 
 type AuthService struct {
@@ -65,6 +66,35 @@ func (s *AuthService) Login(ctx context.Context, login, password string) (string
 	}
 
 	return accessToken, user, nil
+}
+
+func (s *AuthService) Register(ctx context.Context, login, password string) (string, string, *users.User, error) {
+	existing, _ := s.userRepo.GetByLogin(ctx, login)
+	if existing != nil {
+		return "", "", nil, ErrDuplicateLogin
+	}
+
+	user := &users.User{Login: login}
+	if err := user.SetPassword(password); err != nil {
+		return "", "", nil, fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	created, err := s.userRepo.Create(ctx, login, user.PasswordHash, []string{})
+	if err != nil {
+		return "", "", nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	accessToken, err := s.generateAccessToken(created)
+	if err != nil {
+		return "", "", nil, fmt.Errorf("failed to generate access token: %w", err)
+	}
+
+	refreshToken, err := s.CreateRefreshToken(ctx, created.ID)
+	if err != nil {
+		return "", "", nil, fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+
+	return accessToken, refreshToken, created, nil
 }
 
 func (s *AuthService) CreateRefreshToken(ctx context.Context, userID int) (string, error) {

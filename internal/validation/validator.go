@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"unicode"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -27,6 +28,49 @@ func init() {
 	// while letting swaggo ignore these tags entirely. The validation rules
 	// are documented in Go field comments for the OpenAPI spec.
 	validate.SetTagName("v8")
+
+	validate.RegisterValidation("passwd", isPasswordValid)
+}
+
+// isPasswordValid checks that a password meets security requirements:
+// - At least 8 characters long
+// - Contains at least one uppercase letter (supports Unicode, not just ASCII)
+// - Contains at least one lowercase letter (supports Unicode, not just ASCII)
+// - Contains at least one digit
+// - Contains at least one special character
+func isPasswordValid(fl validator.FieldLevel) bool {
+	password := fl.Field().String()
+
+	if len(password) < 8 {
+		return false
+	}
+
+	hasUpper := false
+	hasLower := false
+	hasDigit := false
+	hasSpecial := false
+
+	for _, ch := range password {
+		switch {
+		case unicode.IsUpper(ch):
+			hasUpper = true
+		case unicode.IsLower(ch):
+			hasLower = true
+		case unicode.IsDigit(ch):
+			hasDigit = true
+		default:
+			// Check if it's a special character.
+			// This includes common ASCII symbols like !@#$%^&*()_+-=[]{}|;':",./<>?`~
+			// and other printable non-alphanumeric characters including Unicode symbols.
+			if (ch >= 32 && ch <= 47) || (ch >= 58 && ch <= 64) ||
+				(ch >= 91 && ch <= 96) || (ch >= 123 && ch <= 126) ||
+				(!unicode.IsLetter(ch) && !unicode.IsDigit(ch) && !unicode.IsSpace(ch)) {
+				hasSpecial = true
+			}
+		}
+	}
+
+	return hasUpper && hasLower && hasDigit && hasSpecial
 }
 
 // ValidateStruct checks a struct against validation rules defined in struct tags.
@@ -124,6 +168,8 @@ func getJSONFieldName(structType reflect.Type, goFieldName string) string {
 //   - buildMessage("role", "oneof", "admin user") -> "role must be one of [admin user]"
 func buildMessage(fieldName, tag, param string) string {
 	switch tag {
+	case "passwd":
+		return fmt.Sprintf("%s must be at least 8 characters with uppercase, lowercase, digit and special character", fieldName)
 	case "min":
 		if param != "" {
 			return fmt.Sprintf("%s must be at least %s characters", fieldName, param)
