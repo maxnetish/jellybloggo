@@ -17,6 +17,16 @@ var validate *validator.Validate
 // It's used here to initialize the singleton validator with all default rules.
 func init() {
 	validate = validator.New()
+	// We use "v8" tag name instead of the default "validate".
+	// By default, go-playground/validator reads the "validate" struct tag,
+	// but swaggo (the Swagger generator) also reads "validate" tags to
+	// generate OpenAPI constraints (minLength, maxLength, required, etc.).
+	// This causes Swagger UI to validate requests locally before sending
+	// them to the server, which prevents testing server-side validation.
+	// By using a custom tag name "v8", we keep server-side validation intact
+	// while letting swaggo ignore these tags entirely. The validation rules
+	// are documented in Go field comments for the OpenAPI spec.
+	validate.SetTagName("v8")
 }
 
 // ValidateStruct checks a struct against validation rules defined in struct tags.

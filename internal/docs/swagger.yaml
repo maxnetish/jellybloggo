@@ -2,16 +2,33 @@ basePath: /
 definitions:
   auth.ErrorResponse:
     properties:
+      code:
+        description: |-
+          Code is a machine-readable error code for programmatic handling.
+          Examples: "VALIDATION_ERROR", "INVALID_JSON"
+        type: string
+      details:
+        description: |-
+          Details contains individual field errors when validation fails.
+          This is nil for non-validation errors.
+        items:
+          $ref: '#/definitions/validation.FieldError'
+        type: array
       error:
+        description: Error is a short description of what went wrong.
         type: string
     type: object
   auth.LoginRequest:
     properties:
       login:
-        description: User login (email or username)
+        description: |-
+          User login (email or username).
+          Required.
         type: string
       password:
-        description: User password
+        description: |-
+          User password.
+          Required. Minimum 8 characters.
         type: string
     type: object
   auth.LoginResponse:
@@ -58,6 +75,31 @@ definitions:
           $ref: '#/definitions/users.Role'
         type: array
       updated_at:
+        type: string
+    type: object
+  validation.FieldError:
+    properties:
+      field:
+        description: Field is the name of the JSON field that failed validation (e.g.,
+          "login", "password").
+        type: string
+      message:
+        description: |-
+          Message is a human-readable description of what went wrong.
+          This is what should be displayed to the end user.
+        type: string
+      param:
+        description: Param is the parameter for the validation rule (e.g., "8" for
+          min=8, "admin" for oneof=admin).
+        type: string
+      tag:
+        description: Tag is the validation rule that failed (e.g., "required", "min",
+          "email").
+        type: string
+      value:
+        description: |-
+          Value is the actual value that was sent in the request.
+          This is useful for debugging, but may be omitted if it's sensitive (like passwords).
         type: string
     type: object
 host: localhost:8080

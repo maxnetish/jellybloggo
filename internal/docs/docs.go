@@ -163,7 +163,19 @@ const docTemplate = `{
         "auth.ErrorResponse": {
             "type": "object",
             "properties": {
+                "code": {
+                    "description": "Code is a machine-readable error code for programmatic handling.\nExamples: \"VALIDATION_ERROR\", \"INVALID_JSON\"",
+                    "type": "string"
+                },
+                "details": {
+                    "description": "Details contains individual field errors when validation fails.\nThis is nil for non-validation errors.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/validation.FieldError"
+                    }
+                },
                 "error": {
+                    "description": "Error is a short description of what went wrong.",
                     "type": "string"
                 }
             }
@@ -172,11 +184,11 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "login": {
-                    "description": "User login (email or username)",
+                    "description": "User login (email or username).\nRequired.",
                     "type": "string"
                 },
                 "password": {
-                    "description": "User password",
+                    "description": "User password.\nRequired. Minimum 8 characters.",
                     "type": "string"
                 }
             }
@@ -249,6 +261,31 @@ const docTemplate = `{
                     }
                 },
                 "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "validation.FieldError": {
+            "type": "object",
+            "properties": {
+                "field": {
+                    "description": "Field is the name of the JSON field that failed validation (e.g., \"login\", \"password\").",
+                    "type": "string"
+                },
+                "message": {
+                    "description": "Message is a human-readable description of what went wrong.\nThis is what should be displayed to the end user.",
+                    "type": "string"
+                },
+                "param": {
+                    "description": "Param is the parameter for the validation rule (e.g., \"8\" for min=8, \"admin\" for oneof=admin).",
+                    "type": "string"
+                },
+                "tag": {
+                    "description": "Tag is the validation rule that failed (e.g., \"required\", \"min\", \"email\").",
+                    "type": "string"
+                },
+                "value": {
+                    "description": "Value is the actual value that was sent in the request.\nThis is useful for debugging, but may be omitted if it's sensitive (like passwords).",
                     "type": "string"
                 }
             }

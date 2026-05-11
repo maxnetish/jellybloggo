@@ -14,9 +14,9 @@ import (
 // TestRequest is a sample struct used for testing validation.
 // It has various field types and validation rules to exercise different scenarios.
 type TestRequest struct {
-	Name  string `json:"name"  validate:"required"`
-	Email string `json:"email" validate:"required,email"`
-	Age   int    `json:"age"   validate:"gte=0,lte=150"`
+	Name  string `json:"name"  v8:"required"`
+	Email string `json:"email" v8:"required,email"`
+	Age   int    `json:"age"   v8:"gte=0,lte=150"`
 }
 
 // TestValidateStruct_Valid tests that a fully valid struct passes validation.

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/maxnetish/jellybloggo/internal/users"
+	"github.com/maxnetish/jellybloggo/internal/validation"
 )
 
 const (
@@ -45,8 +46,8 @@ func NewAuthHandler(service *AuthService, userRepo users.UserRepository) *AuthHa
 // @Router /api/auth/login [post]
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `{"error":"invalid request body"}`, http.StatusBadRequest)
+	if err := validation.DecodeAndValidate(r, &req); err != nil {
+		validation.WriteValidationError(w, err)
 		return
 	}
 
@@ -54,16 +55,25 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	accessToken, user, err := h.service.Login(ctx, req.Login, req.Password)
 	if err != nil {
 		if errors.Is(err, ErrInvalidCredentials) {
-			http.Error(w, `{"error":"invalid credentials"}`, http.StatusUnauthorized)
+			validation.RespondJSON(w, http.StatusUnauthorized, validation.ErrorResponse{
+				Error: "invalid credentials",
+				Code:  "INVALID_CREDENTIALS",
+			})
 			return
 		}
-		http.Error(w, `{"error":"internal error"}`, http.StatusInternalServerError)
+		validation.RespondJSON(w, http.StatusInternalServerError, validation.ErrorResponse{
+			Error: "internal error",
+			Code:  "INTERNAL_ERROR",
+		})
 		return
 	}
 
 	refreshToken, err := h.service.CreateRefreshToken(ctx, user.ID)
 	if err != nil {
-		http.Error(w, `{"error":"internal error"}`, http.StatusInternalServerError)
+		validation.RespondJSON(w, http.StatusInternalServerError, validation.ErrorResponse{
+			Error: "internal error",
+			Code:  "INTERNAL_ERROR",
+		})
 		return
 	}
 
@@ -76,8 +86,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(LoginResponse{
+	validation.RespondJSON(w, http.StatusOK, LoginResponse{
 		AccessToken: accessToken,
 		User:        user,
 	})
