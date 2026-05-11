@@ -1,5 +1,18 @@
 basePath: /
 definitions:
+  auth.ChangePasswordRequest:
+    properties:
+      current_password:
+        description: |-
+          Current password for verification.
+          Required.
+        type: string
+      new_password:
+        description: |-
+          New password.
+          Required. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character.
+        type: string
+    type: object
   auth.ErrorResponse:
     properties:
       code:
@@ -164,6 +177,41 @@ paths:
         "204":
           description: No Content
       summary: Logout user
+      tags:
+      - auth
+  /api/auth/password:
+    post:
+      consumes:
+      - application/json
+      description: Changes the password for the current user. Verifies current password
+        before updating.
+      parameters:
+      - description: Current and new password
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.ChangePasswordRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Validation failed
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "401":
+          description: Current password is incorrect
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Change password
       tags:
       - auth
   /api/auth/refresh:

@@ -30,6 +30,16 @@ type RegisterRequest struct {
 	Password string `json:"password" v8:"required,passwd"`
 }
 
+// ChangePasswordRequest is used to change the current user's password.
+type ChangePasswordRequest struct {
+	// Current password for verification.
+	// Required.
+	CurrentPassword string `json:"current_password" v8:"required"`
+	// New password.
+	// Required. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character.
+	NewPassword string `json:"new_password" v8:"required,passwd"`
+}
+
 type LoginResponse struct {
 	AccessToken string       `json:"access_token"`
 	User        *users.User  `json:"user"`

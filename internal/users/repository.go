@@ -16,6 +16,8 @@ type UserRepository interface {
 	GetByID(ctx context.Context, id int) (*User, error)
 	// SetRoles replaces all roles for a user. Role names must be valid (admin, author, reader).
 	SetRoles(ctx context.Context, userID int, roles []string) error
+	// UpdatePassword changes the password hash for a user.
+	UpdatePassword(ctx context.Context, userID int, passwordHash string) error
 	// HasRole checks if any user has the specified role.
 	HasRole(ctx context.Context, roleName string) (bool, error)
 }
@@ -168,6 +170,23 @@ func (r *userRepository) addRoleToUserTx(ctx context.Context, tx *sql.Tx, userID
 	_, err = tx.ExecContext(ctx, "INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", userID, roleID)
 	if err != nil {
 		return fmt.Errorf("failed to assign role to user: %w", err)
+	}
+
+	return nil
+}
+
+func (r *userRepository) UpdatePassword(ctx context.Context, userID int, passwordHash string) error {
+	result, err := r.db.ExecContext(ctx,
+		"UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+		passwordHash, userID,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to update password: %w", err)
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return fmt.Errorf("user not found")
 	}
 
 	return nil

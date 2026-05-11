@@ -144,6 +144,55 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// ChangePassword changes the password for the currently authenticated user.
+// Does not invalidate existing sessions — re-login is not required.
+// @Summary Change password
+// @Description Changes the password for the current user. Verifies current password before updating.
+// @Tags auth
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body ChangePasswordRequest true "Current and new password"
+// @Success 204 "No Content"
+// @Failure 400 {object} ErrorResponse "Validation failed"
+// @Failure 401 {object} ErrorResponse "Current password is incorrect"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /api/auth/password [post]
+func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(ContextKeyUserID).(int)
+	if !ok || userID == 0 {
+		validation.RespondJSON(w, http.StatusUnauthorized, validation.ErrorResponse{
+			Error: "not authenticated",
+			Code:  "NOT_AUTHENTICATED",
+		})
+		return
+	}
+
+	var req ChangePasswordRequest
+	if err := validation.DecodeAndValidate(r, &req); err != nil {
+		validation.WriteValidationError(w, err)
+		return
+	}
+
+	ctx := r.Context()
+	if err := h.service.ChangePassword(ctx, userID, req.CurrentPassword, req.NewPassword); err != nil {
+		if errors.Is(err, ErrCurrentPasswordIncorrect) {
+			validation.RespondJSON(w, http.StatusUnauthorized, validation.ErrorResponse{
+				Error: "current password is incorrect",
+				Code:  "CURRENT_PASSWORD_INCORRECT",
+			})
+			return
+		}
+		validation.RespondJSON(w, http.StatusInternalServerError, validation.ErrorResponse{
+			Error: "internal error",
+			Code:  "INTERNAL_ERROR",
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // Refresh exchanges valid refresh token cookie for new access token.
 // Returns new access token in JSON body and rotates refresh token cookie.
 // @Summary Refresh access token

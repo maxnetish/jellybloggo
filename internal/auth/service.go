@@ -16,7 +16,8 @@ var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrRefreshTokenExpired = errors.New("refresh token expired")
 	ErrRefreshTokenInvalid = errors.New("invalid refresh token")
-	ErrDuplicateLogin = errors.New("login already taken")
+	ErrDuplicateLogin           = errors.New("login already taken")
+	ErrCurrentPasswordIncorrect = errors.New("current password is incorrect")
 )
 
 type AuthService struct {
@@ -139,6 +140,30 @@ func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
 
 func (s *AuthService) InvalidateUserSessions(ctx context.Context, userID int) error {
 	return s.refreshTokenRepo.DeleteAllForUser(ctx, userID)
+}
+
+func (s *AuthService) ChangePassword(ctx context.Context, userID int, currentPassword, newPassword string) error {
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return fmt.Errorf("failed to get user: %w", err)
+	}
+	if user == nil {
+		return ErrInvalidCredentials
+	}
+
+	if !user.CheckPassword(currentPassword) {
+		return ErrCurrentPasswordIncorrect
+	}
+
+	if err := user.SetPassword(newPassword); err != nil {
+		return fmt.Errorf("failed to hash password: %w", err)
+	}
+
+	if err := s.userRepo.UpdatePassword(ctx, userID, user.PasswordHash); err != nil {
+		return fmt.Errorf("failed to update password: %w", err)
+	}
+
+	return nil
 }
 
 func (s *AuthService) ValidateAccessToken(tokenString string) (int, error) {

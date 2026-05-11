@@ -81,6 +81,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/auth/password": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Changes the password for the current user. Verifies current password before updating.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Change password",
+                "parameters": [
+                    {
+                        "description": "Current and new password",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.ChangePasswordRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Validation failed",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Current password is incorrect",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/auth/refresh": {
             "post": {
                 "description": "Exchanges valid refresh token cookie for new access token. Implements token rotation.",
@@ -212,6 +266,19 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "auth.ChangePasswordRequest": {
+            "type": "object",
+            "properties": {
+                "current_password": {
+                    "description": "Current password for verification.\nRequired.",
+                    "type": "string"
+                },
+                "new_password": {
+                    "description": "New password.\nRequired. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character.",
+                    "type": "string"
+                }
+            }
+        },
         "auth.ErrorResponse": {
             "type": "object",
             "properties": {
