@@ -11,17 +11,9 @@ import (
 // FieldError represents a single validation error for one field.
 // It contains all the information needed to display a clear error message to the API user.
 type FieldError struct {
-	// Field is the name of the JSON field that failed validation (e.g., "login", "password").
-	Field string `json:"field"`
-	// Tag is the validation rule that failed (e.g., "required", "min", "email").
-	Tag string `json:"tag"`
-	// Value is the actual value that was sent in the request.
-	// This is useful for debugging, but may be omitted if it's sensitive (like passwords).
-	Value string `json:"value,omitempty"`
-	// Param is the parameter for the validation rule (e.g., "8" for min=8, "admin" for oneof=admin).
-	Param string `json:"param,omitempty"`
-	// Message is a human-readable description of what went wrong.
-	// This is what should be displayed to the end user.
+	Field   string `json:"field"`
+	Tag     string `json:"tag"`
+	Value   string `json:"value,omitempty"`
 	Message string `json:"message"`
 }
 
@@ -131,7 +123,6 @@ func newFieldErrors(validationErrs validator.ValidationErrors, s interface{}) []
 			Field:   fieldName,
 			Tag:     tag,
 			Value:   value,
-			Param:   param,
 			Message: message,
 		})
 	}

@@ -289,7 +289,7 @@ func TestBuildMessage(t *testing.T) {
 		{"login", "required", "", "login is required"},
 		{"password", "min", "8", "password must be at least 8 characters"},
 		{"email", "email", "", "email must be a valid email address"},
-		{"role", "oneof", "admin user", "role must be one of [admin user]"},
+		{"role", "oneof", "", "role must be a valid value"},
 	}
 
 	for _, tc := range tests {

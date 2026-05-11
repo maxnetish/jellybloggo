@@ -20,6 +20,7 @@ func NewRouter(service *AuthService, userRepo users.UserRepository) *chi.Mux {
 		r.Use(JWTMiddleware(service))
 		r.Get("/user", handler.GetUser)
 		r.Post("/password", handler.ChangePassword)
+		r.Post("/roles", handler.UpdateRoles)
 	})
 
 	return r

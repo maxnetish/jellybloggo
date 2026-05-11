@@ -219,6 +219,66 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/auth/roles": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Changes roles for a target user. Requires admin role. Roles list can be empty.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Update user roles",
+                "parameters": [
+                    {
+                        "description": "Target login and roles to assign",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.UpdateRolesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Invalid login, roles, or target user not found",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Admin role required",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/auth/user": {
             "get": {
                 "security": [
@@ -347,6 +407,22 @@ const docTemplate = `{
                 }
             }
         },
+        "auth.UpdateRolesRequest": {
+            "type": "object",
+            "properties": {
+                "login": {
+                    "description": "Target user login. Must exist.\nRequired.",
+                    "type": "string"
+                },
+                "roles": {
+                    "description": "Role names to assign. Each must be one of: admin, author, reader.\nCan be empty to remove all roles.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
         "auth.UserResponse": {
             "type": "object",
             "properties": {
@@ -401,23 +477,15 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "field": {
-                    "description": "Field is the name of the JSON field that failed validation (e.g., \"login\", \"password\").",
                     "type": "string"
                 },
                 "message": {
-                    "description": "Message is a human-readable description of what went wrong.\nThis is what should be displayed to the end user.",
-                    "type": "string"
-                },
-                "param": {
-                    "description": "Param is the parameter for the validation rule (e.g., \"8\" for min=8, \"admin\" for oneof=admin).",
                     "type": "string"
                 },
                 "tag": {
-                    "description": "Tag is the validation rule that failed (e.g., \"required\", \"min\", \"email\").",
                     "type": "string"
                 },
                 "value": {
-                    "description": "Value is the actual value that was sent in the request.\nThis is useful for debugging, but may be omitted if it's sensitive (like passwords).",
                     "type": "string"
                 }
             }

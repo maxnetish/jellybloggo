@@ -40,6 +40,17 @@ type ChangePasswordRequest struct {
 	NewPassword string `json:"new_password" v8:"required,passwd"`
 }
 
+// UpdateRolesRequest is used by an admin to change roles for a user.
+// Roles list can be empty to remove all roles.
+type UpdateRolesRequest struct {
+	// Target user login. Must exist.
+	// Required.
+	Login string `json:"login" v8:"required"`
+	// Role names to assign. Each must be one of: admin, author, reader.
+	// Can be empty to remove all roles.
+	Roles []string `json:"roles" v8:"dive,oneof=admin author reader"`
+}
+
 type LoginResponse struct {
 	AccessToken string       `json:"access_token"`
 	User        *users.User  `json:"user"`

@@ -71,6 +71,21 @@ definitions:
           Required. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character.
         type: string
     type: object
+  auth.UpdateRolesRequest:
+    properties:
+      login:
+        description: |-
+          Target user login. Must exist.
+          Required.
+        type: string
+      roles:
+        description: |-
+          Role names to assign. Each must be one of: admin, author, reader.
+          Can be empty to remove all roles.
+        items:
+          type: string
+        type: array
+    type: object
   auth.UserResponse:
     properties:
       user:
@@ -106,26 +121,12 @@ definitions:
   validation.FieldError:
     properties:
       field:
-        description: Field is the name of the JSON field that failed validation (e.g.,
-          "login", "password").
         type: string
       message:
-        description: |-
-          Message is a human-readable description of what went wrong.
-          This is what should be displayed to the end user.
-        type: string
-      param:
-        description: Param is the parameter for the validation rule (e.g., "8" for
-          min=8, "admin" for oneof=admin).
         type: string
       tag:
-        description: Tag is the validation rule that failed (e.g., "required", "min",
-          "email").
         type: string
       value:
-        description: |-
-          Value is the actual value that was sent in the request.
-          This is useful for debugging, but may be omitted if it's sensitive (like passwords).
         type: string
     type: object
 host: localhost:8080
@@ -269,6 +270,45 @@ paths:
           schema:
             $ref: '#/definitions/auth.ErrorResponse'
       summary: Register a new user
+      tags:
+      - auth
+  /api/auth/roles:
+    post:
+      consumes:
+      - application/json
+      description: Changes roles for a target user. Requires admin role. Roles list
+        can be empty.
+      parameters:
+      - description: Target login and roles to assign
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.UpdateRolesRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Invalid login, roles, or target user not found
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "401":
+          description: Not authenticated
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "403":
+          description: Admin role required
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update user roles
       tags:
       - auth
   /api/auth/user:

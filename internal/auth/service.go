@@ -18,6 +18,8 @@ var (
 	ErrRefreshTokenInvalid = errors.New("invalid refresh token")
 	ErrDuplicateLogin           = errors.New("login already taken")
 	ErrCurrentPasswordIncorrect = errors.New("current password is incorrect")
+	ErrForbidden                = errors.New("forbidden")
+	ErrUserNotFound             = errors.New("user not found")
 )
 
 type AuthService struct {
@@ -161,6 +163,34 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID int, currentPas
 
 	if err := s.userRepo.UpdatePassword(ctx, userID, user.PasswordHash); err != nil {
 		return fmt.Errorf("failed to update password: %w", err)
+	}
+
+	return nil
+}
+
+func (s *AuthService) UpdateRoles(ctx context.Context, actorUserID int, targetLogin string, roles []string) error {
+	actor, err := s.userRepo.GetByID(ctx, actorUserID)
+	if err != nil {
+		return fmt.Errorf("failed to get actor: %w", err)
+	}
+	if actor == nil {
+		return ErrInvalidCredentials
+	}
+
+	if !actor.HasRole("admin") {
+		return ErrForbidden
+	}
+
+	target, err := s.userRepo.GetByLogin(ctx, targetLogin)
+	if err != nil {
+		return ErrUserNotFound
+	}
+	if target == nil {
+		return ErrUserNotFound
+	}
+
+	if err := s.userRepo.SetRoles(ctx, target.ID, roles); err != nil {
+		return fmt.Errorf("failed to set roles: %w", err)
 	}
 
 	return nil

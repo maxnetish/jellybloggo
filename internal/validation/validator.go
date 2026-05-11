@@ -186,7 +186,7 @@ func buildMessage(fieldName, tag, param string) string {
 		}
 		return fmt.Sprintf("%s has invalid length", fieldName)
 	case "oneof":
-		return fmt.Sprintf("%s must be one of [%s]", fieldName, param)
+		return fmt.Sprintf("%s must be a valid value", fieldName)
 	case "eq":
 		return fmt.Sprintf("%s must be equal to %s", fieldName, param)
 	case "ne":

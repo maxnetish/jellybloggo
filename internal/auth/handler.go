@@ -193,6 +193,62 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// UpdateRoles changes roles for a user. Only users with admin role can access this.
+// @Summary Update user roles
+// @Description Changes roles for a target user. Requires admin role. Roles list can be empty.
+// @Tags auth
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body UpdateRolesRequest true "Target login and roles to assign"
+// @Success 204 "No Content"
+// @Failure 400 {object} ErrorResponse "Invalid login, roles, or target user not found"
+// @Failure 401 {object} ErrorResponse "Not authenticated"
+// @Failure 403 {object} ErrorResponse "Admin role required"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /api/auth/roles [post]
+func (h *AuthHandler) UpdateRoles(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(ContextKeyUserID).(int)
+	if !ok || userID == 0 {
+		validation.RespondJSON(w, http.StatusUnauthorized, validation.ErrorResponse{
+			Error: "not authenticated",
+			Code:  "NOT_AUTHENTICATED",
+		})
+		return
+	}
+
+	var req UpdateRolesRequest
+	if err := validation.DecodeAndValidate(r, &req); err != nil {
+		validation.WriteValidationError(w, err)
+		return
+	}
+
+	ctx := r.Context()
+	if err := h.service.UpdateRoles(ctx, userID, req.Login, req.Roles); err != nil {
+		if errors.Is(err, ErrForbidden) {
+			validation.RespondJSON(w, http.StatusForbidden, validation.ErrorResponse{
+				Error: "forbidden",
+				Code:  "FORBIDDEN",
+			})
+			return
+		}
+		if errors.Is(err, ErrUserNotFound) {
+			validation.RespondJSON(w, http.StatusBadRequest, validation.ErrorResponse{
+				Error: "user not found",
+				Code:  "USER_NOT_FOUND",
+			})
+			return
+		}
+		validation.RespondJSON(w, http.StatusInternalServerError, validation.ErrorResponse{
+			Error: "internal error",
+			Code:  "INTERNAL_ERROR",
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // Refresh exchanges valid refresh token cookie for new access token.
 // Returns new access token in JSON body and rotates refresh token cookie.
 // @Summary Refresh access token
