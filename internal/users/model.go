@@ -3,6 +3,7 @@ package users
 import (
 	"time"
 
+	"github.com/maxnetish/jellybloggo/internal/pagination"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -47,4 +48,40 @@ func (u *User) HasRole(roleName string) bool {
 		}
 	}
 	return false
+}
+
+type ListParams struct {
+	Roles   []string
+	Search  string
+	SortBy  string
+	SortDir string
+	Page    int
+	PerPage int
+}
+
+type UserResponse struct {
+	ID        int       `json:"id"`
+	Login     string    `json:"login"`
+	Roles     []string  `json:"roles"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type UserListResponse struct {
+	Content    []UserResponse        `json:"content"`
+	Pagination pagination.Pagination `json:"pagination"`
+}
+
+func UserToResponse(u *User) UserResponse {
+	roles := make([]string, len(u.Roles))
+	for i, r := range u.Roles {
+		roles[i] = r.Name
+	}
+	return UserResponse{
+		ID:        u.ID,
+		Login:     u.Login,
+		Roles:     roles,
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
+	}
 }

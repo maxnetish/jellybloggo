@@ -96,6 +96,21 @@ definitions:
       status:
         type: string
     type: object
+  pagination.Pagination:
+    properties:
+      page:
+        type: integer
+      per_page:
+        type: integer
+      sort_by:
+        type: string
+      sort_dir:
+        type: string
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
   users.Role:
     properties:
       id:
@@ -116,6 +131,48 @@ definitions:
           $ref: '#/definitions/users.Role'
         type: array
       updated_at:
+        type: string
+    type: object
+  users.UserListResponse:
+    properties:
+      content:
+        items:
+          $ref: '#/definitions/users.UserResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/pagination.Pagination'
+    type: object
+  users.UserResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: integer
+      login:
+        type: string
+      roles:
+        items:
+          type: string
+        type: array
+      updated_at:
+        type: string
+    type: object
+  validation.ErrorResponse:
+    properties:
+      code:
+        description: |-
+          Code is a machine-readable error code for programmatic handling.
+          Examples: "VALIDATION_ERROR", "INVALID_JSON"
+        type: string
+      details:
+        description: |-
+          Details contains individual field errors when validation fails.
+          This is nil for non-validation errors.
+        items:
+          $ref: '#/definitions/validation.FieldError'
+        type: array
+      error:
+        description: Error is a short description of what went wrong.
         type: string
     type: object
   validation.FieldError:
@@ -326,6 +383,61 @@ paths:
       summary: Get current user
       tags:
       - auth
+  /api/users:
+    get:
+      description: Returns paginated list of users. Requires admin role.
+      parameters:
+      - collectionFormat: multi
+        description: Filter by roles (repeatable)
+        in: query
+        items:
+          type: string
+        name: roles
+        type: array
+      - description: Search by login (partial, case-insensitive)
+        in: query
+        name: search
+        type: string
+      - description: 'Sort field: login, created_at, updated_at'
+        in: query
+        name: sort_by
+        type: string
+      - description: 'Sort direction: asc, desc'
+        in: query
+        name: sort_dir
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of users
+          schema:
+            $ref: '#/definitions/users.UserListResponse'
+        "401":
+          description: Not authenticated
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all users
+      tags:
+      - users
   /health:
     get:
       description: Возвращает статус работоспособности сервера

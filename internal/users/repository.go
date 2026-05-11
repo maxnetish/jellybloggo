@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 )
 
 // UserRepository defines operations for user management in the database.
@@ -18,6 +19,8 @@ type UserRepository interface {
 	SetRoles(ctx context.Context, userID int, roles []string) error
 	// UpdatePassword changes the password hash for a user.
 	UpdatePassword(ctx context.Context, userID int, passwordHash string) error
+	// List returns a paginated, filtered, sorted list of users and the total count.
+	List(ctx context.Context, params ListParams) ([]*User, int, error)
 	// HasRole checks if any user has the specified role.
 	HasRole(ctx context.Context, roleName string) (bool, error)
 }
@@ -190,6 +193,89 @@ func (r *userRepository) UpdatePassword(ctx context.Context, userID int, passwor
 	}
 
 	return nil
+}
+
+func (r *userRepository) List(ctx context.Context, params ListParams) ([]*User, int, error) {
+	var args []interface{}
+
+	where := ""
+	if params.Search != "" {
+		where = "WHERE u.login LIKE ?"
+		args = append(args, "%"+params.Search+"%")
+	}
+
+	if len(params.Roles) > 0 {
+		placeholders := make([]string, len(params.Roles))
+		for i, role := range params.Roles {
+			placeholders[i] = "?"
+			args = append(args, role)
+		}
+		roleFilter := fmt.Sprintf(
+			"EXISTS (SELECT 1 FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = u.id AND r.name IN (%s))",
+			strings.Join(placeholders, ","),
+		)
+		if where == "" {
+			where = "WHERE " + roleFilter
+		} else {
+			where += " AND " + roleFilter
+		}
+	}
+
+	var total int
+	countQuery := "SELECT COUNT(*) FROM users u " + where
+	countArgs := make([]interface{}, len(args))
+	copy(countArgs, args)
+	if err := r.db.QueryRowContext(ctx, countQuery, countArgs...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("failed to count users: %w", err)
+	}
+
+	sortBy := params.SortBy
+	if sortBy == "" {
+		sortBy = "login"
+	}
+	sortDir := params.SortDir
+	if sortDir == "" {
+		sortDir = "asc"
+	}
+	order := fmt.Sprintf("ORDER BY u.%s %s", sortBy, sortDir)
+
+	offset := (params.Page - 1) * params.PerPage
+	dataQuery := fmt.Sprintf(
+		"SELECT u.id, u.login, u.password_hash, u.created_at, u.updated_at FROM users u %s %s LIMIT ? OFFSET ?",
+		where, order,
+	)
+	dataArgs := make([]interface{}, len(args))
+	copy(dataArgs, args)
+	dataArgs = append(dataArgs, params.PerPage, offset)
+
+	rows, err := r.db.QueryContext(ctx, dataQuery, dataArgs...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to query users: %w", err)
+	}
+	defer rows.Close()
+
+	var users []*User
+	for rows.Next() {
+		user := &User{}
+		if err := rows.Scan(&user.ID, &user.Login, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt); err != nil {
+			return nil, 0, fmt.Errorf("failed to scan user: %w", err)
+		}
+		roles, err := r.getRolesByUserID(ctx, user.ID)
+		if err != nil {
+			return nil, 0, err
+		}
+		user.Roles = roles
+		users = append(users, user)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("failed to iterate users: %w", err)
+	}
+
+	if users == nil {
+		users = []*User{}
+	}
+
+	return users, total, nil
 }
 
 func (r *userRepository) HasRole(ctx context.Context, roleName string) (bool, error) {

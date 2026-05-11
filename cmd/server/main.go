@@ -84,6 +84,11 @@ func main() {
 
 	r.Mount("/api/auth", auth.NewRouter(authService, userRepo))
 
+	r.Group(func(r chi.Router) {
+		r.Use(auth.JWTMiddleware(authService))
+		r.Mount("/api/users", users.NewRouter(userRepo))
+	})
+
 	log.Println("Server starting on :8080")
 	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatal(err)
