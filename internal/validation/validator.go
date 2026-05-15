@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 	"unicode"
 
@@ -30,6 +31,7 @@ func init() {
 	validate.SetTagName("v8")
 
 	validate.RegisterValidation("passwd", isPasswordValid)
+	validate.RegisterValidation("slug", isSlugValid)
 }
 
 // isPasswordValid checks that a password meets security requirements:
@@ -71,6 +73,13 @@ func isPasswordValid(fl validator.FieldLevel) bool {
 	}
 
 	return hasUpper && hasLower && hasDigit && hasSpecial
+}
+
+var slugRegex = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
+
+func isSlugValid(fl validator.FieldLevel) bool {
+	slug := fl.Field().String()
+	return slugRegex.MatchString(slug)
 }
 
 // ValidateStruct checks a struct against validation rules defined in struct tags.
@@ -118,6 +127,8 @@ func humanReadableTag(tag string) string {
 		return "must be a valid URL"
 	case "uri":
 		return "must be a valid URI"
+	case "slug":
+		return "must be a valid slug (lowercase letters, numbers, hyphens)"
 	default:
 		// For unknown tags, return the tag name as-is (e.g., "min", "max")
 		return tag
@@ -170,6 +181,8 @@ func buildMessage(fieldName, tag, param string) string {
 	switch tag {
 	case "passwd":
 		return fmt.Sprintf("%s must be at least 8 characters with uppercase, lowercase, digit and special character", fieldName)
+	case "slug":
+		return fmt.Sprintf("%s must be a valid slug (lowercase letters, numbers, hyphens)", fieldName)
 	case "min":
 		if param != "" {
 			return fmt.Sprintf("%s must be at least %s characters", fieldName, param)

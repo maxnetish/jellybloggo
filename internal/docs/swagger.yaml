@@ -111,6 +111,62 @@ definitions:
       total_pages:
         type: integer
     type: object
+  posts.CreatePostRequest:
+    properties:
+      annotation:
+        type: string
+      author:
+        type: string
+      content:
+        type: string
+      contentType:
+        type: string
+      id:
+        type: string
+      slug:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      thumbnailUrl:
+        type: string
+      title:
+        type: string
+    type: object
+  posts.PostResponse:
+    properties:
+      annotation:
+        type: string
+      author:
+        type: string
+      content:
+        type: string
+      content_type:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      owner_id:
+        type: integer
+      slug:
+        type: string
+      status:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      thumbnail_url:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+      visibility:
+        type: string
+    type: object
   users.Role:
     properties:
       id:
@@ -415,6 +471,55 @@ paths:
       summary: Get current user
       tags:
       - auth
+  /api/posts:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new post or updates an existing one. Author role required.
+        Only post owner can update.
+      parameters:
+      - description: Post data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/posts.CreatePostRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Post updated
+          schema:
+            $ref: '#/definitions/posts.PostResponse'
+        "201":
+          description: Post created
+          schema:
+            $ref: '#/definitions/posts.PostResponse'
+        "400":
+          description: Validation failed
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "401":
+          description: Not authenticated
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "403":
+          description: Forbidden - author role required or not owner
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "409":
+          description: Slug already exists
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create or update a post
+      tags:
+      - posts
   /api/users:
     get:
       description: Returns paginated list of users. Requires admin role.

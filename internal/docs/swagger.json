@@ -347,6 +347,81 @@
                 }
             }
         },
+        "/api/posts": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a new post or updates an existing one. Author role required. Only post owner can update.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Create or update a post",
+                "parameters": [
+                    {
+                        "description": "Post data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/posts.CreatePostRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Post updated",
+                        "schema": {
+                            "$ref": "#/definitions/posts.PostResponse"
+                        }
+                    },
+                    "201": {
+                        "description": "Post created",
+                        "schema": {
+                            "$ref": "#/definitions/posts.PostResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Validation failed",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden - author role required or not owner",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Slug already exists",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/users": {
             "get": {
                 "security": [
@@ -587,6 +662,91 @@
                 },
                 "total_pages": {
                     "type": "integer"
+                }
+            }
+        },
+        "posts.CreatePostRequest": {
+            "type": "object",
+            "properties": {
+                "annotation": {
+                    "type": "string"
+                },
+                "author": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "contentType": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "thumbnailUrl": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "posts.PostResponse": {
+            "type": "object",
+            "properties": {
+                "annotation": {
+                    "type": "string"
+                },
+                "author": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                },
+                "content_type": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "owner_id": {
+                    "type": "integer"
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "thumbnail_url": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "visibility": {
+                    "type": "string"
                 }
             }
         },

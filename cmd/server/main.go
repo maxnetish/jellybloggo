@@ -16,6 +16,7 @@ import (
 	"github.com/maxnetish/jellybloggo/internal/auth"
 	"github.com/maxnetish/jellybloggo/internal/database"
 	"github.com/maxnetish/jellybloggo/internal/health"
+	"github.com/maxnetish/jellybloggo/internal/posts"
 	"github.com/maxnetish/jellybloggo/internal/users"
 
 	_ "github.com/maxnetish/jellybloggo/internal/docs"
@@ -50,6 +51,7 @@ func main() {
 	defer db.Close()
 
 	userRepo = users.NewUserRepository(db)
+	postRepo := posts.NewPostRepository(db)
 
 	if adminLogin := os.Getenv("ADMIN_LOGIN"); adminLogin != "" {
 		if err := users.BootstrapAdmin(context.Background(), userRepo, adminLogin, os.Getenv("ADMIN_PASSWORD")); err != nil {
@@ -87,6 +89,7 @@ func main() {
 	r.Group(func(r chi.Router) {
 		r.Use(auth.JWTMiddleware(authService))
 		r.Mount("/api/users", users.NewRouter(userRepo))
+		r.Mount("/api/posts", posts.NewRouter(postRepo, userRepo))
 	})
 
 	log.Println("Server starting on :8080")
