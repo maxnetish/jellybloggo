@@ -159,8 +159,8 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /api/auth/password [post]
 func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(ContextKeyUserID).(int)
-	if !ok || userID == 0 {
+	userID, ok := r.Context().Value(ContextKeyUserID).(string)
+	if !ok || userID == "" {
 		validation.RespondJSON(w, http.StatusUnauthorized, validation.ErrorResponse{
 			Error: "not authenticated",
 			Code:  "NOT_AUTHENTICATED",
@@ -208,8 +208,8 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /api/auth/roles [post]
 func (h *AuthHandler) UpdateRoles(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(ContextKeyUserID).(int)
-	if !ok || userID == 0 {
+	userID, ok := r.Context().Value(ContextKeyUserID).(string)
+	if !ok || userID == "" {
 		validation.RespondJSON(w, http.StatusUnauthorized, validation.ErrorResponse{
 			Error: "not authenticated",
 			Code:  "NOT_AUTHENTICATED",
@@ -342,8 +342,8 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} UserResponse
 // @Router /api/auth/user [get]
 func (h *AuthHandler) GetUser(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(ContextKeyUserID).(int)
-	if !ok || userID == 0 {
+	userID, ok := r.Context().Value(ContextKeyUserID).(string)
+	if !ok || userID == "" {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(UserResponse{User: nil})
 		return
@@ -373,8 +373,8 @@ func (h *AuthHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /api/auth/user [delete]
 func (h *AuthHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(ContextKeyUserID).(int)
-	if !ok || userID == 0 {
+	userID, ok := r.Context().Value(ContextKeyUserID).(string)
+	if !ok || userID == "" {
 		validation.RespondJSON(w, http.StatusUnauthorized, validation.ErrorResponse{
 			Error: "not authenticated",
 			Code:  "NOT_AUTHENTICATED",
@@ -450,8 +450,8 @@ func JWTMiddleware(service *AuthService) func(http.Handler) http.Handler {
 func UserMiddleware(userRepo users.UserRepository) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			userID, ok := r.Context().Value(ContextKeyUserID).(int)
-			if !ok || userID == 0 {
+			userID, ok := r.Context().Value(ContextKeyUserID).(string)
+			if !ok || userID == "" {
 				next.ServeHTTP(w, r)
 				return
 			}

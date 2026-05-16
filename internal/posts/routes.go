@@ -10,5 +10,6 @@ func NewRouter(postRepo PostRepository, userRepo users.UserRepository) *chi.Mux 
 	h := NewPostHandler(postRepo, userRepo)
 	r.Post("/", h.UpsertPost)
 	r.Get("/", h.ListPosts)
+	r.Get("/{id}", h.GetPost)
 	return r
 }

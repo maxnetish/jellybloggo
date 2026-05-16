@@ -70,7 +70,7 @@ type ErrorResponse = validation.ErrorResponse
 type RefreshToken struct {
 	ID        int64
 	TokenHash string
-	UserID    int
+	UserID    string
 	ExpiresAt time.Time
 	CreatedAt time.Time
 }

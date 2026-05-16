@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/maxnetish/jellybloggo/internal/pagination"
 	"github.com/maxnetish/jellybloggo/internal/users"
 	"github.com/maxnetish/jellybloggo/internal/validation"
@@ -46,8 +47,8 @@ func NewPostHandler(postRepo PostRepository, userRepo users.UserRepository) *Pos
 // @Failure 500 {object} validation.ErrorResponse "Internal server error"
 // @Router /api/posts [post]
 func (h *PostHandler) UpsertPost(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("userID").(int)
-	if !ok || userID == 0 {
+	userID, ok := r.Context().Value("userID").(string)
+	if !ok || userID == "" {
 		validation.RespondJSON(w, http.StatusUnauthorized, validation.ErrorResponse{
 			Error: "not authenticated",
 			Code:  "NOT_AUTHENTICATED",
@@ -229,8 +230,8 @@ func (h *PostHandler) UpsertPost(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {object} validation.ErrorResponse "Internal server error"
 // @Router /api/posts [get]
 func (h *PostHandler) ListPosts(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("userID").(int)
-	if !ok || userID == 0 {
+	userID, ok := r.Context().Value("userID").(string)
+	if !ok || userID == "" {
 		validation.RespondJSON(w, http.StatusUnauthorized, validation.ErrorResponse{
 			Error: "not authenticated",
 			Code:  "NOT_AUTHENTICATED",
@@ -247,9 +248,9 @@ func (h *PostHandler) ListPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var ownerID int
+	var ownerID string
 	if actor.HasRole("admin") {
-		ownerID = 0
+		ownerID = ""
 	} else if actor.HasRole("author") {
 		ownerID = userID
 	} else {
@@ -405,4 +406,81 @@ func (h *PostHandler) ListPosts(w http.ResponseWriter, r *http.Request) {
 			SortDir:    sortDir,
 		},
 	})
+}
+
+// GetPost returns a single post by ID.
+// @Summary Get a post by ID
+// @Description Returns full post data. Admin can get any post, author can get only own posts.
+// @Tags posts
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "Post ID"
+// @Success 200 {object} PostResponse "Post data"
+// @Failure 401 {object} validation.ErrorResponse "Not authenticated"
+// @Failure 403 {object} validation.ErrorResponse "Forbidden"
+// @Failure 404 {object} validation.ErrorResponse "Not found"
+// @Failure 500 {object} validation.ErrorResponse "Internal server error"
+// @Router /api/posts/{id} [get]
+func (h *PostHandler) GetPost(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value("userID").(string)
+	if !ok || userID == "" {
+		validation.RespondJSON(w, http.StatusUnauthorized, validation.ErrorResponse{
+			Error: "not authenticated",
+			Code:  "NOT_AUTHENTICATED",
+		})
+		return
+	}
+
+	actor, err := h.userRepo.GetByID(r.Context(), userID)
+	if err != nil || actor == nil {
+		validation.RespondJSON(w, http.StatusForbidden, validation.ErrorResponse{
+			Error: "forbidden",
+			Code:  "FORBIDDEN",
+		})
+		return
+	}
+
+	if !actor.HasRole("admin") && !actor.HasRole("author") {
+		validation.RespondJSON(w, http.StatusForbidden, validation.ErrorResponse{
+			Error: "forbidden - author or admin role required",
+			Code:  "FORBIDDEN",
+		})
+		return
+	}
+
+	postID := chi.URLParam(r, "id")
+	if postID == "" {
+		validation.RespondJSON(w, http.StatusNotFound, validation.ErrorResponse{
+			Error: "not found",
+			Code:  "NOT_FOUND",
+		})
+		return
+	}
+
+	post, err := h.postRepo.GetByID(r.Context(), postID)
+	if err != nil {
+		validation.RespondJSON(w, http.StatusInternalServerError, validation.ErrorResponse{
+			Error: "internal error",
+			Code:  "INTERNAL_ERROR",
+		})
+		return
+	}
+
+	if post == nil {
+		validation.RespondJSON(w, http.StatusNotFound, validation.ErrorResponse{
+			Error: "not found",
+			Code:  "NOT_FOUND",
+		})
+		return
+	}
+
+	if !actor.HasRole("admin") && post.OwnerID != userID {
+		validation.RespondJSON(w, http.StatusForbidden, validation.ErrorResponse{
+			Error: "forbidden - not post owner",
+			Code:  "FORBIDDEN",
+		})
+		return
+	}
+
+	validation.RespondJSON(w, http.StatusOK, PostToResponse(post))
 }

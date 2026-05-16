@@ -176,7 +176,7 @@ func (r *postRepository) List(ctx context.Context, params ListParams) ([]*Post, 
 	join := ""
 	var whereClauses []string
 
-	if params.OwnerID != 0 {
+	if params.OwnerID != "" {
 		whereClauses = append(whereClauses, "p.owner_id = ?")
 		args = append(args, params.OwnerID)
 	}

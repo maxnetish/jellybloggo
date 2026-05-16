@@ -181,7 +181,7 @@ definitions:
       id:
         type: string
       owner_id:
-        type: integer
+        type: string
       slug:
         type: string
       status:
@@ -236,7 +236,7 @@ definitions:
       created_at:
         type: string
       id:
-        type: integer
+        type: string
       login:
         type: string
       roles:
@@ -260,7 +260,7 @@ definitions:
       created_at:
         type: string
       id:
-        type: integer
+        type: string
       login:
         type: string
       roles:
@@ -649,6 +649,44 @@ paths:
       security:
       - BearerAuth: []
       summary: Create or update a post
+      tags:
+      - posts
+  /api/posts/{id}:
+    get:
+      description: Returns full post data. Admin can get any post, author can get
+        only own posts.
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Post data
+          schema:
+            $ref: '#/definitions/posts.PostResponse'
+        "401":
+          description: Not authenticated
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get a post by ID
       tags:
       - posts
   /api/users:

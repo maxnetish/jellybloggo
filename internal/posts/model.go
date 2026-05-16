@@ -17,7 +17,7 @@ type Attachment struct {
 
 type Post struct {
 	ID           string
-	OwnerID      int
+	OwnerID      string
 	Author       *string
 	Status       string
 	Visibility   string
@@ -48,7 +48,7 @@ type CreatePostRequest struct {
 
 type PostResponse struct {
 	ID           string       `json:"id"`
-	OwnerID      int          `json:"owner_id"`
+	OwnerID      string       `json:"owner_id"`
 	Author       *string      `json:"author"`
 	Status       string       `json:"status"`
 	Visibility   string       `json:"visibility"`
@@ -88,7 +88,7 @@ type ListParams struct {
 	Status       []string
 	CreatedAtFrom *time.Time
 	CreatedAtTo   *time.Time
-	OwnerID      int
+	OwnerID      string
 	SortBy       string
 	SortDir      string
 	Page         int

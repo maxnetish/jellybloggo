@@ -100,7 +100,7 @@ func (s *AuthService) Register(ctx context.Context, login, password string) (str
 	return accessToken, refreshToken, created, nil
 }
 
-func (s *AuthService) CreateRefreshToken(ctx context.Context, userID int) (string, error) {
+func (s *AuthService) CreateRefreshToken(ctx context.Context, userID string) (string, error) {
 	expiresAt := time.Now().Add(s.refreshExpiry)
 	return s.refreshTokenRepo.Create(ctx, userID, expiresAt)
 }
@@ -140,11 +140,11 @@ func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
 	return s.refreshTokenRepo.DeleteByToken(ctx, refreshToken)
 }
 
-func (s *AuthService) InvalidateUserSessions(ctx context.Context, userID int) error {
+func (s *AuthService) InvalidateUserSessions(ctx context.Context, userID string) error {
 	return s.refreshTokenRepo.DeleteAllForUser(ctx, userID)
 }
 
-func (s *AuthService) ChangePassword(ctx context.Context, userID int, currentPassword, newPassword string) error {
+func (s *AuthService) ChangePassword(ctx context.Context, userID string, currentPassword, newPassword string) error {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("failed to get user: %w", err)
@@ -168,7 +168,7 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID int, currentPas
 	return nil
 }
 
-func (s *AuthService) UpdateRoles(ctx context.Context, actorUserID int, targetLogin string, roles []string) error {
+func (s *AuthService) UpdateRoles(ctx context.Context, actorUserID string, targetLogin string, roles []string) error {
 	actor, err := s.userRepo.GetByID(ctx, actorUserID)
 	if err != nil {
 		return fmt.Errorf("failed to get actor: %w", err)
@@ -196,7 +196,7 @@ func (s *AuthService) UpdateRoles(ctx context.Context, actorUserID int, targetLo
 	return nil
 }
 
-func (s *AuthService) DeleteUser(ctx context.Context, actorUserID int, targetLogin string) error {
+func (s *AuthService) DeleteUser(ctx context.Context, actorUserID string, targetLogin string) error {
 	actor, err := s.userRepo.GetByID(ctx, actorUserID)
 	if err != nil {
 		return fmt.Errorf("failed to get actor: %w", err)
@@ -222,7 +222,7 @@ func (s *AuthService) DeleteUser(ctx context.Context, actorUserID int, targetLog
 	return s.userRepo.Delete(ctx, actorUserID)
 }
 
-func (s *AuthService) ValidateAccessToken(tokenString string) (int, error) {
+func (s *AuthService) ValidateAccessToken(tokenString string) (string, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -231,20 +231,20 @@ func (s *AuthService) ValidateAccessToken(tokenString string) (int, error) {
 	})
 
 	if err != nil || !token.Valid {
-		return 0, fmt.Errorf("invalid token")
+		return "", fmt.Errorf("invalid token")
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return 0, fmt.Errorf("invalid claims")
+		return "", fmt.Errorf("invalid claims")
 	}
 
-	userID, ok := claims["sub"].(float64)
+	userID, ok := claims["sub"].(string)
 	if !ok {
-		return 0, fmt.Errorf("missing or invalid sub claim")
+		return "", fmt.Errorf("missing or invalid sub claim")
 	}
 
-	return int(userID), nil
+	return userID, nil
 }
 
 func (s *AuthService) generateAccessToken(user *users.User) (string, error) {

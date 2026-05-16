@@ -1,14 +1,29 @@
 package users
 
 import (
+	"crypto/rand"
+	"math/big"
 	"time"
 
 	"github.com/maxnetish/jellybloggo/internal/pagination"
 	"golang.org/x/crypto/bcrypt"
 )
 
+const idAlphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+const idLength = 10
+
+func GenerateID() string {
+	result := make([]byte, idLength)
+	alphabetLen := big.NewInt(int64(len(idAlphabet)))
+	for i := range result {
+		n, _ := rand.Int(rand.Reader, alphabetLen)
+		result[i] = idAlphabet[n.Int64()]
+	}
+	return string(result)
+}
+
 type User struct {
-	ID           int       `json:"id"`
+	ID           string    `json:"id"`
 	Login        string    `json:"login"`
 	PasswordHash string    `json:"-"`
 	Roles        []Role    `json:"roles"`
@@ -60,7 +75,7 @@ type ListParams struct {
 }
 
 type UserResponse struct {
-	ID        int       `json:"id"`
+	ID        string    `json:"id"`
 	Login     string    `json:"login"`
 	Roles     []string  `json:"roles"`
 	CreatedAt time.Time `json:"created_at"`

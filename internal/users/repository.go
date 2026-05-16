@@ -14,15 +14,15 @@ type UserRepository interface {
 	// GetByLogin retrieves a user by login. Returns nil if not found.
 	GetByLogin(ctx context.Context, login string) (*User, error)
 	// GetByID retrieves a user by ID. Returns nil if not found.
-	GetByID(ctx context.Context, id int) (*User, error)
+	GetByID(ctx context.Context, id string) (*User, error)
 	// SetRoles replaces all roles for a user. Role names must be valid (admin, author, reader).
-	SetRoles(ctx context.Context, userID int, roles []string) error
+	SetRoles(ctx context.Context, userID string, roles []string) error
 	// UpdatePassword changes the password hash for a user.
-	UpdatePassword(ctx context.Context, userID int, passwordHash string) error
+	UpdatePassword(ctx context.Context, userID string, passwordHash string) error
 	// List returns a paginated, filtered, sorted list of users and the total count.
 	List(ctx context.Context, params ListParams) ([]*User, int, error)
 	// Delete removes a user by ID. Cascade deletes user_roles and refresh_tokens.
-	Delete(ctx context.Context, userID int) error
+	Delete(ctx context.Context, userID string) error
 	// HasRole checks if any user has the specified role.
 	HasRole(ctx context.Context, roleName string) (bool, error)
 }
@@ -43,21 +43,17 @@ func (r *userRepository) Create(ctx context.Context, login, passwordHash string,
 	}
 	defer tx.Rollback()
 
-	result, err := tx.ExecContext(ctx,
-		"INSERT INTO users (login, password_hash) VALUES (?, ?)",
-		login, passwordHash,
+	userID := GenerateID()
+	_, err = tx.ExecContext(ctx,
+		"INSERT INTO users (id, login, password_hash) VALUES (?, ?, ?)",
+		userID, login, passwordHash,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to insert user: %w", err)
 	}
 
-	userID, err := result.LastInsertId()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get last insert id: %w", err)
-	}
-
 	for _, roleName := range roles {
-		if err := r.addRoleToUserTx(ctx, tx, int(userID), roleName); err != nil {
+		if err := r.addRoleToUserTx(ctx, tx, userID, roleName); err != nil {
 			return nil, err
 		}
 	}
@@ -66,7 +62,7 @@ func (r *userRepository) Create(ctx context.Context, login, passwordHash string,
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	return r.GetByID(ctx, int(userID))
+	return r.GetByID(ctx, userID)
 }
 
 // GetByLogin finds a user by login string, including their roles.
@@ -92,8 +88,8 @@ func (r *userRepository) GetByLogin(ctx context.Context, login string) (*User, e
 	return user, nil
 }
 
-// GetByID finds a user by numeric ID, including their roles.
-func (r *userRepository) GetByID(ctx context.Context, id int) (*User, error) {
+// GetByID finds a user by ID, including their roles.
+func (r *userRepository) GetByID(ctx context.Context, id string) (*User, error) {
 	user := &User{}
 	err := r.db.QueryRowContext(ctx,
 		"SELECT id, login, password_hash, created_at, updated_at FROM users WHERE id = ?",
@@ -116,7 +112,7 @@ func (r *userRepository) GetByID(ctx context.Context, id int) (*User, error) {
 }
 
 // SetRoles removes all existing role assignments and assigns the given roles to a user.
-func (r *userRepository) SetRoles(ctx context.Context, userID int, roles []string) error {
+func (r *userRepository) SetRoles(ctx context.Context, userID string, roles []string) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
@@ -137,7 +133,7 @@ func (r *userRepository) SetRoles(ctx context.Context, userID int, roles []strin
 }
 
 // getRolesByUserID loads all roles assigned to a user.
-func (r *userRepository) getRolesByUserID(ctx context.Context, userID int) ([]Role, error) {
+func (r *userRepository) getRolesByUserID(ctx context.Context, userID string) ([]Role, error) {
 	rows, err := r.db.QueryContext(ctx,
 		`SELECT r.id, r.name FROM roles r
 		 JOIN user_roles ur ON r.id = ur.role_id
@@ -162,7 +158,7 @@ func (r *userRepository) getRolesByUserID(ctx context.Context, userID int) ([]Ro
 }
 
 // addRoleToUserTx assigns a role to a user within an active transaction.
-func (r *userRepository) addRoleToUserTx(ctx context.Context, tx *sql.Tx, userID int, roleName string) error {
+func (r *userRepository) addRoleToUserTx(ctx context.Context, tx *sql.Tx, userID string, roleName string) error {
 	var roleID int
 	err := tx.QueryRowContext(ctx, "SELECT id FROM roles WHERE name = ?", roleName).Scan(&roleID)
 	if err == sql.ErrNoRows {
@@ -180,7 +176,7 @@ func (r *userRepository) addRoleToUserTx(ctx context.Context, tx *sql.Tx, userID
 	return nil
 }
 
-func (r *userRepository) UpdatePassword(ctx context.Context, userID int, passwordHash string) error {
+func (r *userRepository) UpdatePassword(ctx context.Context, userID string, passwordHash string) error {
 	result, err := r.db.ExecContext(ctx,
 		"UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
 		passwordHash, userID,
@@ -280,7 +276,7 @@ func (r *userRepository) List(ctx context.Context, params ListParams) ([]*User, 
 	return users, total, nil
 }
 
-func (r *userRepository) Delete(ctx context.Context, userID int) error {
+func (r *userRepository) Delete(ctx context.Context, userID string) error {
 	result, err := r.db.ExecContext(ctx, "DELETE FROM users WHERE id = ?", userID)
 	if err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)

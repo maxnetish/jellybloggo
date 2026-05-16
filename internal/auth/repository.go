@@ -10,10 +10,10 @@ import (
 )
 
 type RefreshTokenRepository interface {
-	Create(ctx context.Context, userID int, expiresAt time.Time) (string, error)
+	Create(ctx context.Context, userID string, expiresAt time.Time) (string, error)
 	GetByToken(ctx context.Context, token string) (*RefreshToken, error)
 	DeleteByToken(ctx context.Context, token string) error
-	DeleteAllForUser(ctx context.Context, userID int) error
+	DeleteAllForUser(ctx context.Context, userID string) error
 }
 
 type refreshTokenRepository struct {
@@ -29,8 +29,8 @@ func hashToken(token string) string {
 	return hex.EncodeToString(hash[:])
 }
 
-func (r *refreshTokenRepository) Create(ctx context.Context, userID int, expiresAt time.Time) (string, error) {
-	token := fmt.Sprintf("%d.%d.%d", time.Now().UnixNano(), userID, time.Now().Unix())
+func (r *refreshTokenRepository) Create(ctx context.Context, userID string, expiresAt time.Time) (string, error) {
+	token := fmt.Sprintf("%d:%s:%d", time.Now().UnixNano(), userID, time.Now().Unix())
 	tokenHash := hashToken(token)
 
 	_, err := r.db.ExecContext(ctx,
@@ -76,7 +76,7 @@ func (r *refreshTokenRepository) DeleteByToken(ctx context.Context, token string
 	return nil
 }
 
-func (r *refreshTokenRepository) DeleteAllForUser(ctx context.Context, userID int) error {
+func (r *refreshTokenRepository) DeleteAllForUser(ctx context.Context, userID string) error {
 	_, err := r.db.ExecContext(ctx,
 		"DELETE FROM refresh_tokens WHERE user_id = ?",
 		userID,

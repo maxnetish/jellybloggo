@@ -36,8 +36,8 @@ func NewUserHandler(userRepo UserRepository) *UserHandler {
 // @Failure 500 {object} validation.ErrorResponse "Internal server error"
 // @Router /api/users [get]
 func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value("userID").(int)
-	if !ok || userID == 0 {
+	userID, ok := r.Context().Value("userID").(string)
+	if !ok || userID == "" {
 		validation.RespondJSON(w, http.StatusUnauthorized, validation.ErrorResponse{
 			Error: "not authenticated",
 			Code:  "NOT_AUTHENTICATED",

@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS posts (
     id             TEXT    NOT NULL PRIMARY KEY,
-    owner_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    owner_id       TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     author         TEXT,
