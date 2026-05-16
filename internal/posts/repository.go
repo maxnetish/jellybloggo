@@ -3,6 +3,7 @@ package posts
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -26,20 +27,30 @@ func NewPostRepository(db *sql.DB) PostRepository {
 
 func (r *postRepository) GetByID(ctx context.Context, id string) (*Post, error) {
 	post := &Post{}
+	var attachmentsJSON *string
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, owner_id, author, status, visibility, thumbnail_url, slug, title, annotation, content, content_type, created_at, updated_at 
+		`SELECT id, owner_id, author, status, visibility, thumbnail_url, slug, title, annotation, content, content_type, attachments, created_at, updated_at 
 		 FROM posts WHERE id = ?`,
 		id,
 	).Scan(
 		&post.ID, &post.OwnerID, &post.Author, &post.Status, &post.Visibility,
 		&post.ThumbnailURL, &post.Slug, &post.Title, &post.Annotation,
-		&post.Content, &post.ContentType, &post.CreatedAt, &post.UpdatedAt,
+		&post.Content, &post.ContentType, &attachmentsJSON, &post.CreatedAt, &post.UpdatedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to get post by id: %w", err)
+	}
+
+	if attachmentsJSON != nil {
+		if err := json.Unmarshal([]byte(*attachmentsJSON), &post.Attachments); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal attachments: %w", err)
+		}
+	}
+	if post.Attachments == nil {
+		post.Attachments = []Attachment{}
 	}
 
 	tags, err := r.GetTagsByPostID(ctx, id)
@@ -52,12 +63,22 @@ func (r *postRepository) GetByID(ctx context.Context, id string) (*Post, error) 
 }
 
 func (r *postRepository) Create(ctx context.Context, post *Post) (*Post, error) {
+	var attachmentsJSON *string
+	if len(post.Attachments) > 0 {
+		data, err := json.Marshal(post.Attachments)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal attachments: %w", err)
+		}
+		s := string(data)
+		attachmentsJSON = &s
+	}
+
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO posts (id, owner_id, author, status, visibility, thumbnail_url, slug, title, annotation, content, content_type)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO posts (id, owner_id, author, status, visibility, thumbnail_url, slug, title, annotation, content, content_type, attachments)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		post.ID, post.OwnerID, post.Author, post.Status, post.Visibility,
 		post.ThumbnailURL, post.Slug, post.Title, post.Annotation,
-		post.Content, post.ContentType,
+		post.Content, post.ContentType, attachmentsJSON,
 	)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {
@@ -70,11 +91,21 @@ func (r *postRepository) Create(ctx context.Context, post *Post) (*Post, error) 
 }
 
 func (r *postRepository) Update(ctx context.Context, post *Post) (*Post, error) {
+	var attachmentsJSON *string
+	if len(post.Attachments) > 0 {
+		data, err := json.Marshal(post.Attachments)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal attachments: %w", err)
+		}
+		s := string(data)
+		attachmentsJSON = &s
+	}
+
 	_, err := r.db.ExecContext(ctx,
-		`UPDATE posts SET author = ?, thumbnail_url = ?, slug = ?, title = ?, annotation = ?, content = ?, content_type = ?, updated_at = CURRENT_TIMESTAMP
+		`UPDATE posts SET author = ?, thumbnail_url = ?, slug = ?, title = ?, annotation = ?, content = ?, content_type = ?, attachments = ?, updated_at = CURRENT_TIMESTAMP
 		 WHERE id = ?`,
 		post.Author, post.ThumbnailURL, post.Slug, post.Title,
-		post.Annotation, post.Content, post.ContentType, post.ID,
+		post.Annotation, post.Content, post.ContentType, attachmentsJSON, post.ID,
 	)
 	if err != nil {
 		if strings.Contains(err.Error(), "UNIQUE constraint failed") {

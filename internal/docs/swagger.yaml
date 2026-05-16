@@ -111,10 +111,29 @@ definitions:
       total_pages:
         type: integer
     type: object
+  posts.Attachment:
+    properties:
+      contentType:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      label:
+        type: string
+      size:
+        type: integer
+      url:
+        type: string
+    type: object
   posts.CreatePostRequest:
     properties:
       annotation:
         type: string
+      attachments:
+        items:
+          $ref: '#/definitions/posts.Attachment'
+        type: array
       author:
         type: string
       content:
@@ -138,6 +157,10 @@ definitions:
     properties:
       annotation:
         type: string
+      attachments:
+        items:
+          $ref: '#/definitions/posts.Attachment'
+        type: array
       author:
         type: string
       content:

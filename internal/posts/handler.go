@@ -106,6 +106,7 @@ func (h *PostHandler) UpsertPost(w http.ResponseWriter, r *http.Request) {
 			Annotation:   req.Annotation,
 			Content:      req.Content,
 			ContentType:  req.ContentType,
+			Attachments:  req.Attachments,
 		}
 
 		updated, err := h.postRepo.Update(ctx, post)
@@ -160,6 +161,7 @@ func (h *PostHandler) UpsertPost(w http.ResponseWriter, r *http.Request) {
 		Annotation:   req.Annotation,
 		Content:      req.Content,
 		ContentType:  req.ContentType,
+		Attachments:  req.Attachments,
 	}
 
 	created, err := h.postRepo.Create(ctx, post)

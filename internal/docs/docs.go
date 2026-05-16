@@ -671,11 +671,40 @@ const docTemplate = `{
                 }
             }
         },
+        "posts.Attachment": {
+            "type": "object",
+            "properties": {
+                "contentType": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "size": {
+                    "type": "integer"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
         "posts.CreatePostRequest": {
             "type": "object",
             "properties": {
                 "annotation": {
                     "type": "string"
+                },
+                "attachments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/posts.Attachment"
+                    }
                 },
                 "author": {
                     "type": "string"
@@ -711,6 +740,12 @@ const docTemplate = `{
             "properties": {
                 "annotation": {
                     "type": "string"
+                },
+                "attachments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/posts.Attachment"
+                    }
                 },
                 "author": {
                     "type": "string"
