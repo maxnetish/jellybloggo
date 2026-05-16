@@ -2,6 +2,8 @@ package posts
 
 import (
 	"time"
+
+	"github.com/maxnetish/jellybloggo/internal/pagination"
 )
 
 type Attachment struct {
@@ -62,6 +64,37 @@ type PostResponse struct {
 	UpdatedAt    time.Time    `json:"updated_at"`
 }
 
+type PostListResponse struct {
+	Content    []PostSummaryResponse `json:"content"`
+	Pagination pagination.Pagination `json:"pagination"`
+}
+
+type PostSummaryResponse struct {
+	ID           string   `json:"id"`
+	Author       *string  `json:"author"`
+	Title        string   `json:"title"`
+	Annotation   *string  `json:"annotation,omitempty"`
+	ThumbnailURL *string  `json:"thumbnail_url,omitempty"`
+	Status       string   `json:"status"`
+	Visibility   string   `json:"visibility"`
+	Tags         []string `json:"tags,omitempty"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+type ListParams struct {
+	Search       string
+	Tags         []string
+	Status       []string
+	CreatedAtFrom *time.Time
+	CreatedAtTo   *time.Time
+	OwnerID      int
+	SortBy       string
+	SortDir      string
+	Page         int
+	PerPage      int
+}
+
 func PostToResponse(p *Post) PostResponse {
 	return PostResponse{
 		ID:           p.ID,
@@ -77,6 +110,21 @@ func PostToResponse(p *Post) PostResponse {
 		ContentType:  p.ContentType,
 		Tags:         p.Tags,
 		Attachments:  p.Attachments,
+		CreatedAt:    p.CreatedAt,
+		UpdatedAt:    p.UpdatedAt,
+	}
+}
+
+func PostToSummaryResponse(p *Post) PostSummaryResponse {
+	return PostSummaryResponse{
+		ID:           p.ID,
+		Author:       p.Author,
+		Title:        p.Title,
+		Annotation:   p.Annotation,
+		ThumbnailURL: p.ThumbnailURL,
+		Status:       p.Status,
+		Visibility:   p.Visibility,
+		Tags:         p.Tags,
 		CreatedAt:    p.CreatedAt,
 		UpdatedAt:    p.UpdatedAt,
 	}

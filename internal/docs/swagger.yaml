@@ -153,6 +153,15 @@ definitions:
       title:
         type: string
     type: object
+  posts.PostListResponse:
+    properties:
+      content:
+        items:
+          $ref: '#/definitions/posts.PostSummaryResponse'
+        type: array
+      pagination:
+        $ref: '#/definitions/pagination.Pagination'
+    type: object
   posts.PostResponse:
     properties:
       annotation:
@@ -174,6 +183,31 @@ definitions:
       owner_id:
         type: integer
       slug:
+        type: string
+      status:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      thumbnail_url:
+        type: string
+      title:
+        type: string
+      updated_at:
+        type: string
+      visibility:
+        type: string
+    type: object
+  posts.PostSummaryResponse:
+    properties:
+      annotation:
+        type: string
+      author:
+        type: string
+      created_at:
+        type: string
+      id:
         type: string
       status:
         type: string
@@ -495,6 +529,80 @@ paths:
       tags:
       - auth
   /api/posts:
+    get:
+      description: Returns paginated list of posts. Admin sees all posts, author sees
+        only own posts.
+      parameters:
+      - description: Search by title, annotation or content (partial, case-insensitive)
+        in: query
+        name: search
+        type: string
+      - collectionFormat: multi
+        description: Filter by tags (match any)
+        in: query
+        items:
+          type: string
+        name: tags
+        type: array
+      - collectionFormat: multi
+        description: 'Filter by status: draft, published'
+        in: query
+        items:
+          type: string
+        name: status
+        type: array
+      - description: Filter by created_at from (date, YYYY-MM-DD)
+        in: query
+        name: created_at_from
+        type: string
+      - description: Filter by created_at to (date, YYYY-MM-DD, inclusive)
+        in: query
+        name: created_at_to
+        type: string
+      - description: 'Sort field: created_at, updated_at, author, status, title'
+        in: query
+        name: sort_by
+        type: string
+      - description: 'Sort direction: asc, desc'
+        in: query
+        name: sort_dir
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of posts
+          schema:
+            $ref: '#/definitions/posts.PostListResponse'
+        "400":
+          description: Validation failed
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "401":
+          description: Not authenticated
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/validation.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List all posts (admin) or own posts (author)
+      tags:
+      - posts
     post:
       consumes:
       - application/json

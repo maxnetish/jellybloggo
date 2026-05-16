@@ -15,6 +15,7 @@ type PostRepository interface {
 	UpsertTags(ctx context.Context, tags []string) error
 	SetPostTags(ctx context.Context, postID string, tags []string) error
 	GetTagsByPostID(ctx context.Context, postID string) ([]string, error)
+	List(ctx context.Context, params ListParams) ([]*Post, int, error)
 }
 
 type postRepository struct {
@@ -166,6 +167,132 @@ func (r *postRepository) SetPostTags(ctx context.Context, postID string, tags []
 	}
 
 	return nil
+}
+
+func (r *postRepository) List(ctx context.Context, params ListParams) ([]*Post, int, error) {
+	var args []interface{}
+
+	distinct := ""
+	join := ""
+	var whereClauses []string
+
+	if params.OwnerID != 0 {
+		whereClauses = append(whereClauses, "p.owner_id = ?")
+		args = append(args, params.OwnerID)
+	}
+
+	if params.Search != "" {
+		whereClauses = append(whereClauses, "(p.title LIKE ? OR p.annotation LIKE ? OR p.content LIKE ?)")
+		s := "%" + params.Search + "%"
+		args = append(args, s, s, s)
+	}
+
+	if len(params.Status) > 0 {
+		placeholders := make([]string, len(params.Status))
+		for i, v := range params.Status {
+			placeholders[i] = "?"
+			args = append(args, v)
+		}
+		whereClauses = append(whereClauses, fmt.Sprintf("p.status IN (%s)", strings.Join(placeholders, ",")))
+	}
+
+	if len(params.Tags) > 0 {
+		distinct = "DISTINCT"
+		join = "LEFT JOIN post_tags pt ON p.id = pt.post_id"
+		placeholders := make([]string, len(params.Tags))
+		for i, tag := range params.Tags {
+			placeholders[i] = "?"
+			args = append(args, tag)
+		}
+		whereClauses = append(whereClauses, fmt.Sprintf("pt.tag_name IN (%s)", strings.Join(placeholders, ",")))
+	}
+
+	if params.CreatedAtFrom != nil {
+		whereClauses = append(whereClauses, "p.created_at >= ?")
+		args = append(args, *params.CreatedAtFrom)
+	}
+
+	if params.CreatedAtTo != nil {
+		whereClauses = append(whereClauses, "p.created_at < ?")
+		args = append(args, params.CreatedAtTo.AddDate(0, 0, 1))
+	}
+
+	where := ""
+	if len(whereClauses) > 0 {
+		where = "WHERE " + strings.Join(whereClauses, " AND ")
+	}
+
+	var total int
+	countQuery := fmt.Sprintf("SELECT COUNT(%s) FROM posts p %s %s", distinct, join, where)
+	countArgs := make([]interface{}, len(args))
+	copy(countArgs, args)
+	if err := r.db.QueryRowContext(ctx, countQuery, countArgs...).Scan(&total); err != nil {
+		return nil, 0, fmt.Errorf("failed to count posts: %w", err)
+	}
+
+	sortBy := params.SortBy
+	if sortBy == "" {
+		sortBy = "created_at"
+	}
+	sortDir := params.SortDir
+	if sortDir == "" {
+		sortDir = "desc"
+	}
+	order := fmt.Sprintf("ORDER BY p.%s %s", sortBy, sortDir)
+
+	offset := (params.Page - 1) * params.PerPage
+	dataQuery := fmt.Sprintf(
+		"SELECT %s p.id, p.owner_id, p.author, p.status, p.visibility, p.thumbnail_url, p.slug, p.title, p.annotation, p.content, p.content_type, p.attachments, p.created_at, p.updated_at FROM posts p %s %s %s LIMIT ? OFFSET ?",
+		distinct, join, where, order,
+	)
+	dataArgs := make([]interface{}, len(args))
+	copy(dataArgs, args)
+	dataArgs = append(dataArgs, params.PerPage, offset)
+
+	rows, err := r.db.QueryContext(ctx, dataQuery, dataArgs...)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to query posts: %w", err)
+	}
+	defer rows.Close()
+
+	var posts []*Post
+	for rows.Next() {
+		post := &Post{}
+		var attachmentsJSON *string
+		if err := rows.Scan(
+			&post.ID, &post.OwnerID, &post.Author, &post.Status, &post.Visibility,
+			&post.ThumbnailURL, &post.Slug, &post.Title, &post.Annotation,
+			&post.Content, &post.ContentType, &attachmentsJSON, &post.CreatedAt, &post.UpdatedAt,
+		); err != nil {
+			return nil, 0, fmt.Errorf("failed to scan post: %w", err)
+		}
+
+		if attachmentsJSON != nil {
+			if err := json.Unmarshal([]byte(*attachmentsJSON), &post.Attachments); err != nil {
+				return nil, 0, fmt.Errorf("failed to unmarshal attachments: %w", err)
+			}
+		}
+		if post.Attachments == nil {
+			post.Attachments = []Attachment{}
+		}
+
+		tags, err := r.GetTagsByPostID(ctx, post.ID)
+		if err != nil {
+			return nil, 0, err
+		}
+		post.Tags = tags
+
+		posts = append(posts, post)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("failed to iterate posts: %w", err)
+	}
+
+	if posts == nil {
+		posts = []*Post{}
+	}
+
+	return posts, total, nil
 }
 
 func (r *postRepository) GetTagsByPostID(ctx context.Context, postID string) ([]string, error) {
