@@ -8,8 +8,9 @@ jellybloggo/
 ├── internal/
 │   ├── health/             # Health check endpoint
 │   ├── auth/               # Authentication, JWT middleware
+│   │   └── README_UI.md   # UI integration notes (auth flow, endpoints)
 │   ├── middleware/         # Custom middleware (future)
-│   └── docs/               # Swagger generated files
+│   └── docs/              # Swagger generated files
 ├── bin/                    # Compiled binaries (gitignored)
 ├── go.mod / go.sum
 ├── justfile
@@ -55,3 +56,14 @@ Using **chi** router.
 - JSON responses with `Content-Type: application/json`
 - JWT passed via `Authorization: Bearer <token>` header
 - Protected routes mounted under `/api/*`
+- All auth endpoints documented in `internal/auth/README_UI.md`
+
+## Frontend Integration
+
+- Backend runs on port **8080** (configurable via `PORT` env)
+- Swagger UI available at `/swagger/`
+- In development: Express server proxies `/api/*` to backend
+- In production: nginx handles routing:
+  - Static files served from Angular build
+  - `/api/*` proxied to backend on port 8080
+  - `/swagger/*` proxied to backend (optional)
