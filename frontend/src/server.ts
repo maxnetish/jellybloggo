@@ -7,19 +7,30 @@ import {
 import express from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import { join } from 'node:path';
+import { environment } from './environments/environment';
 
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine();
 
-if (process.env['NODE_ENV'] !== 'production') {
+if (!environment.production) {
   app.use(
     '/api',
     createProxyMiddleware({
-      target: process.env['BACKEND_URL'] || 'http://localhost:8080',
+      target: `${environment.backendProxy}/api`,
       changeOrigin: true,
-      pathRewrite: { '^/api': '' },
+      on: {
+        proxyReq: (proxyReq, req) => {
+          console.log(`[HPM] ${req.method} ${req.url} -> ${environment.backendProxy}`);
+        },
+        proxyRes: (proxyRes, req) => {
+          console.log(`[HPM] ${req.method} ${req.url} <- ${proxyRes.statusCode}`);
+        },
+        error: (err, req, res) => {
+          console.error(`[HPM] ${req.method} ${req.url} error: ${err.message}`);
+        },
+      },
     }),
   );
 }

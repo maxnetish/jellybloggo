@@ -63,12 +63,13 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 
 ## Backend Integration
 
-- Backend API base URL is configured via environment files:
-  - `src/environments/environment.ts` (dev): `apiUrl: 'http://localhost:8080/api'`
-  - `src/environments/environment.prod.ts` (prod): `apiUrl: '/api'` (nginx proxies to backend)
+- Backend API base URL and proxy are configured via environment files:
+  - `src/environments/environment.ts` (dev): `apiUrl: '/api'`, `backendProxy: 'http://localhost:8080'`
+  - `src/environments/environment.prod.ts` (prod): `apiUrl: '/api'`
 - All API calls go through dedicated services encapsulating API logic
 - Handle HTTP errors centrally (e.g., via interceptor)
-- In development, Express server proxies `/api/*` to `BACKEND_URL` env or `http://localhost:8080`
+- In development, Express server proxies `/api/*` to `environment.backendProxy` (default: `http://localhost:8080`)
+- In production, nginx handles `/api/*` routing before requests reach Express
 
 ## Authentication
 
