@@ -32,24 +32,28 @@ No manual header management needed. Both tokens are sent automatically via cooki
 
 ---
 
-### 3. Handling Token Expiry
-```javascript
-// Interceptor example (Angular HttpClient)
-intercept(req, next) {
-  return next.handle(req).pipe(
-    catchError(error => {
-      if (error.status === 401 && !req.url.includes('/auth/refresh')) {
-        return this.refreshAndRetry(req, next);
-      }
-      return throwError(() => error);
-    })
-  );
-}
-```
+### 3. Transparent Token Refresh
+
+The backend automatically refreshes expired `access_token` before executing the handler. This is transparent to the UI — no explicit refresh call needed.
+
+**How it works:**
+1. Request arrives with `access_token` cookie
+2. Backend validates token — if invalid/expired, tries `refresh_token` cookie
+3. If `refresh_token` is valid, backend generates new `access_token` (and rotates `refresh_token`)
+4. New cookies are set in the response
+5. Original handler executes with valid user context
+
+**Edge case — both tokens invalid:**
+- No auth context injected — handler receives request without `userID`
+- Handler decides what to return (401, 403, or public data)
+
+**Response will include:**
+- `Set-Cookie: access_token=...; HttpOnly; ...`
+- `Set-Cookie: refresh_token=...; HttpOnly; ...` (rotated)
 
 ---
 
-### 4. Refresh Token
+### 4. Manual Refresh (optional)
 ```http
 POST /api/auth/refresh
 Cookie: refresh_token=<http_only_cookie>
@@ -98,16 +102,14 @@ Cookie: access_token=<http_only_cookie>
 
 ## SSR (Server-Side Rendering) Notes
 
-When using SSR (e.g., Angular Universal, Next.js):
-
-1. **Proxy must forward cookies** from browser request to backend
-2. Example for Express proxy:
+### Proxy Configuration
+Express (or nginx) must forward cookies from browser request to backend:
 ```javascript
 app.use('/api', createProxyMiddleware({
   target: 'http://localhost:8080',
   changeOrigin: true,
   on: {
-    proxyReq: (proxyReq, req, res) => {
+    proxyReq: (proxyReq, req) => {
       if (req.headers.cookie) {
         proxyReq.setHeader('Cookie', req.headers.cookie);
       }
@@ -116,13 +118,31 @@ app.use('/api', createProxyMiddleware({
 }));
 ```
 
+### Handling Set-Cookie in SSR
+When backend refreshes tokens, `Set-Cookie` headers must be forwarded to the browser response.
+
+In Angular SSR, capture cookies from `HttpErrorResponse.headers.getAll('set-cookie')` on 401, save to `REQUEST_CONTEXT`, and let Express forward them.
+
+For Express + Angular SSR, accumulate cookies and set them on the final response:
+```javascript
+const requestContext = { setCookies: [] };
+
+angularApp.handle(req, requestContext).then(async (response) => {
+  // ... render response
+  if (requestContext.setCookies.length > 0) {
+    res.setHeader('set-cookie', requestContext.setCookies);
+  }
+  await writeResponseToNodeResponse(response, res);
+});
+```
+
 ---
 
 ## Error Handling
 
 | Status | Meaning | UI Action |
 |--------|---------|-----------|
-| 401 | Token expired or invalid | Call refresh, then redirect to login if fails |
+| 401 | Both tokens invalid, session expired | Handled transparently by backend; if UI sees 401, show login |
 | 403 | Forbidden | Show "Access denied" |
 | 500 | Server error | Show error message |
 

@@ -86,9 +86,10 @@ See `backend/internal/auth/README_UI.md` for API contract.
 
 2. **Protected Requests**: Cookies are sent automatically. No manual headers needed.
 
-3. **Token Refresh**: `POST /api/auth/refresh` (cookie sent automatically)
-   - New cookies are set by the backend (token rotation)
-   - If 401, session expired — user must log in again
+3. **Token Refresh**: Automatic transparent refresh by backend.
+   - If `access_token` is invalid, backend uses `refresh_token` to generate new tokens.
+   - New cookies are set in the response (token rotation).
+   - Manual `POST /api/auth/refresh` available but rarely needed.
 
 4. **Logout**: `POST /api/auth/logout` (cookies sent automatically)
    - Backend clears both cookies
@@ -100,23 +101,19 @@ See `backend/internal/auth/README_UI.md` for API contract.
 ### SSR (Server-Side Rendering)
 
 - Express proxy **must forward** `Cookie` header from browser request to backend (`proxyReq.setHeader('Cookie', req.headers.cookie)`)
-- `ssrCookieInterceptor` injects `REQUEST` token and forwards the original `Cookie` header to outgoing `HttpClient` requests during server rendering
-- `authInterceptor` handles 401 in SSR via raw `fetch()` to capture `Set-Cookie` headers via `response.headers.getSetCookie()`
+- Backend handles token refresh transparently — `authInterceptor` only captures `Set-Cookie` headers on 401 and forwards them via `REQUEST_CONTEXT` to Express
 - Captured `Set-Cookie` headers are accumulated in `REQUEST_CONTEXT` and forwarded to the browser response by Express
 
 ### Auth Service Pattern
 
-- `AuthService` with methods: `login`, `logout`, `refresh`, `getCurrentUser`
-- `ssrCookieInterceptor` — forwards cookies in SSR context
-- `authInterceptor` — global 401 handling:
-  - **Browser**: `AuthService.refresh()` → retry original request
-  - **SSR**: raw `fetch` to `/api/auth/refresh` → parse `Set-Cookie` → retry with updated `Cookie` header → forward new cookies to browser
-  - If refresh fails: call `/api/auth/logout` to clear invalid `refresh_token`
+- `AuthApiService` with methods: `login`, `logout`, `getCurrentUser`
+- `authInterceptor` — captures `Set-Cookie` headers on 401 in SSR and forwards to browser
+- Backend `TransparentRefreshMiddleware` handles all token validation and refresh transparently
 
 ### Error Handling
 
 | Status | Meaning | UI Action |
 |--------|---------|-----------|
-| 401 | Token expired/invalid | Attempt refresh, redirect to login if failed |
+| 401 | Both tokens invalid, session expired | Backend refreshes automatically; if seen by UI, show login |
 | 403 | Forbidden | Show "Access denied" message |
 | 500 | Server error | Show generic error message |

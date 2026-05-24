@@ -10,14 +10,14 @@ import { Observable } from 'rxjs';
  *
  * Все токены хранятся в HTTP-only cookies (устанавливаются бэкендом).
  * Сервис не хранит токены в памяти или localStorage — cookies отправляются
- * браузером автоматически, а в SSR пробрасываются через `ssrCookieInterceptor`.
+ * браузером автоматически.
  *
  * @see backend/internal/auth/README_UI.md — полный контракт API
  */
 @Injectable({
   providedIn: 'root',
 })
-export class AuthService {
+export class AuthApiService {
   private readonly http = inject(HttpClient);
 
   /**
@@ -49,22 +49,6 @@ export class AuthService {
    */
   logout(): Observable<void> {
     return this.http.post<void>(`${environment.apiUrl}/auth/logout`, null);
-  }
-
-  /**
-   * Обновление access_token через refresh_token.
-   *
-   * Бэкенд читает `refresh_token` из cookie, валидирует его,
-   * и при успехе устанавливает новые `access_token` и `refresh_token`
-   * (token rotation). Вызывается автоматически `authInterceptor` при 401.
-   *
-   * @returns Observable с данными пользователя
-   *
-   * @see backend/internal/auth/README_UI.md — раздел "Refresh Token"
-   * @see backend/internal/auth/handler.go — метод RefreshHandler
-   */
-  refresh(): Observable<UserResponse> {
-    return this.http.post<UserResponse>(`${environment.apiUrl}/auth/refresh`, null);
   }
 
   /**

@@ -105,6 +105,49 @@ func (s *AuthService) CreateRefreshToken(ctx context.Context, userID string) (st
 	return s.refreshTokenRepo.Create(ctx, userID, expiresAt)
 }
 
+type FullRefreshResult struct {
+	UserID       string
+	AccessToken  string
+	RefreshToken string
+}
+
+func (s *AuthService) FullRefresh(ctx context.Context, refreshToken string) (*FullRefreshResult, error) {
+	stored, err := s.refreshTokenRepo.GetByToken(ctx, refreshToken)
+	if err != nil || stored == nil {
+		return nil, ErrRefreshTokenInvalid
+	}
+
+	if time.Now().After(stored.ExpiresAt) {
+		s.refreshTokenRepo.DeleteByToken(ctx, refreshToken)
+		return nil, ErrRefreshTokenExpired
+	}
+
+	user, err := s.userRepo.GetByID(ctx, stored.UserID)
+	if err != nil || user == nil {
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
+	if err := s.refreshTokenRepo.DeleteByToken(ctx, refreshToken); err != nil {
+		return nil, fmt.Errorf("failed to delete old refresh token: %w", err)
+	}
+
+	accessToken, err := s.generateAccessToken(user)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate access token: %w", err)
+	}
+
+	newRefreshToken, err := s.CreateRefreshToken(ctx, user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create refresh token: %w", err)
+	}
+
+	return &FullRefreshResult{
+		UserID:       user.ID,
+		AccessToken:  accessToken,
+		RefreshToken: newRefreshToken,
+	}, nil
+}
+
 func (s *AuthService) Refresh(ctx context.Context, refreshToken string) (string, *users.User, error) {
 	stored, err := s.refreshTokenRepo.GetByToken(ctx, refreshToken)
 	if err != nil {

@@ -87,7 +87,7 @@ func main() {
 	r.Mount("/api/auth", auth.NewRouter(authService, userRepo))
 
 	r.Group(func(r chi.Router) {
-		r.Use(auth.JWTMiddleware(authService))
+		r.Use(auth.TransparentRefreshMiddleware(authService))
 		r.Mount("/api/users", users.NewRouter(userRepo))
 		r.Mount("/api/posts", posts.NewRouter(postRepo, userRepo))
 	})

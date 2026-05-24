@@ -17,7 +17,7 @@ func NewRouter(service *AuthService, userRepo users.UserRepository) *chi.Mux {
 	r.Post("/logout", handler.Logout)
 
 	r.Group(func(r chi.Router) {
-		r.Use(JWTMiddleware(service))
+		r.Use(TransparentRefreshMiddleware(service))
 		r.Get("/user", handler.GetUser)
 		r.Delete("/user", handler.DeleteUser)
 		r.Post("/password", handler.ChangePassword)
