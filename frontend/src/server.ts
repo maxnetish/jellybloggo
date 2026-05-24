@@ -22,6 +22,9 @@ if (!environment.production) {
       changeOrigin: true,
       on: {
         proxyReq: (proxyReq, req) => {
+          if (req.headers.cookie) {
+            proxyReq.setHeader('Cookie', req.headers.cookie);
+          }
           console.log(`[HPM] ${req.method} ${req.url} -> ${environment.backendProxy}`);
         },
         proxyRes: (proxyRes, req) => {
@@ -44,11 +47,49 @@ app.use(
 );
 
 app.use((req, res, next) => {
+  const requestContext = { setCookies: [] as string[] };
   angularApp
-    .handle(req)
-    .then((response) =>
-      response ? writeResponseToNodeResponse(response, res) : next(),
-    )
+    .handle(req, requestContext)
+    .then(async (response) => {
+      if (!response) {
+        next();
+        return;
+      }
+
+      if (requestContext.setCookies.length > 0) {
+        const originalSetHeader = res.setHeader.bind(res);
+        let setHeaderModified = false;
+
+        try {
+          if (response.headers.has('set-cookie')) {
+            res.setHeader = ((name: string, value: string | number | readonly string[]) => {
+              if (name.toLowerCase() === 'set-cookie' && !setHeaderModified) {
+                const existing = Array.isArray(value)
+                  ? value
+                  : [value as string];
+                originalSetHeader(name, [
+                  ...existing,
+                  ...requestContext.setCookies,
+                ]);
+                setHeaderModified = true;
+              } else {
+                originalSetHeader(name, value);
+              }
+            }) as typeof res.setHeader;
+          } else {
+            res.setHeader('set-cookie', requestContext.setCookies);
+          }
+
+          await writeResponseToNodeResponse(response, res);
+        } finally {
+          if (setHeaderModified) {
+            res.setHeader = originalSetHeader;
+          }
+        }
+      } else {
+        await writeResponseToNodeResponse(response, res);
+      }
+    })
     .catch(next);
 });
 

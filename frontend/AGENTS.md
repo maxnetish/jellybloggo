@@ -75,30 +75,43 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 
 See `backend/internal/auth/README_UI.md` for API contract.
 
+**Important**: Backend uses HTTP-only cookies for both `access_token` and `refresh_token`. No manual `Authorization: Bearer` header management is needed — cookies are sent automatically by the browser.
+
 ### Auth Flow
 
 1. **Login**: `POST /api/auth/login` with `{ "login": "...", "password": "..." }`
-   - Response: `{ "access_token": "...", "user": { "id", "login", "roles" } }`
-   - Store `access_token` in memory/localStorage
-   - `refresh_token` stored in HTTP-only cookie automatically
+   - Response: `{ "user": { "id", "login", "roles" } }`
+   - `access_token` and `refresh_token` are set in HTTP-only cookies by the backend
+   - No client-side token storage
 
-2. **Protected Requests**: Include header `Authorization: Bearer <access_token>`
+2. **Protected Requests**: Cookies are sent automatically. No manual headers needed.
 
 3. **Token Refresh**: `POST /api/auth/refresh` (cookie sent automatically)
-   - If 401, show login form
+   - New cookies are set by the backend (token rotation)
+   - If 401, session expired — user must log in again
 
-4. **Logout**: `POST /api/auth/logout` (cookie sent automatically)
-   - Clear `access_token` and user from frontend storage
+4. **Logout**: `POST /api/auth/logout` (cookies sent automatically)
+   - Backend clears both cookies
+   - No client-side cleanup needed
 
-5. **Get Current User**: `GET /api/auth/user` with Bearer token
+5. **Get Current User**: `GET /api/auth/user` (cookie sent automatically)
    - Response: `{ "user": {...} }` or `{ "user": null }`
+
+### SSR (Server-Side Rendering)
+
+- Express proxy **must forward** `Cookie` header from browser request to backend (`proxyReq.setHeader('Cookie', req.headers.cookie)`)
+- `ssrCookieInterceptor` injects `REQUEST` token and forwards the original `Cookie` header to outgoing `HttpClient` requests during server rendering
+- `authInterceptor` handles 401 in SSR via raw `fetch()` to capture `Set-Cookie` headers via `response.headers.getSetCookie()`
+- Captured `Set-Cookie` headers are accumulated in `REQUEST_CONTEXT` and forwarded to the browser response by Express
 
 ### Auth Service Pattern
 
-- Create `AuthService` with methods: `login`, `logout`, `refresh`, `getCurrentUser`
-- Store token in memory (preferred) or localStorage
-- Create `tokenInterceptor` (functional interceptor) to attach Bearer header automatically
-- Handle 401 responses globally to trigger refresh flow
+- `AuthService` with methods: `login`, `logout`, `refresh`, `getCurrentUser`
+- `ssrCookieInterceptor` — forwards cookies in SSR context
+- `authInterceptor` — global 401 handling:
+  - **Browser**: `AuthService.refresh()` → retry original request
+  - **SSR**: raw `fetch` to `/api/auth/refresh` → parse `Set-Cookie` → retry with updated `Cookie` header → forward new cookies to browser
+  - If refresh fails: call `/api/auth/logout` to clear invalid `refresh_token`
 
 ### Error Handling
 

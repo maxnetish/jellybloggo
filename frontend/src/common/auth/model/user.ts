@@ -7,6 +7,12 @@ export interface User {
   id: string;
   login: string;
   roles: UserRole[];
+  /**
+   * json date
+   */
   created_at: string;
+  /**
+   * json date
+   */
   updated_at: string;
 }
