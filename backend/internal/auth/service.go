@@ -247,6 +247,10 @@ func (s *AuthService) ValidateAccessToken(tokenString string) (string, error) {
 	return userID, nil
 }
 
+func (s *AuthService) TokenExpiry() time.Duration {
+	return s.tokenExpiry
+}
+
 func (s *AuthService) generateAccessToken(user *users.User) (string, error) {
 	claims := jwt.MapClaims{
 		"sub": user.ID,

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/maxnetish/jellybloggo/internal/users"
@@ -16,8 +17,16 @@ const (
 	ContextKeyUser   = "user"
 
 	RefreshTokenCookie = "refresh_token"
+	AccessTokenCookie  = "access_token"
 	CookieMaxAge       = 7 * 24 * 60 * 60
 )
+
+func isSecureCookie(r *http.Request) bool {
+	if r.TLS != nil {
+		return true
+	}
+	return strings.ToLower(os.Getenv("SECURE_COOKIES")) == "true"
+}
 
 type AuthHandler struct {
 	service  *AuthService
@@ -82,13 +91,23 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		Value:    refreshToken,
 		MaxAge:   CookieMaxAge,
 		HttpOnly: true,
+		Secure:   isSecureCookie(r),
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     AccessTokenCookie,
+		Value:    accessToken,
+		MaxAge:   int(h.service.TokenExpiry().Seconds()),
+		HttpOnly: true,
+		Secure:   isSecureCookie(r),
 		Path:     "/",
 		SameSite: http.SameSiteLaxMode,
 	})
 
 	validation.RespondJSON(w, http.StatusOK, LoginResponse{
-		AccessToken: accessToken,
-		User:        user,
+		User: user,
 	})
 }
 
@@ -134,13 +153,23 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Value:    refreshToken,
 		MaxAge:   CookieMaxAge,
 		HttpOnly: true,
+		Secure:   isSecureCookie(r),
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     AccessTokenCookie,
+		Value:    accessToken,
+		MaxAge:   int(h.service.TokenExpiry().Seconds()),
+		HttpOnly: true,
+		Secure:   isSecureCookie(r),
 		Path:     "/",
 		SameSite: http.SameSiteLaxMode,
 	})
 
 	validation.RespondJSON(w, http.StatusOK, LoginResponse{
-		AccessToken: accessToken,
-		User:        user,
+		User: user,
 	})
 }
 
@@ -298,14 +327,24 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 		Value:    newRefreshToken,
 		MaxAge:   CookieMaxAge,
 		HttpOnly: true,
+		Secure:   isSecureCookie(r),
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     AccessTokenCookie,
+		Value:    accessToken,
+		MaxAge:   int(h.service.TokenExpiry().Seconds()),
+		HttpOnly: true,
+		Secure:   isSecureCookie(r),
 		Path:     "/",
 		SameSite: http.SameSiteLaxMode,
 	})
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(RefreshResponse{
-		AccessToken: accessToken,
-		User:        user,
+		User: user,
 	})
 }
 
@@ -323,6 +362,13 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 	http.SetCookie(w, &http.Cookie{
 		Name:   RefreshTokenCookie,
+		Value:  "",
+		MaxAge: -1,
+		Path:   "/",
+	})
+
+	http.SetCookie(w, &http.Cookie{
+		Name:   AccessTokenCookie,
 		Value:  "",
 		MaxAge: -1,
 		Path:   "/",
@@ -423,19 +469,29 @@ func (h *AuthHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 func JWTMiddleware(service *AuthService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			var tokenString string
+
 			authHeader := r.Header.Get("Authorization")
-			if authHeader == "" {
+			if authHeader != "" {
+				parts := strings.SplitN(authHeader, " ", 2)
+				if len(parts) == 2 && strings.ToLower(parts[0]) == "bearer" {
+					tokenString = parts[1]
+				}
+			}
+
+			if tokenString == "" {
+				cookie, err := r.Cookie(AccessTokenCookie)
+				if err == nil && cookie.Value != "" {
+					tokenString = cookie.Value
+				}
+			}
+
+			if tokenString == "" {
 				next.ServeHTTP(w, r)
 				return
 			}
 
-			parts := strings.SplitN(authHeader, " ", 2)
-			if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-				next.ServeHTTP(w, r)
-				return
-			}
-
-			userID, err := service.ValidateAccessToken(parts[1])
+			userID, err := service.ValidateAccessToken(tokenString)
 			if err != nil {
 				next.ServeHTTP(w, r)
 				return

@@ -46,15 +46,11 @@ definitions:
     type: object
   auth.LoginResponse:
     properties:
-      access_token:
-        type: string
       user:
         $ref: '#/definitions/users.User'
     type: object
   auth.RefreshResponse:
     properties:
-      access_token:
-        type: string
       user:
         $ref: '#/definitions/users.User'
     type: object

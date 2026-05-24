@@ -45,6 +45,7 @@ Create a `.env` file to configure the application:
 | `JWT_SECRET` | `default-secret-change-me` | Secret key for signing JWT access tokens |
 | `TOKEN_EXPIRY` | `15m` | Access token lifetime (e.g., `15m`, `1h`) |
 | `REFRESH_EXPIRY` | `168h` | Refresh token lifetime (e.g., `168h` = 7 days) |
+| `SECURE_COOKIES` | `false` | Set `true` to enable Secure flag on cookies (required for HTTPS) |
 | `ADMIN_LOGIN` | — | Initial admin login (creates admin user on startup if role doesn't exist) |
 | `ADMIN_PASSWORD` | — | Initial admin password |
 

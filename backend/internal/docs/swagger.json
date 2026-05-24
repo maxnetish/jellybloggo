@@ -747,9 +747,6 @@
         "auth.LoginResponse": {
             "type": "object",
             "properties": {
-                "access_token": {
-                    "type": "string"
-                },
                 "user": {
                     "$ref": "#/definitions/users.User"
                 }
@@ -758,9 +755,6 @@
         "auth.RefreshResponse": {
             "type": "object",
             "properties": {
-                "access_token": {
-                    "type": "string"
-                },
                 "user": {
                     "$ref": "#/definitions/users.User"
                 }

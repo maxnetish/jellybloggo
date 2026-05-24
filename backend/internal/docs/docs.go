@@ -753,9 +753,6 @@ const docTemplate = `{
         "auth.LoginResponse": {
             "type": "object",
             "properties": {
-                "access_token": {
-                    "type": "string"
-                },
                 "user": {
                     "$ref": "#/definitions/users.User"
                 }
@@ -764,9 +761,6 @@ const docTemplate = `{
         "auth.RefreshResponse": {
             "type": "object",
             "properties": {
-                "access_token": {
-                    "type": "string"
-                },
                 "user": {
                     "$ref": "#/definitions/users.User"
                 }

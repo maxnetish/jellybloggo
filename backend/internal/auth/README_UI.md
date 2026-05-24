@@ -2,6 +2,8 @@
 
 ## Authentication Flow
 
+All tokens are stored in HTTP-only cookies for security. The browser automatically sends cookies with each request.
+
 ### 1. Login
 ```http
 POST /api/auth/login
@@ -12,44 +14,37 @@ Content-Type: application/json
 
 **Response (200):**
 ```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIs...",
-  "user": { "id": 1, "login": "admin", "roles": [...] }
-}
+{ "user": { "id": "1", "login": "admin", "roles": [...] } }
 ```
-- Save `access_token` in localStorage or memory
-- Save `user` object
-- `refresh_token` is stored in HTTP-only cookie automatically
+
+- `access_token` is set in HTTP-only cookie (expires in 15 min by default)
+- `refresh_token` is set in HTTP-only cookie (expires in 7 days by default)
 
 ---
 
 ### 2. Making Protected Requests
 ```javascript
-// Add to all API calls
-headers: {
-  'Authorization': `Bearer ${accessToken}`
-}
+// Cookies are sent automatically by the browser
+fetch('/api/protected-endpoint')
 ```
+
+No manual header management needed. Both tokens are sent automatically via cookies.
 
 ---
 
 ### 3. Handling Token Expiry
 ```javascript
-// Interceptor example (Axios)
-axios.interceptors.response.use(
-  response => response,
-  async error => {
-    if (error.response?.status === 401) {
-      // Try to refresh
-      const refreshed = await refreshToken();
-      if (!refreshed) {
-        // Show login form
-        redirectToLogin();
+// Interceptor example (Angular HttpClient)
+intercept(req, next) {
+  return next.handle(req).pipe(
+    catchError(error => {
+      if (error.status === 401 && !req.url.includes('/auth/refresh')) {
+        return this.refreshAndRetry(req, next);
       }
-    }
-    return Promise.reject(error);
-  }
-);
+      return throwError(() => error);
+    })
+  );
+}
 ```
 
 ---
@@ -62,35 +57,36 @@ Cookie: refresh_token=<http_only_cookie>
 
 **Response (200):**
 ```json
-{
-  "access_token": "eyJhbGciOiJIUzI1NiIs...",
-  "user": { "id": 1, "login": "admin", "roles": [...] }
-}
+{ "user": { "id": "1", "login": "admin", "roles": [...] } }
 ```
 
-**Response (401):** Any 401 from `/auth/refresh` means the user must log in again.
+- New `access_token` cookie is set automatically
+- New `refresh_token` cookie is set automatically (rotation)
+
+**Response (401):** Session expired. User must log in again.
 
 ---
 
 ### 5. Logout
 ```http
 POST /api/auth/logout
-Cookie: refresh_token=<http_only_cookie>
+Cookie: refresh_token=<http_only_cookie>, access_token=<http_only_cookie>
 ```
-- Clears HTTP-only cookie on server
-- Clear `access_token` and `user` from frontend storage
+
+- Both cookies are cleared on the server
+- No client-side cleanup needed
 
 ---
 
 ### 6. Get Current User
 ```http
 GET /api/auth/user
-Authorization: Bearer <access_token>
+Cookie: access_token=<http_only_cookie>
 ```
 
 **Response (200 - logged in):**
 ```json
-{ "user": { "id": 1, "login": "admin", "roles": [...] } }
+{ "user": { "id": "1", "login": "admin", "roles": [...] } }
 ```
 
 **Response (200 - not logged in):**
@@ -100,11 +96,33 @@ Authorization: Bearer <access_token>
 
 ---
 
+## SSR (Server-Side Rendering) Notes
+
+When using SSR (e.g., Angular Universal, Next.js):
+
+1. **Proxy must forward cookies** from browser request to backend
+2. Example for Express proxy:
+```javascript
+app.use('/api', createProxyMiddleware({
+  target: 'http://localhost:8080',
+  changeOrigin: true,
+  on: {
+    proxyReq: (proxyReq, req, res) => {
+      if (req.headers.cookie) {
+        proxyReq.setHeader('Cookie', req.headers.cookie);
+      }
+    }
+  }
+}));
+```
+
+---
+
 ## Error Handling
 
 | Status | Meaning | UI Action |
 |--------|---------|-----------|
-| 401 | Token expired or invalid | Call refresh, then login if fails |
+| 401 | Token expired or invalid | Call refresh, then redirect to login if fails |
 | 403 | Forbidden | Show "Access denied" |
 | 500 | Server error | Show error message |
 
@@ -112,7 +130,8 @@ Authorization: Bearer <access_token>
 
 ## Security Notes
 
-1. `access_token` is stored in client memory/localStorage - vulnerable to XSS
-2. `refresh_token` is in HTTP-only cookie - protected from XSS
-3. If refresh token is compromised, attacker can use it once, then it's invalidated
-4. All sessions are invalidated when password is changed
+1. Both `access_token` and `refresh_token` are in HTTP-only cookies - protected from XSS
+2. `SameSite=Lax` - protection against CSRF for same-site requests
+3. `Secure=true` in production (HTTPS) - set `SECURE_COOKIES=true` env var
+4. Refresh token rotation - old refresh token is invalidated after use
+5. All sessions are invalidated when password is changed

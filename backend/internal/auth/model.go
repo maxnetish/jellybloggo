@@ -52,13 +52,11 @@ type UpdateRolesRequest struct {
 }
 
 type LoginResponse struct {
-	AccessToken string       `json:"access_token"`
-	User        *users.User  `json:"user"`
+	User *users.User `json:"user"`
 }
 
 type RefreshResponse struct {
-	AccessToken string       `json:"access_token"`
-	User        *users.User  `json:"user"`
+	User *users.User `json:"user"`
 }
 
 type UserResponse struct {
