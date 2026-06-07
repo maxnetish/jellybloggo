@@ -19,6 +19,7 @@ func NewRouter(service *AuthService, userRepo users.UserRepository) *chi.Mux {
 	r.Group(func(r chi.Router) {
 		r.Use(TransparentRefreshMiddleware(service))
 		r.Get("/user", handler.GetUser)
+		r.Patch("/user", handler.UpdateProfile)
 		r.Delete("/user", handler.DeleteUser)
 		r.Post("/password", handler.ChangePassword)
 		r.Post("/roles", handler.UpdateRoles)

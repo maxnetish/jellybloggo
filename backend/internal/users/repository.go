@@ -3,9 +3,15 @@ package users
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 )
+
+// ErrUserNotFound возвращается методами репозитория, когда UPDATE или DELETE
+// не затронули ни одной строки (т.е. пользователь с указанным id не найден).
+// Содержит красивое текстовое сообщение для логов и errors.Is для сравнения.
+var ErrUserNotFound = errors.New("user not found")
 
 // UserRepository defines operations for user management in the database.
 type UserRepository interface {
@@ -19,6 +25,11 @@ type UserRepository interface {
 	SetRoles(ctx context.Context, userID string, roles []string) error
 	// UpdatePassword changes the password hash for a user.
 	UpdatePassword(ctx context.Context, userID string, passwordHash string) error
+	// UpdateProfile обновляет указанные поля профиля пользователя.
+	// Поля с nil в ProfileUpdate пропускаются (не трогают колонку и updated_at).
+	// Если все поля nil — UPDATE не выполняется, метод возвращает nil (no-op).
+	// Если пользователь не найден — возвращает ErrUserNotFound.
+	UpdateProfile(ctx context.Context, userID string, update ProfileUpdate) error
 	// List returns a paginated, filtered, sorted list of users and the total count.
 	List(ctx context.Context, params ListParams) ([]*User, int, error)
 	// Delete removes a user by ID. Cascade deletes user_roles and refresh_tokens.
@@ -45,7 +56,7 @@ func (r *userRepository) Create(ctx context.Context, login, passwordHash string,
 
 	userID := GenerateID()
 	_, err = tx.ExecContext(ctx,
-		"INSERT INTO users (id, login, password_hash) VALUES (?, ?, ?)",
+		"INSERT INTO users (id, login, password_hash, full_name, birth_date, location, avatar_url, about) VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL)",
 		userID, login, passwordHash,
 	)
 	if err != nil {
@@ -69,9 +80,9 @@ func (r *userRepository) Create(ctx context.Context, login, passwordHash string,
 func (r *userRepository) GetByLogin(ctx context.Context, login string) (*User, error) {
 	user := &User{}
 	err := r.db.QueryRowContext(ctx,
-		"SELECT id, login, password_hash, created_at, updated_at FROM users WHERE login = ?",
+		"SELECT id, login, password_hash, full_name, birth_date, location, avatar_url, about, created_at, updated_at FROM users WHERE login = ?",
 		login,
-	).Scan(&user.ID, &user.Login, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt)
+	).Scan(&user.ID, &user.Login, &user.PasswordHash, &user.FullName, &user.BirthDate, &user.Location, &user.AvatarURL, &user.About, &user.CreatedAt, &user.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -92,9 +103,9 @@ func (r *userRepository) GetByLogin(ctx context.Context, login string) (*User, e
 func (r *userRepository) GetByID(ctx context.Context, id string) (*User, error) {
 	user := &User{}
 	err := r.db.QueryRowContext(ctx,
-		"SELECT id, login, password_hash, created_at, updated_at FROM users WHERE id = ?",
+		"SELECT id, login, password_hash, full_name, birth_date, location, avatar_url, about, created_at, updated_at FROM users WHERE id = ?",
 		id,
-	).Scan(&user.ID, &user.Login, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt)
+	).Scan(&user.ID, &user.Login, &user.PasswordHash, &user.FullName, &user.BirthDate, &user.Location, &user.AvatarURL, &user.About, &user.CreatedAt, &user.UpdatedAt)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -193,6 +204,55 @@ func (r *userRepository) UpdatePassword(ctx context.Context, userID string, pass
 	return nil
 }
 
+// UpdateProfile частично обновляет профиль пользователя.
+// Собирает SQL динамически: для каждого непустого поля добавляется "col = ?"
+// в SET-выражение. Если ни одно поле не задано — UPDATE не выполняется (no-op).
+// При любом изменении также обновляется колонка updated_at.
+func (r *userRepository) UpdateProfile(ctx context.Context, userID string, update ProfileUpdate) error {
+	// Собираем список колонок для обновления. updated_at обновляется только
+	// если реально меняется хотя бы одно поле.
+	setClauses := []string{}
+	args := []interface{}{}
+
+	if update.FullName != nil {
+		setClauses = append(setClauses, "full_name = ?")
+		args = append(args, *update.FullName)
+	}
+	if update.BirthDate != nil {
+		setClauses = append(setClauses, "birth_date = ?")
+		args = append(args, *update.BirthDate)
+	}
+	if update.AvatarURL != nil {
+		setClauses = append(setClauses, "avatar_url = ?")
+		args = append(args, *update.AvatarURL)
+	}
+	if update.About != nil {
+		setClauses = append(setClauses, "about = ?")
+		args = append(args, *update.About)
+	}
+
+	// PATCH с пустым телом {} — нечего обновлять, ничего не делаем.
+	if len(setClauses) == 0 {
+		return nil
+	}
+
+	// Добавляем updated_at только если есть хотя бы одно реальное изменение.
+	setClauses = append(setClauses, "updated_at = CURRENT_TIMESTAMP")
+	args = append(args, userID)
+
+	query := "UPDATE users SET " + strings.Join(setClauses, ", ") + " WHERE id = ?"
+	result, err := r.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("failed to update profile: %w", err)
+	}
+
+	rows, _ := result.RowsAffected()
+	if rows == 0 {
+		return ErrUserNotFound
+	}
+	return nil
+}
+
 func (r *userRepository) List(ctx context.Context, params ListParams) ([]*User, int, error) {
 	var args []interface{}
 
@@ -239,7 +299,7 @@ func (r *userRepository) List(ctx context.Context, params ListParams) ([]*User, 
 
 	offset := (params.Page - 1) * params.PerPage
 	dataQuery := fmt.Sprintf(
-		"SELECT u.id, u.login, u.password_hash, u.created_at, u.updated_at FROM users u %s %s LIMIT ? OFFSET ?",
+		"SELECT u.id, u.login, u.password_hash, u.full_name, u.birth_date, u.location, u.avatar_url, u.about, u.created_at, u.updated_at FROM users u %s %s LIMIT ? OFFSET ?",
 		where, order,
 	)
 	dataArgs := make([]interface{}, len(args))
@@ -255,7 +315,7 @@ func (r *userRepository) List(ctx context.Context, params ListParams) ([]*User, 
 	var users []*User
 	for rows.Next() {
 		user := &User{}
-		if err := rows.Scan(&user.ID, &user.Login, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt); err != nil {
+		if err := rows.Scan(&user.ID, &user.Login, &user.PasswordHash, &user.FullName, &user.BirthDate, &user.Location, &user.AvatarURL, &user.About, &user.CreatedAt, &user.UpdatedAt); err != nil {
 			return nil, 0, fmt.Errorf("failed to scan user: %w", err)
 		}
 		roles, err := r.getRolesByUserID(ctx, user.ID)

@@ -23,12 +23,17 @@ func GenerateID() string {
 }
 
 type User struct {
-	ID           string    `json:"id"`
-	Login        string    `json:"login"`
-	PasswordHash string    `json:"-"`
-	Roles        []Role    `json:"roles"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	ID           string     `json:"id"`
+	Login        string     `json:"login"`
+	PasswordHash string     `json:"-"`
+	FullName     *string    `json:"-"`
+	BirthDate    *time.Time `json:"-"`
+	Location     *string    `json:"-"`
+	AvatarURL    *string    `json:"-"`
+	About        *string    `json:"-"`
+	Roles        []Role     `json:"roles"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
 }
 
 type Role struct {
@@ -74,12 +79,28 @@ type ListParams struct {
 	PerPage int
 }
 
+// ProfileUpdate описывает частичное обновление профиля пользователя.
+// Используется в PATCH-эндпоинте: nil-поле означает "не менять".
+// Это позволяет клиенту присылать только те поля, которые он редактирует,
+// и не затирать уже сохранённые значения.
+type ProfileUpdate struct {
+	FullName  *string
+	BirthDate *time.Time
+	AvatarURL *string
+	About     *string
+}
+
 type UserResponse struct {
-	ID        string    `json:"id"`
-	Login     string    `json:"login"`
-	Roles     []string  `json:"roles"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        string     `json:"id"`
+	Login     string     `json:"login"`
+	Roles     []string   `json:"roles"`
+	FullName  *string    `json:"full_name,omitempty"`
+	BirthDate *time.Time `json:"birth_date,omitempty"`
+	Location  *string    `json:"location,omitempty"`
+	AvatarURL *string    `json:"avatar_url,omitempty"`
+	About     *string    `json:"about,omitempty"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 }
 
 type UserListResponse struct {
@@ -96,6 +117,11 @@ func UserToResponse(u *User) UserResponse {
 		ID:        u.ID,
 		Login:     u.Login,
 		Roles:     roles,
+		FullName:  u.FullName,
+		BirthDate: u.BirthDate,
+		Location:  u.Location,
+		AvatarURL: u.AvatarURL,
+		About:     u.About,
 		CreatedAt: u.CreatedAt,
 		UpdatedAt: u.UpdatedAt,
 	}

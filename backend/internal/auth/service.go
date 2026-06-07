@@ -19,7 +19,9 @@ var (
 	ErrDuplicateLogin           = errors.New("login already taken")
 	ErrCurrentPasswordIncorrect = errors.New("current password is incorrect")
 	ErrForbidden                = errors.New("forbidden")
-	ErrUserNotFound             = errors.New("user not found")
+	// ErrUserNotFound — re-export users.ErrUserNotFound для согласованного
+	// errors.Is() в вызывающем коде (например, в UpdateRoles и UpdateProfile).
+	ErrUserNotFound = users.ErrUserNotFound
 )
 
 type AuthService struct {
@@ -237,6 +239,30 @@ func (s *AuthService) UpdateRoles(ctx context.Context, actorUserID string, targe
 	}
 
 	return nil
+}
+
+// UpdateProfile обновляет профиль пользователя.
+// userID — это id ТОЛЬКО залогиненного пользователя (берётся из JWT-контекста
+// в хендлере). Никаких параметров "target user" не принимается — пользователь
+// всегда обновляет только себя. Поэтому дополнительных проверок прав не нужно.
+//
+// Возвращает обновлённого пользователя (после UPDATE делаем SELECT), чтобы
+// хендлер мог сразу вернуть его клиенту в ответе 200 OK.
+func (s *AuthService) UpdateProfile(ctx context.Context, userID string, update users.ProfileUpdate) (*users.User, error) {
+	if err := s.userRepo.UpdateProfile(ctx, userID, update); err != nil {
+		// errors.Is сравнивает по цепочке %w, поэтому тут ловится и
+		// users.ErrUserNotFound, и наш re-export auth.ErrUserNotFound.
+		if errors.Is(err, ErrUserNotFound) {
+			return nil, ErrUserNotFound
+		}
+		return nil, fmt.Errorf("failed to update profile: %w", err)
+	}
+
+	user, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load updated user: %w", err)
+	}
+	return user, nil
 }
 
 func (s *AuthService) DeleteUser(ctx context.Context, actorUserID string, targetLogin string) error {

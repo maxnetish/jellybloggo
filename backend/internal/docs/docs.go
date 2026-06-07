@@ -351,6 +351,61 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates full_name, birth_date, avatar_url, about for the **current** authenticated user. All fields are optional; omitted fields are left unchanged. The endpoint always targets the authenticated user — target user cannot be specified.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Update own profile",
+                "parameters": [
+                    {
+                        "description": "Profile fields to update (all optional)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.UpdateProfileRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated user",
+                        "schema": {
+                            "$ref": "#/definitions/auth.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Validation failed or user not found",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/api/posts": {
@@ -779,6 +834,27 @@ const docTemplate = `{
                 }
             }
         },
+        "auth.UpdateProfileRequest": {
+            "type": "object",
+            "properties": {
+                "about": {
+                    "description": "Краткая биография (\"О себе\").\nНеобязательное. Максимум 4096 символов.",
+                    "type": "string"
+                },
+                "avatar_url": {
+                    "description": "URL аватара.\nНеобязательное. Должен быть валидным URL. Максимум 500 символов.",
+                    "type": "string"
+                },
+                "birth_date": {
+                    "description": "Дата рождения в формате YYYY-MM-DD.\nНеобязательное. JSON-парсер Go проверяет формат; некорректные значения дают 400.",
+                    "type": "string"
+                },
+                "full_name": {
+                    "description": "Полное имя пользователя.\nНеобязательное. Максимум 256 символов.",
+                    "type": "string"
+                }
+            }
+        },
         "auth.UpdateRolesRequest": {
             "type": "object",
             "properties": {
@@ -799,7 +875,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "user": {
-                    "$ref": "#/definitions/users.User"
+                    "$ref": "#/definitions/users.UserResponse"
                 }
             }
         },
@@ -1057,10 +1133,25 @@ const docTemplate = `{
         "users.UserResponse": {
             "type": "object",
             "properties": {
+                "about": {
+                    "type": "string"
+                },
+                "avatar_url": {
+                    "type": "string"
+                },
+                "birth_date": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
+                "full_name": {
+                    "type": "string"
+                },
                 "id": {
+                    "type": "string"
+                },
+                "location": {
                     "type": "string"
                 },
                 "login": {

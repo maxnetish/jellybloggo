@@ -278,6 +278,84 @@ func (h *AuthHandler) UpdateRoles(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// UpdateProfile обновляет профиль залогиненного пользователя (частично).
+// Принимает PATCH /api/auth/user с JSON-телом, в котором только изменяемые поля.
+//
+// Безопасность: userID берётся ТОЛЬКО из JWT-контекста (заполняется middleware
+// TransparentRefreshMiddleware). DTO не принимает ни login, ни user_id, ни какой-либо
+// другой идентификатор целевого пользователя. Это значит, что "обновить чужой профиль"
+// через этот эндпоинт технически невозможно — пользователь всегда редактирует
+// только себя. Поэтому никаких проверок "actor == target" не нужно.
+//
+// Возвращает 200 OK с обновлённым UserResponse (включая все 4 профильных поля
+// + updated_at), чтобы клиент мог сразу отобразить новые данные без повторного GET.
+// @Summary Update own profile
+// @Description Updates full_name, birth_date, avatar_url, about for the **current** authenticated user. All fields are optional; omitted fields are left unchanged. The endpoint always targets the authenticated user — target user cannot be specified.
+// @Tags auth
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body UpdateProfileRequest true "Profile fields to update (all optional)"
+// @Success 200 {object} UserResponse "Updated user"
+// @Failure 400 {object} ErrorResponse "Validation failed or user not found"
+// @Failure 401 {object} ErrorResponse "Not authenticated"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /api/auth/user [patch]
+func (h *AuthHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
+	// 1. Извлекаем userID из контекста. Контекст заполняется middleware
+	//    TransparentRefreshMiddleware в auth/routes.go после успешной проверки
+	//    access-токена (или прозрачного refresh через cookie).
+	userID, ok := r.Context().Value(ContextKeyUserID).(string)
+	if !ok || userID == "" {
+		validation.RespondJSON(w, http.StatusUnauthorized, validation.ErrorResponse{
+			Error: "not authenticated",
+			Code:  "NOT_AUTHENTICATED",
+		})
+		return
+	}
+
+	// 2. Декодируем JSON-тело и прогоняем через валидатор (v8-теги на DTO).
+	//    При ошибке валидации WriteValidationError сам формирует 400 с Details.
+	var req UpdateProfileRequest
+	if err := validation.DecodeAndValidate(r, &req); err != nil {
+		validation.WriteValidationError(w, err)
+		return
+	}
+
+	// 3. Конвертируем DTO в ProfileUpdate — структуру слоя репозитория.
+	//    Поля 1:1 копируются (указатели остаются nil для пропущенных полей).
+	update := users.ProfileUpdate{
+		FullName:  req.FullName,
+		BirthDate: req.BirthDate,
+		AvatarURL: req.AvatarURL,
+		About:     req.About,
+	}
+
+	// 4. Вызываем сервис. Он делает UPDATE и возвращает обновлённого пользователя.
+	user, err := h.service.UpdateProfile(r.Context(), userID, update)
+	if err != nil {
+		// 400 USER_NOT_FOUND — на случай, если пользователь был удалён между
+		// выдачей JWT и текущим запросом. Не 404, чтобы не палить наличие/отсутствие
+		// ресурса отдельным кодом; консистентно с UpdateRoles.
+		if errors.Is(err, ErrUserNotFound) {
+			validation.RespondJSON(w, http.StatusBadRequest, validation.ErrorResponse{
+				Error: "user not found",
+				Code:  "USER_NOT_FOUND",
+			})
+			return
+		}
+		validation.RespondJSON(w, http.StatusInternalServerError, validation.ErrorResponse{
+			Error: "internal error",
+			Code:  "INTERNAL_ERROR",
+		})
+		return
+	}
+
+	// 5. Отдаём обновлённого пользователя в той же форме, что и GET /api/auth/user.
+	resp := users.UserToResponse(user)
+	validation.RespondJSON(w, http.StatusOK, UserResponse{User: &resp})
+}
+
 // Refresh exchanges valid refresh token cookie for new access token.
 // Returns new access token in JSON body and rotates refresh token cookie.
 // @Summary Refresh access token
@@ -391,19 +469,20 @@ func (h *AuthHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(ContextKeyUserID).(string)
 	if !ok || userID == "" {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(UserResponse{User: nil})
+		_ = json.NewEncoder(w).Encode(UserResponse{User: nil})
 		return
 	}
 
 	user, err := h.userRepo.GetByID(r.Context(), userID)
 	if err != nil || user == nil {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(UserResponse{User: nil})
+		_ = json.NewEncoder(w).Encode(UserResponse{User: nil})
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(UserResponse{User: user})
+	resp := users.UserToResponse(user)
+	_ = json.NewEncoder(w).Encode(UserResponse{User: &resp})
 }
 
 // DeleteUser deletes the current user account, or a target user (admin only).

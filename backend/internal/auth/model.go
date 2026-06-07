@@ -51,6 +51,28 @@ type UpdateRolesRequest struct {
 	Roles []string `json:"roles" v8:"dive,oneof=admin author reader"`
 }
 
+// UpdateProfileRequest — тело PATCH /api/auth/user.
+// Все поля опциональные. Клиент шлёт только те поля, которые хочет изменить.
+// Pointer-типы нужны, чтобы отличить "поле не прислано" (nil) от "прислано значение" (non-nil).
+// Указатель nil означает: "не менять эту колонку". Указатель non-nil — обновить на значение.
+// Явный null в JSON ({"full_name": null}) Go парсит в nil pointer, поэтому
+// он тоже трактуется как "не менять". Это сделано специально, чтобы упростить
+// UI-логику: пустое поле формы просто не включается в DTO.
+type UpdateProfileRequest struct {
+	// Полное имя пользователя.
+	// Необязательное. Максимум 256 символов.
+	FullName *string `json:"full_name,omitempty" v8:"omitempty,max=256"`
+	// Дата рождения в формате YYYY-MM-DD.
+	// Необязательное. JSON-парсер Go проверяет формат; некорректные значения дают 400.
+	BirthDate *time.Time `json:"birth_date,omitempty"`
+	// URL аватара.
+	// Необязательное. Должен быть валидным URL. Максимум 500 символов.
+	AvatarURL *string `json:"avatar_url,omitempty" v8:"omitempty,url,max=500"`
+	// Краткая биография ("О себе").
+	// Необязательное. Максимум 4096 символов.
+	About *string `json:"about,omitempty" v8:"omitempty,max=4096"`
+}
+
 type LoginResponse struct {
 	User *users.User `json:"user"`
 }
@@ -60,7 +82,7 @@ type RefreshResponse struct {
 }
 
 type UserResponse struct {
-	User *users.User `json:"user"`
+	User *users.UserResponse `json:"user"`
 }
 
 type ErrorResponse = validation.ErrorResponse

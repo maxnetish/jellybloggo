@@ -67,6 +67,29 @@ definitions:
           Required. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character. Maximum 128 characters.
         type: string
     type: object
+  auth.UpdateProfileRequest:
+    properties:
+      about:
+        description: |-
+          Краткая биография ("О себе").
+          Необязательное. Максимум 4096 символов.
+        type: string
+      avatar_url:
+        description: |-
+          URL аватара.
+          Необязательное. Должен быть валидным URL. Максимум 500 символов.
+        type: string
+      birth_date:
+        description: |-
+          Дата рождения в формате YYYY-MM-DD.
+          Необязательное. JSON-парсер Go проверяет формат; некорректные значения дают 400.
+        type: string
+      full_name:
+        description: |-
+          Полное имя пользователя.
+          Необязательное. Максимум 256 символов.
+        type: string
+    type: object
   auth.UpdateRolesRequest:
     properties:
       login:
@@ -85,7 +108,7 @@ definitions:
   auth.UserResponse:
     properties:
       user:
-        $ref: '#/definitions/users.User'
+        $ref: '#/definitions/users.UserResponse'
     type: object
   health.Response:
     properties:
@@ -253,9 +276,19 @@ definitions:
     type: object
   users.UserResponse:
     properties:
+      about:
+        type: string
+      avatar_url:
+        type: string
+      birth_date:
+        type: string
       created_at:
         type: string
+      full_name:
+        type: string
       id:
+        type: string
+      location:
         type: string
       login:
         type: string
@@ -522,6 +555,44 @@ paths:
       security:
       - BearerAuth: []
       summary: Get current user
+      tags:
+      - auth
+    patch:
+      consumes:
+      - application/json
+      description: Updates full_name, birth_date, avatar_url, about for the **current**
+        authenticated user. All fields are optional; omitted fields are left unchanged.
+        The endpoint always targets the authenticated user — target user cannot be
+        specified.
+      parameters:
+      - description: Profile fields to update (all optional)
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/auth.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated user
+          schema:
+            $ref: '#/definitions/auth.UserResponse'
+        "400":
+          description: Validation failed or user not found
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "401":
+          description: Not authenticated
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update own profile
       tags:
       - auth
   /api/posts:
