@@ -21,9 +21,6 @@ export function authGuard({ role }: { role?: Role[] } = {}): CanActivateFn {
 
     return authService.currentUser$.pipe(
       map((currentUser) => {
-        // DEBUG
-        console.log('read current user', currentUser);
-
         if (!currentUser) {
           // нет пользователя
           // Переход на страницу логина

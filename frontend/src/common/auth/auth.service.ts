@@ -104,12 +104,8 @@ export class AuthService {
    * @see backend/internal/auth/handler.go — метод GetCurrentUserHandler
    */
   private loadCurrentUser() {
-    // DEBUG
-    console.log('Load current user...');
     this.http.get<UserResponse>(`${environment.apiUrl}/auth/user`).subscribe({
       next: (response) => {
-        // DEBUG
-        console.log('Get current user', response);
         this.currentUserStream$.next(response.user || null);
       },
     });
