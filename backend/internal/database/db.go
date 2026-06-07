@@ -45,6 +45,30 @@ func New(dsn string) (*sql.DB, error) {
 	return db, nil
 }
 
+// NewInMemory creates a new in-memory SQLite database with all migrations applied.
+// Each call returns a fresh, isolated database that exists only for the lifetime
+// of the returned *sql.DB — perfect for unit/integration tests.
+//
+// The caller is responsible for closing the returned *sql.DB (e.g. via t.Cleanup).
+func NewInMemory() (*sql.DB, error) {
+	db, err := sql.Open("sqlite", ":memory:?_foreign_keys=on")
+	if err != nil {
+		return nil, fmt.Errorf("failed to open in-memory db: %w", err)
+	}
+
+	if err := db.Ping(); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("failed to ping in-memory db: %w", err)
+	}
+
+	if err := runMigrations(db); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("failed to run migrations: %w", err)
+	}
+
+	return db, nil
+}
+
 // runMigrations executes all pending SQL migration files in order.
 // Each migration is executed only once and tracked in the _migrations table.
 func runMigrations(db *sql.DB) error {
