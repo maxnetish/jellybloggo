@@ -3,9 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { UserResponse } from './model/user-response';
 import { LoginRequest } from './model/login-request';
-import { Observable, Subject, tap } from 'rxjs';
+import { BehaviorSubject, Observable, shareReplay, Subject, tap } from 'rxjs';
 import { User } from './model/user';
 import { isPlatformBrowser } from '@angular/common';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 /**
  * Сервис для взаимодействия с auth-эндпоинтами бэкенда.
@@ -48,7 +49,7 @@ export class AuthService {
   login(credentials: LoginRequest): Observable<UserResponse> {
     return this.http.post<UserResponse>(`${environment.apiUrl}/auth/login`, credentials).pipe(
       tap((response) => {
-        this.currentUser.set(response.user);
+        this.currentUserStream$.next(response.user);
       }),
     );
   }
@@ -56,7 +57,7 @@ export class AuthService {
   register(credentials: LoginRequest) {
     return this.http.post<UserResponse>(`${environment.apiUrl}/auth/register`, credentials).pipe(
       tap((response) => {
-        this.currentUser.set(response.user);
+        this.currentUserStream$.next(response.user);
       }),
     );
   }
@@ -75,12 +76,21 @@ export class AuthService {
   logout(): Observable<void> {
     return this.http.post<void>(`${environment.apiUrl}/auth/logout`, null).pipe(
       tap(() => {
-        this.currentUser.set(null);
+        this.currentUserStream$.next(null);
       }),
     );
   }
 
-  readonly currentUser = signal<User | null>(null);
+  /**
+   * Делает эмит после явного next, то есть после того как полeчили с сервера currentUser.
+   * После этого все подпичики currentUser$ получат пользака или null.
+   */
+  private readonly currentUserStream$ = new Subject<User | null>();
+
+  /**
+   * Emits after we receive info about user (possible null).
+   */
+  readonly currentUser$ = this.currentUserStream$.pipe(shareReplay(1));
 
   /**
    * Получение текущего авторизованного пользователя.
@@ -94,9 +104,13 @@ export class AuthService {
    * @see backend/internal/auth/handler.go — метод GetCurrentUserHandler
    */
   private loadCurrentUser() {
+    // DEBUG
+    console.log('Load current user...');
     this.http.get<UserResponse>(`${environment.apiUrl}/auth/user`).subscribe({
       next: (response) => {
-        this.currentUser.set(response.user || null);
+        // DEBUG
+        console.log('Get current user', response);
+        this.currentUserStream$.next(response.user || null);
       },
     });
   }

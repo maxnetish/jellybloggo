@@ -1,1 +1,40 @@
-<p>admin-root-page works!</p>
+<header tuiNavigationHeader tuiTheme="light">
+  <span tuiNavigationLogo>
+    <tui-icon icon="@tui.layers"/>
+    <span tuiFade>Jellybloggo private</span>
+  </span>
+
+  <span tuiNavigationSegments>
+    <a
+      appearance="secondary-grayscale"
+      tuiButton
+      routerLink="profile"
+    >
+      <tui-icon icon="@tui.user-pen"/>
+      My profile
+    </a>
+    <button
+      appearance="secondary-grayscale"
+      tuiButton
+      type="button"
+    >
+      Link 2
+    </button>
+  </span>
+
+  <hr/>
+
+  <button
+    appearance="secondary-grayscale"
+    iconStart="@tui.plus"
+    tuiButton
+    type="button"
+  >
+    Create
+  </button>
+</header>
+
+<main tuiNavigationMain>
+  <router-outlet/>
+</main>
+

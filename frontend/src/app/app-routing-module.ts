@@ -9,6 +9,7 @@ const routes: Routes = [
   {
     path: 'admin',
     loadComponent: () => import('../pages/admin/admin-root-page/admin-root-page').then(m => m.AdminRootPage),
+    loadChildren: () => import('../pages/admin/admin-root-page/admin-routes').then(m => m.adminChildRoutes),
   },
   {
     path: 'login',

@@ -1,4 +1,4 @@
-import { UserRole } from './user-role';
+import { Role, UserRole } from './user-role';
 
 /**
  * @see backend/internal/users/model.go:User
@@ -6,7 +6,7 @@ import { UserRole } from './user-role';
 export interface User {
   id: string;
   login: string;
-  roles: UserRole[];
+  roles: Role[];
   /**
    * json date
    */

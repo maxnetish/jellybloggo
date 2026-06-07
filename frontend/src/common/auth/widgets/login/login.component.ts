@@ -14,6 +14,7 @@ import { createLoginForm } from './login.form';
 import { ReactiveFormsModule } from '@angular/forms';
 import { TuiPassword } from '@taiga-ui/kit';
 import { AuthService } from '../../auth.service';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-login',
@@ -39,6 +40,8 @@ import { AuthService } from '../../auth.service';
 export class LoginComponent {
   protected readonly form = createLoginForm();
   protected readonly authService = inject(AuthService);
+  protected readonly router = inject(Router);
+  protected readonly route = inject(ActivatedRoute);
 
   protected readonly warn = signal<string | null>(null);
 
@@ -60,6 +63,9 @@ export class LoginComponent {
         password,
       })
       .subscribe({
+        next: (result) => {
+          this.navigateAfter();
+        },
         error: (err) => {
           this.warn.set(this.errorToMessage(err));
         },
@@ -85,6 +91,9 @@ export class LoginComponent {
         password,
       })
       .subscribe({
+        next: () => {
+          this.navigateAfter();
+        },
         error: (err) => {
           console.log(err);
           if (err.status === 401) {
@@ -98,5 +107,12 @@ export class LoginComponent {
 
   private errorToMessage(err: any) {
     return err.error?.error || err.error?.code || err.message || err.name || 'Something went wrong';
+  }
+
+  private navigateAfter() {
+    const afterLoginUrl = this.route.snapshot.queryParamMap.get('afterLogin');
+    if (afterLoginUrl) {
+      this.router.navigateByUrl(afterLoginUrl);
+    }
   }
 }
