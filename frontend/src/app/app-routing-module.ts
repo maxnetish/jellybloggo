@@ -10,6 +10,10 @@ const routes: Routes = [
     path: 'admin',
     loadComponent: () => import('../pages/admin/admin-root-page/admin-root-page').then(m => m.AdminRootPage),
   },
+  {
+    path: 'login',
+    loadComponent: () => import('../common/auth/widgets/login/login.component').then(m => m.LoginComponent),
+  }
 ];
 
 @NgModule({

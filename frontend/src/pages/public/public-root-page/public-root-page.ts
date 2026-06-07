@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
-import { AuthApiService } from '../../../common/auth/auth-api.service';
+import { AuthService } from '../../../common/auth/auth.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { JsonPipe } from '@angular/common';
 
@@ -11,11 +11,7 @@ import { JsonPipe } from '@angular/common';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PublicRootPage implements OnInit {
-  private readonly authApiService = inject(AuthApiService);
-
-  protected readonly currentUser = toSignal(this.authApiService.getCurrentUser(), {
-    initialValue: null,
-  });
+  protected readonly autService = inject(AuthService);
 
   ngOnInit(): void {}
 }

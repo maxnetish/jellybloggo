@@ -1,9 +1,11 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal, PLATFORM_ID } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { UserResponse } from './model/user-response';
 import { LoginRequest } from './model/login-request';
-import { Observable } from 'rxjs';
+import { Observable, Subject, tap } from 'rxjs';
+import { User } from './model/user';
+import { isPlatformBrowser } from '@angular/common';
 
 /**
  * Сервис для взаимодействия с auth-эндпоинтами бэкенда.
@@ -17,8 +19,19 @@ import { Observable } from 'rxjs';
 @Injectable({
   providedIn: 'root',
 })
-export class AuthApiService {
+export class AuthService {
   private readonly http = inject(HttpClient);
+  private readonly platformId = inject(PLATFORM_ID);
+
+  constructor() {
+    if (isPlatformBrowser(this.platformId)) {
+      // ТОлько в браузере. На сервере пользак всегда будет null.
+      // Т.к. непонятно, как в запрос из SSR подложить куки из запроса в express.
+      // Нейронки добавили какие то костыли в server.js для этого, долго старались.
+      // Но это толком не работает.
+      this.loadCurrentUser();
+    }
+  }
 
   /**
    * Аутентификация пользователя.
@@ -33,7 +46,19 @@ export class AuthApiService {
    * @see backend/internal/auth/handler.go — метод LoginHandler
    */
   login(credentials: LoginRequest): Observable<UserResponse> {
-    return this.http.post<UserResponse>(`${environment.apiUrl}/auth/login`, credentials);
+    return this.http.post<UserResponse>(`${environment.apiUrl}/auth/login`, credentials).pipe(
+      tap((response) => {
+        this.currentUser.set(response.user);
+      }),
+    );
+  }
+
+  register(credentials: LoginRequest) {
+    return this.http.post<UserResponse>(`${environment.apiUrl}/auth/register`, credentials).pipe(
+      tap((response) => {
+        this.currentUser.set(response.user);
+      }),
+    );
   }
 
   /**
@@ -48,8 +73,14 @@ export class AuthApiService {
    * @see backend/internal/auth/handler.go — метод LogoutHandler
    */
   logout(): Observable<void> {
-    return this.http.post<void>(`${environment.apiUrl}/auth/logout`, null);
+    return this.http.post<void>(`${environment.apiUrl}/auth/logout`, null).pipe(
+      tap(() => {
+        this.currentUser.set(null);
+      }),
+    );
   }
+
+  readonly currentUser = signal<User | null>(null);
 
   /**
    * Получение текущего авторизованного пользователя.
@@ -62,7 +93,11 @@ export class AuthApiService {
    * @see backend/internal/auth/README_UI.md — раздел "Get Current User"
    * @see backend/internal/auth/handler.go — метод GetCurrentUserHandler
    */
-  getCurrentUser(): Observable<UserResponse> {
-    return this.http.get<UserResponse>(`${environment.apiUrl}/auth/user`);
+  private loadCurrentUser() {
+    this.http.get<UserResponse>(`${environment.apiUrl}/auth/user`).subscribe({
+      next: (response) => {
+        this.currentUser.set(response.user || null);
+      },
+    });
   }
 }

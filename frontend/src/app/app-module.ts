@@ -1,6 +1,6 @@
 import { NgModule, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { BrowserModule, provideClientHydration, withEventReplay } from '@angular/platform-browser';
-import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from '../common/auth/auth.interceptor';
 
 import { AppRoutingModule } from './app-routing-module';
@@ -13,13 +13,9 @@ import { provideTaiga, TuiRoot } from '@taiga-ui/core';
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideClientHydration(withEventReplay()),
-    provideHttpClient(
-      withFetch(),
-      withInterceptors([authInterceptor]),
-    ),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
     provideTaiga(),
   ],
   bootstrap: [App],
 })
-export class AppModule {
-}
+export class AppModule {}

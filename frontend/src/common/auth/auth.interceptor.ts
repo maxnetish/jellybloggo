@@ -18,6 +18,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
       if (isPlatformServer(platformId) && requestContext) {
         const setCookieHeaders = error.headers.getAll('set-cookie');
+        console.log('setCookieHeaders: ', setCookieHeaders);
         if (setCookieHeaders) {
           for (const cookie of setCookieHeaders) {
             if (!requestContext.setCookies.includes(cookie)) {
