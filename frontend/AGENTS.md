@@ -1,5 +1,12 @@
 You are an expert in TypeScript, Angular, and scalable web application development. You write functional, maintainable, performant, and accessible code following Angular and TypeScript best practices.
 
+## Node.js
+
+- **Required version: v20+ or v22** (Angular CLI v21 requires Node 20+)
+- Use **nvm** to manage Node.js versions: `nvm use 22` (or `nvm use 20`)
+- **DO NOT install Node.js globally** or upgrade system Node — use nvm only
+- Example: `export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && nvm use 22`
+
 ## TypeScript Best Practices
 
 - Use strict type checking
@@ -117,3 +124,21 @@ See `backend/internal/auth/README_UI.md` for API contract.
 | 401 | Both tokens invalid, session expired | Backend refreshes automatically; if seen by UI, show login |
 | 403 | Forbidden | Show "Access denied" message |
 | 500 | Server error | Show generic error message |
+
+## Testing
+
+### Test Setup & Polyfills
+
+- Test setup file: `src/test-setup.ts` — contains polyfills required by Taiga UI
+- Polyfills included:
+  - `window.matchMedia` mock — Taiga UI uses for responsive design
+  - `window.IntersectionObserver` mock — used by infinite scrolls, dropdowns, etc.
+  - `window.ResizeObserver` mock — used by Taiga UI for menu size calculations
+- This file is automatically loaded in `angular.json` under `test.options.setupFiles`
+- If adding tests that use Taiga UI components, ensure `test-setup.ts` is configured in angular.json
+
+### Running Tests
+
+- `npm test` runs all specs via Vitest
+- Backend must be running for tests that make HTTP calls to `/api/auth/user`
+- "Unhandled Errors" for `HttpErrorResponse: 0 Unknown Error` are expected when backend is not running
