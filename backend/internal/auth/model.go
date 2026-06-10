@@ -65,6 +65,9 @@ type UpdateProfileRequest struct {
 	// Дата рождения в формате YYYY-MM-DD.
 	// Необязательное. JSON-парсер Go проверяет формат; некорректные значения дают 400.
 	BirthDate *time.Time `json:"birth_date,omitempty"`
+	// Местоположение пользователя.
+	// Необязательное. Максимум 256 символов.
+	Location *string `json:"location,omitempty" v8:"omitempty,max=256"`
 	// URL аватара.
 	// Необязательное. Должен быть валидным URL. Максимум 500 символов.
 	AvatarURL *string `json:"avatar_url,omitempty" v8:"omitempty,url,max=500"`

@@ -1,12 +1,12 @@
-import { Injectable, inject, signal, PLATFORM_ID } from '@angular/core';
+import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 import { UserResponse } from './model/user-response';
+import { ProfileUpdate } from './model/profile-update';
 import { LoginRequest } from './model/login-request';
-import { BehaviorSubject, Observable, shareReplay, Subject, tap } from 'rxjs';
+import { Observable, shareReplay, Subject, tap } from 'rxjs';
 import { User } from './model/user';
 import { isPlatformBrowser } from '@angular/common';
-import { toSignal } from '@angular/core/rxjs-interop';
 
 /**
  * Сервис для взаимодействия с auth-эндпоинтами бэкенда.
@@ -82,7 +82,18 @@ export class AuthService {
   }
 
   /**
-   * Делает эмит после явного next, то есть после того как полeчили с сервера currentUser.
+   * Обновить профиль текущего пользователя
+   */
+  updateProfile(profile: ProfileUpdate): Observable<UserResponse> {
+    return this.http.patch<UserResponse>(`${environment.apiUrl}/auth/user`, profile).pipe(
+      tap((response) => {
+        this.currentUserStream$.next(response.user);
+      }),
+    );
+  }
+
+  /**
+   * Делает эмит после явного next, то есть после того как получили с сервера currentUser.
    * После этого все подпичики currentUser$ получат пользака или null.
    */
   private readonly currentUserStream$ = new Subject<User | null>();

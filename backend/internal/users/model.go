@@ -86,6 +86,7 @@ type ListParams struct {
 type ProfileUpdate struct {
 	FullName  *string
 	BirthDate *time.Time
+	Location  *string
 	AvatarURL *string
 	About     *string
 }

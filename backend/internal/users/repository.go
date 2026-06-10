@@ -218,6 +218,10 @@ func (r *userRepository) UpdateProfile(ctx context.Context, userID string, updat
 		setClauses = append(setClauses, "full_name = ?")
 		args = append(args, *update.FullName)
 	}
+	if update.Location != nil {
+		setClauses = append(setClauses, "location = ?")
+		args = append(args, *update.Location)
+	}
 	if update.BirthDate != nil {
 		setClauses = append(setClauses, "birth_date = ?")
 		args = append(args, *update.BirthDate)

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { PublicRootPage } from './public-root-page';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('PublicRootPage', () => {
   let component: PublicRootPage;
@@ -9,6 +10,9 @@ describe('PublicRootPage', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [PublicRootPage],
+      providers: [
+        provideHttpClientTesting(),
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(PublicRootPage);
