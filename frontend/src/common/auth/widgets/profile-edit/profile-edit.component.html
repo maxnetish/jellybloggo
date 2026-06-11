@@ -1,1 +1,32 @@
-<p>profile-edit works!</p>
+<div tuiPlatform="web" class="login-page">
+  <form
+    appearance="floating"
+    tuiCardLarge
+    tuiForm="l"
+    [formGroup]="form"
+  >
+    <header tuiHeader>
+      <h2 tuiTitle>Profile</h2>
+    </header>
+
+    <tui-textfield>
+      <label tuiLabel>Full name</label>
+      <textarea
+        placeholder="Optional full name or nickname"
+        tuiTextarea
+        formControlName="fullName"
+      ></textarea>
+    </tui-textfield>
+    <tui-error formControlName="fullName"/>
+
+    <tui-textfield>
+      <label tuiLabel>Date of birth</label>
+      <input
+        tuiInputDate
+        formControlName="birthDate"
+      />
+      <tui-calendar *tuiDropdown />
+    </tui-textfield>
+
+  </form>
+</div>

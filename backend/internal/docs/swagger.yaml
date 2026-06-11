@@ -89,6 +89,11 @@ definitions:
           Полное имя пользователя.
           Необязательное. Максимум 256 символов.
         type: string
+      location:
+        description: |-
+          Местоположение пользователя.
+          Необязательное. Максимум 256 символов.
+        type: string
     type: object
   auth.UpdateRolesRequest:
     properties:
