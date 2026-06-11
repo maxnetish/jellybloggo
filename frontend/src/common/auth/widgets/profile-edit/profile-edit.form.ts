@@ -1,16 +1,25 @@
 import { FormControl, FormGroup } from '@angular/forms';
 import { User } from '../../model/user';
 import { ProfileUpdate } from '../../model/profile-update';
+import { AppValidators } from '../../../utils/validators/app-validators';
 
 export type ProfileForm = ReturnType<typeof createProfileForm>;
 
 export function createProfileForm() {
   return new FormGroup({
-    fullName: new FormControl<string | null>(null),
+    fullName: new FormControl<string | null>(null, {
+      validators: [AppValidators.maxLength({ maxLength: 256 }), AppValidators.notBlank()],
+    }),
     birthDate: new FormControl<string | null>(null),
-    location: new FormControl<string | null>(null),
-    avatarUrl: new FormControl<string | null>(null),
-    about: new FormControl<string | null>(null),
+    location: new FormControl<string | null>(null, {
+      validators: [AppValidators.maxLength({ maxLength: 256 }), AppValidators.notBlank()],
+    }),
+    avatarUrl: new FormControl<string | null>(null, {
+      validators: [AppValidators.maxLength({ maxLength: 500 }), AppValidators.url()],
+    }),
+    about: new FormControl<string | null>(null, {
+      validators: [AppValidators.maxLength({ maxLength: 4096 }), AppValidators.notBlank()],
+    }),
   });
 }
 
