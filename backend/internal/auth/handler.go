@@ -332,6 +332,7 @@ func (h *AuthHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	update := users.ProfileUpdate{
 		FullName:  req.FullName,
 		BirthDate: birthDate,
+		Location:  req.Location,
 		AvatarURL: req.AvatarURL,
 		About:     req.About,
 	}
