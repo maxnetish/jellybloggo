@@ -34,6 +34,8 @@ export function applyDtoToForm({ form, dto }: { form: ProfileForm; dto: User }) 
     avatarUrl: dto.avatar_url || null,
     about: dto.about || null,
   });
+  form.markAsPristine();
+  form.markAsUntouched();
   return form;
 }
 

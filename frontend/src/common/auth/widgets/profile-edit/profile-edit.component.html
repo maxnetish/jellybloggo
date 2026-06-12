@@ -7,7 +7,18 @@
   >
     <header tuiHeader>
       <h2 tuiTitle>Profile</h2>
+
+      <aside tuiAccessories>
+        <div
+          [appearance]="(formStatus$ | async)?.appearance || 'info'"
+          [tuiAvatar]="(formStatus$ | async)?.icon"
+          size="s"
+          [class.rotating-icon]="(formStatus$ | async)?.rotating"
+        ></div>
+      </aside>
     </header>
+
+    <tui-error [error]="(formStatus$ | async)?.errorMessage || null"/>
 
     <tui-textfield>
       <label tuiLabel>Full name</label>
@@ -15,6 +26,7 @@
         placeholder="Optional full name or nickname"
         tuiTextarea
         formControlName="fullName"
+        [maxlength]="256"
       ></textarea>
     </tui-textfield>
     <tui-error formControlName="fullName"/>
@@ -27,6 +39,28 @@
       />
       <tui-calendar *tuiDropdown />
     </tui-textfield>
+
+    <tui-textfield>
+      <label tuiLabel>My location</label>
+      <textarea
+        placeholder="Where are you? For example, Tatooine"
+        tuiTextarea
+        formControlName="location"
+        [maxlength]="256"
+      ></textarea>
+    </tui-textfield>
+    <tui-error formControlName="location"/>
+
+    <tui-textfield>
+      <label tuiLabel>About me</label>
+      <textarea
+        placeholder="Public information about me. For example, Jedi knight"
+        tuiTextarea
+        formControlName="about"
+        [maxlength]="4096"
+      ></textarea>
+    </tui-textfield>
+    <tui-error formControlName="about"/>
 
   </form>
 </div>
