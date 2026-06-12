@@ -3,6 +3,7 @@ package auth
 import (
 	"time"
 
+	"github.com/maxnetish/jellybloggo/internal/types"
 	"github.com/maxnetish/jellybloggo/internal/users"
 	"github.com/maxnetish/jellybloggo/internal/validation"
 )
@@ -64,7 +65,7 @@ type UpdateProfileRequest struct {
 	FullName *string `json:"full_name,omitempty" v8:"omitempty,max=256"`
 	// Дата рождения в формате YYYY-MM-DD.
 	// Необязательное. JSON-парсер Go проверяет формат; некорректные значения дают 400.
-	BirthDate *time.Time `json:"birth_date,omitempty"`
+	BirthDate *types.Date `json:"birth_date,omitempty"`
 	// Местоположение пользователя.
 	// Необязательное. Максимум 256 символов.
 	Location *string `json:"location,omitempty" v8:"omitempty,max=256"`

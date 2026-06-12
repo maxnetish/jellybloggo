@@ -847,7 +847,11 @@ const docTemplate = `{
                 },
                 "birth_date": {
                     "description": "Дата рождения в формате YYYY-MM-DD.\nНеобязательное. JSON-парсер Go проверяет формат; некорректные значения дают 400.",
-                    "type": "string"
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.Date"
+                        }
+                    ]
                 },
                 "full_name": {
                     "description": "Полное имя пользователя.\nНеобязательное. Максимум 256 символов.",
@@ -1086,6 +1090,14 @@ const docTemplate = `{
                 }
             }
         },
+        "types.Date": {
+            "type": "object",
+            "properties": {
+                "time.Time": {
+                    "type": "string"
+                }
+            }
+        },
         "users.Role": {
             "type": "object",
             "properties": {
@@ -1144,7 +1156,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "birth_date": {
-                    "type": "string"
+                    "$ref": "#/definitions/types.Date"
                 },
                 "created_at": {
                     "type": "string"

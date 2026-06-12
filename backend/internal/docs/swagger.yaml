@@ -80,10 +80,11 @@ definitions:
           Необязательное. Должен быть валидным URL. Максимум 500 символов.
         type: string
       birth_date:
+        allOf:
+        - $ref: '#/definitions/types.Date'
         description: |-
           Дата рождения в формате YYYY-MM-DD.
           Необязательное. JSON-парсер Go проверяет формат; некорректные значения дают 400.
-        type: string
       full_name:
         description: |-
           Полное имя пользователя.
@@ -248,6 +249,11 @@ definitions:
       visibility:
         type: string
     type: object
+  types.Date:
+    properties:
+      time.Time:
+        type: string
+    type: object
   users.Role:
     properties:
       id:
@@ -286,7 +292,7 @@ definitions:
       avatar_url:
         type: string
       birth_date:
-        type: string
+        $ref: '#/definitions/types.Date'
       created_at:
         type: string
       full_name:

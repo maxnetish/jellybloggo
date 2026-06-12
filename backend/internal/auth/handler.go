@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/maxnetish/jellybloggo/internal/users"
 	"github.com/maxnetish/jellybloggo/internal/validation"
@@ -324,9 +325,13 @@ func (h *AuthHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 
 	// 3. Конвертируем DTO в ProfileUpdate — структуру слоя репозитория.
 	//    Поля 1:1 копируются (указатели остаются nil для пропущенных полей).
+	var birthDate *time.Time
+	if req.BirthDate != nil {
+		birthDate = req.BirthDate.TimePtr()
+	}
 	update := users.ProfileUpdate{
 		FullName:  req.FullName,
-		BirthDate: req.BirthDate,
+		BirthDate: birthDate,
 		AvatarURL: req.AvatarURL,
 		About:     req.About,
 	}

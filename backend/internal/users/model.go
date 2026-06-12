@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/maxnetish/jellybloggo/internal/pagination"
+	"github.com/maxnetish/jellybloggo/internal/types"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -96,7 +97,7 @@ type UserResponse struct {
 	Login     string     `json:"login"`
 	Roles     []string   `json:"roles"`
 	FullName  *string    `json:"full_name,omitempty"`
-	BirthDate *time.Time `json:"birth_date,omitempty"`
+	BirthDate *types.Date `json:"birth_date,omitempty"`
 	Location  *string    `json:"location,omitempty"`
 	AvatarURL *string    `json:"avatar_url,omitempty"`
 	About     *string    `json:"about,omitempty"`
@@ -119,7 +120,7 @@ func UserToResponse(u *User) UserResponse {
 		Login:     u.Login,
 		Roles:     roles,
 		FullName:  u.FullName,
-		BirthDate: u.BirthDate,
+		BirthDate: types.NewDateFromPtr(u.BirthDate),
 		Location:  u.Location,
 		AvatarURL: u.AvatarURL,
 		About:     u.About,
