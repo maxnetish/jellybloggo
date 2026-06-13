@@ -159,3 +159,5 @@ export interface UpdateS3ConfigRequest {
    */
   s3_public_end_point: string;
 }
+
+export type S3Config = S3ConfigResponse;

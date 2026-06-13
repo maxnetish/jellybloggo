@@ -1,0 +1,34 @@
+<div
+  appearance="floating"
+  tuiCardLarge
+>
+  <header tuiHeader>
+    <h2 tuiTitle>File manager</h2>
+  </header>
+
+  <div
+    tuiAppearance="secondary"
+    tuiButtonGroup
+  >
+    <button type="button">
+      <tui-icon icon="@tui.circle-plus" />
+      Add storage bucket
+    </button>
+  </div>
+
+  <div>
+    <div>
+      @for (rootNode of treeRootNodes$ | async; track rootNode.id) {
+        <tui-tree
+          [value]="rootNode"
+        ></tui-tree>
+      }
+    </div>
+  </div>
+
+  <footer>
+
+  </footer>
+</div>
+
+
