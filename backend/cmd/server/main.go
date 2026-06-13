@@ -17,6 +17,7 @@ import (
 	"github.com/maxnetish/jellybloggo/internal/database"
 	"github.com/maxnetish/jellybloggo/internal/health"
 	"github.com/maxnetish/jellybloggo/internal/posts"
+	"github.com/maxnetish/jellybloggo/internal/s3config"
 	"github.com/maxnetish/jellybloggo/internal/users"
 
 	_ "github.com/maxnetish/jellybloggo/internal/docs"
@@ -52,6 +53,17 @@ func main() {
 
 	userRepo = users.NewUserRepository(db)
 	postRepo := posts.NewPostRepository(db)
+	s3ConfigRepo := s3config.NewS3ConfigRepository(db)
+
+	encryptionKey := os.Getenv("S3_ENCRYPTION_KEY")
+	if encryptionKey == "" {
+		encryptionKey = "default-s3-encryption-key-change-me"
+	}
+	s3ConfigService, err := s3config.NewS3ConfigService(s3ConfigRepo, encryptionKey)
+	if err != nil {
+		log.Fatalf("Failed to initialize S3 config service: %v", err)
+	}
+	s3ConfigHandler := s3config.NewS3ConfigHandler(s3ConfigService)
 
 	if adminLogin := os.Getenv("ADMIN_LOGIN"); adminLogin != "" {
 		if err := users.BootstrapAdmin(context.Background(), userRepo, adminLogin, os.Getenv("ADMIN_PASSWORD")); err != nil {
@@ -90,6 +102,7 @@ func main() {
 		r.Use(auth.TransparentRefreshMiddleware(authService))
 		r.Mount("/api/users", users.NewRouter(userRepo))
 		r.Mount("/api/posts", posts.NewRouter(postRepo, userRepo))
+		r.Mount("/api/s3-configs", s3config.NewRouter(s3ConfigHandler))
 	})
 
 	log.Println("Server starting on :8080")

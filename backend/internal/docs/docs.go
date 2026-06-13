@@ -652,6 +652,283 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/s3-configs": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns all S3 storage configurations belonging to the authenticated user.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "s3-configs"
+                ],
+                "summary": "List S3 configurations",
+                "responses": {
+                    "200": {
+                        "description": "List of S3 configurations",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/s3config.S3ConfigResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Creates a new S3 storage configuration for the authenticated user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "s3-configs"
+                ],
+                "summary": "Create S3 configuration",
+                "parameters": [
+                    {
+                        "description": "S3 configuration data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/s3config.CreateS3ConfigRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created S3 configuration",
+                        "schema": {
+                            "$ref": "#/definitions/s3config.S3ConfigResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Validation failed",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/s3-configs/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a single S3 storage configuration. User can only access their own configs.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "s3-configs"
+                ],
+                "summary": "Get S3 configuration by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Config ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "S3 configuration",
+                        "schema": {
+                            "$ref": "#/definitions/s3config.S3ConfigResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Updates an existing S3 storage configuration. User can only update their own configs.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "s3-configs"
+                ],
+                "summary": "Update S3 configuration",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Config ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "S3 configuration data (only provided fields will be updated)",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/s3config.UpdateS3ConfigRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated S3 configuration",
+                        "schema": {
+                            "$ref": "#/definitions/s3config.S3ConfigResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Validation failed",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Deletes an S3 storage configuration. User can only delete their own configs.",
+                "tags": [
+                    "s3-configs"
+                ],
+                "summary": "Delete S3 configuration",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Config ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No content"
+                    },
+                    "401": {
+                        "description": "Not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/validation.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/users": {
             "get": {
                 "security": [
@@ -1086,6 +1363,75 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "visibility": {
+                    "type": "string"
+                }
+            }
+        },
+        "s3config.CreateS3ConfigRequest": {
+            "type": "object",
+            "properties": {
+                "config_name": {
+                    "type": "string"
+                },
+                "s3_access_key": {
+                    "type": "string"
+                },
+                "s3_access_secret": {
+                    "type": "string"
+                },
+                "s3_endpoint": {
+                    "type": "string"
+                },
+                "s3_region": {
+                    "type": "string"
+                }
+            }
+        },
+        "s3config.S3ConfigResponse": {
+            "type": "object",
+            "properties": {
+                "config_name": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "s3_access_key": {
+                    "type": "string"
+                },
+                "s3_access_secret": {
+                    "type": "string"
+                },
+                "s3_endpoint": {
+                    "type": "string"
+                },
+                "s3_region": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "s3config.UpdateS3ConfigRequest": {
+            "type": "object",
+            "properties": {
+                "config_name": {
+                    "type": "string"
+                },
+                "s3_access_key": {
+                    "type": "string"
+                },
+                "s3_access_secret": {
+                    "type": "string"
+                },
+                "s3_endpoint": {
+                    "type": "string"
+                },
+                "s3_region": {
                     "type": "string"
                 }
             }

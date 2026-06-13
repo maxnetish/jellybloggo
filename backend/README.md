@@ -48,6 +48,7 @@ Create a `.env` file to configure the application:
 | `SECURE_COOKIES` | `false` | Set `true` to enable Secure flag on cookies (required for HTTPS) |
 | `ADMIN_LOGIN` | — | Initial admin login (creates admin user on startup if role doesn't exist) |
 | `ADMIN_PASSWORD` | — | Initial admin password |
+| `S3_ENCRYPTION_KEY` | `default-s3-encryption-key-change-me` | 32-byte key for encrypting S3 access keys and secrets at rest |
 
 ### Swagger UI
 
