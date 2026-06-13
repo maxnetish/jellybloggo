@@ -25,11 +25,12 @@ func NewS3ConfigRepository(db *sql.DB) S3ConfigRepository {
 
 func (r *s3ConfigRepository) Create(ctx context.Context, config *S3Config) (*S3Config, error) {
 	_, err := r.db.ExecContext(ctx,
-		`INSERT INTO user_s3_configs (id, user_id, config_name, s3_access_key, s3_access_secret, s3_endpoint, s3_region)
-		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO user_s3_configs (id, user_id, config_name, s3_access_key, s3_access_secret, s3_endpoint, s3_region, s3_bucket, s3_public_end_point)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		config.ID, config.UserID, config.ConfigName,
 		config.S3AccessKey, config.S3AccessSecret,
 		config.S3Endpoint, config.S3Region,
+		config.S3Bucket, config.S3PublicEndPoint,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create s3 config: %w", err)
@@ -41,13 +42,14 @@ func (r *s3ConfigRepository) Create(ctx context.Context, config *S3Config) (*S3C
 func (r *s3ConfigRepository) GetByID(ctx context.Context, id string) (*S3Config, error) {
 	config := &S3Config{}
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, user_id, config_name, s3_access_key, s3_access_secret, s3_endpoint, s3_region, created_at, updated_at
+		`SELECT id, user_id, config_name, s3_access_key, s3_access_secret, s3_endpoint, s3_region, s3_bucket, s3_public_end_point, created_at, updated_at
 		 FROM user_s3_configs WHERE id = ?`,
 		id,
 	).Scan(
 		&config.ID, &config.UserID, &config.ConfigName,
 		&config.S3AccessKey, &config.S3AccessSecret,
 		&config.S3Endpoint, &config.S3Region,
+		&config.S3Bucket, &config.S3PublicEndPoint,
 		&config.CreatedAt, &config.UpdatedAt,
 	)
 	if err == sql.ErrNoRows {
@@ -63,13 +65,14 @@ func (r *s3ConfigRepository) GetByID(ctx context.Context, id string) (*S3Config,
 func (r *s3ConfigRepository) GetByIDAndUserID(ctx context.Context, id, userID string) (*S3Config, error) {
 	config := &S3Config{}
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, user_id, config_name, s3_access_key, s3_access_secret, s3_endpoint, s3_region, created_at, updated_at
+		`SELECT id, user_id, config_name, s3_access_key, s3_access_secret, s3_endpoint, s3_region, s3_bucket, s3_public_end_point, created_at, updated_at
 		 FROM user_s3_configs WHERE id = ? AND user_id = ?`,
 		id, userID,
 	).Scan(
 		&config.ID, &config.UserID, &config.ConfigName,
 		&config.S3AccessKey, &config.S3AccessSecret,
 		&config.S3Endpoint, &config.S3Region,
+		&config.S3Bucket, &config.S3PublicEndPoint,
 		&config.CreatedAt, &config.UpdatedAt,
 	)
 	if err == sql.ErrNoRows {
@@ -84,7 +87,7 @@ func (r *s3ConfigRepository) GetByIDAndUserID(ctx context.Context, id, userID st
 
 func (r *s3ConfigRepository) ListByUserID(ctx context.Context, userID string) ([]*S3Config, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT id, user_id, config_name, s3_access_key, s3_access_secret, s3_endpoint, s3_region, created_at, updated_at
+		`SELECT id, user_id, config_name, s3_access_key, s3_access_secret, s3_endpoint, s3_region, s3_bucket, s3_public_end_point, created_at, updated_at
 		 FROM user_s3_configs WHERE user_id = ? ORDER BY created_at DESC`,
 		userID,
 	)
@@ -100,6 +103,7 @@ func (r *s3ConfigRepository) ListByUserID(ctx context.Context, userID string) ([
 			&config.ID, &config.UserID, &config.ConfigName,
 			&config.S3AccessKey, &config.S3AccessSecret,
 			&config.S3Endpoint, &config.S3Region,
+			&config.S3Bucket, &config.S3PublicEndPoint,
 			&config.CreatedAt, &config.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("failed to scan s3 config: %w", err)
@@ -121,10 +125,11 @@ func (r *s3ConfigRepository) ListByUserID(ctx context.Context, userID string) ([
 func (r *s3ConfigRepository) Update(ctx context.Context, config *S3Config) (*S3Config, error) {
 	_, err := r.db.ExecContext(ctx,
 		`UPDATE user_s3_configs
-		 SET config_name = ?, s3_access_key = ?, s3_access_secret = ?, s3_endpoint = ?, s3_region = ?, updated_at = CURRENT_TIMESTAMP
+		 SET config_name = ?, s3_access_key = ?, s3_access_secret = ?, s3_endpoint = ?, s3_region = ?, s3_bucket = ?, s3_public_end_point = ?, updated_at = CURRENT_TIMESTAMP
 		 WHERE id = ?`,
 		config.ConfigName, config.S3AccessKey, config.S3AccessSecret,
-		config.S3Endpoint, config.S3Region, config.ID,
+		config.S3Endpoint, config.S3Region,
+		config.S3Bucket, config.S3PublicEndPoint, config.ID,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update s3 config: %w", err)

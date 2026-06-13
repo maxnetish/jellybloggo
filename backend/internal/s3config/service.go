@@ -50,13 +50,15 @@ func (s *S3ConfigService) Create(ctx context.Context, userID string, req CreateS
 	}
 
 	config := &S3Config{
-		ID:             s.idGen(),
-		UserID:         userID,
-		ConfigName:     req.ConfigName,
-		S3AccessKey:    encryptedAccessKey,
-		S3AccessSecret: encryptedSecret,
-		S3Endpoint:     req.S3Endpoint,
-		S3Region:       req.S3Region,
+		ID:               s.idGen(),
+		UserID:           userID,
+		ConfigName:       req.ConfigName,
+		S3AccessKey:      encryptedAccessKey,
+		S3AccessSecret:   encryptedSecret,
+		S3Endpoint:       req.S3Endpoint,
+		S3Region:         req.S3Region,
+		S3Bucket:         req.S3Bucket,
+		S3PublicEndPoint: req.S3PublicEndPoint,
 	}
 
 	return s.repo.Create(ctx, config)
@@ -118,7 +120,7 @@ func (s *S3ConfigService) Update(ctx context.Context, userID, configID string, r
 		return nil, ErrNotAuthorized
 	}
 
-	if req.ConfigName != nil {
+if req.ConfigName != nil {
 		config.ConfigName = *req.ConfigName
 	}
 	if req.S3Endpoint != nil {
@@ -126,6 +128,12 @@ func (s *S3ConfigService) Update(ctx context.Context, userID, configID string, r
 	}
 	if req.S3Region != nil {
 		config.S3Region = req.S3Region
+	}
+	if req.S3Bucket != nil {
+		config.S3Bucket = *req.S3Bucket
+	}
+	if req.S3PublicEndPoint != nil {
+		config.S3PublicEndPoint = *req.S3PublicEndPoint
 	}
 
 	if req.S3AccessKey != nil {

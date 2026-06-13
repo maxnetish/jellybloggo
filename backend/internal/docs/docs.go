@@ -1379,7 +1379,13 @@ const docTemplate = `{
                 "s3_access_secret": {
                     "type": "string"
                 },
+                "s3_bucket": {
+                    "type": "string"
+                },
                 "s3_endpoint": {
+                    "type": "string"
+                },
+                "s3_public_end_point": {
                     "type": "string"
                 },
                 "s3_region": {
@@ -1405,7 +1411,13 @@ const docTemplate = `{
                 "s3_access_secret": {
                     "type": "string"
                 },
+                "s3_bucket": {
+                    "type": "string"
+                },
                 "s3_endpoint": {
+                    "type": "string"
+                },
+                "s3_public_end_point": {
                     "type": "string"
                 },
                 "s3_region": {
@@ -1428,7 +1440,13 @@ const docTemplate = `{
                 "s3_access_secret": {
                     "type": "string"
                 },
+                "s3_bucket": {
+                    "type": "string"
+                },
                 "s3_endpoint": {
+                    "type": "string"
+                },
+                "s3_public_end_point": {
                     "type": "string"
                 },
                 "s3_region": {
