@@ -45,6 +45,19 @@ export interface S3ConfigResponse {
   s3_region: string | null;
 
   /**
+   * Название S3-бакета, в который загружаются файлы.
+   * Пример: "my-blog-uploads", "media-bucket".
+   */
+  s3_bucket: string;
+
+  /**
+   * Публичный базовый URL для доступа к загруженным файлам.
+   * Формируется как `{s3_public_end_point}/{имя_файла}`.
+   * Пример: "https://cdn.example.com", "https://storage.example.com/bucket"
+   */
+  s3_public_end_point: string;
+
+  /**
    * Время создания конфигурации (RFC3339).
    */
   created_at: string;
@@ -89,11 +102,24 @@ export interface CreateS3ConfigRequest {
    * Регион S3-хранилища (опционально).
    */
   s3_region?: string | null;
+
+  /**
+   * Название S3-бакета.
+   * Обязательно, max 63 символа.
+   */
+  s3_bucket: string;
+
+  /**
+   * Публичный базовый URL для доступа к файлам.
+   * Обязательно, должен быть валидным URL, max 500 символов.
+   */
+  s3_public_end_point: string;
 }
 
 /**
  * Тело запроса для PUT /api/s3-configs/{id} (обновление конфигурации).
- * Все поля опциональны — передаются только те, которые нужно изменить.
+ * Поля credentials и name опциональны — передаются только изменяемые.
+ * Поля s3_bucket и s3_public_end_point обязательны при обновлении.
  *
  * @see backend/internal/s3config/model.go:UpdateS3ConfigRequest
  */
@@ -122,4 +148,14 @@ export interface UpdateS3ConfigRequest {
    * Новый регион (опционально, null — сбросить).
    */
   s3_region?: string | null;
+
+  /**
+   * Новое название S3-бакета (обязательно).
+   */
+  s3_bucket: string;
+
+  /**
+   * Новый публичный базовый URL (обязательно).
+   */
+  s3_public_end_point: string;
 }
