@@ -10,7 +10,10 @@
     tuiAppearance="secondary"
     tuiButtonGroup
   >
-    <button type="button">
+    <button
+      type="button"
+      (click)="openAddDialog()"
+    >
       <tui-icon icon="@tui.circle-plus" />
       Add storage bucket
     </button>

@@ -1,0 +1,117 @@
+<div tuiPlatform="web">
+  <form
+    tuiForm="m"
+    [formGroup]="form"
+  >
+    <header tuiHeader>
+      <h2 tuiTitle>{{ dialogTitle() }}</h2>
+    </header>
+
+    @if (serverError()) {
+      <div
+        appearance="error"
+        size="m"
+        tuiNotification
+      >
+        {{ serverError() }}
+      </div>
+    }
+
+    <tui-textfield>
+      <label tuiLabel>Entry name for user interface</label>
+      <input
+        formControlName="configName"
+        placeholder="Example: Production Minio"
+        tuiInput
+      />
+    </tui-textfield>
+    <tui-error formControlName="configName"/>
+
+    <tui-textfield>
+      <label tuiLabel>S3 Bucket</label>
+      <input
+        formControlName="s3Bucket"
+        placeholder="Example: my-blog-uploads"
+        tuiInput
+      />
+    </tui-textfield>
+    <tui-error formControlName="s3Bucket"/>
+
+    <tui-textfield>
+      <label tuiLabel>Public endpoint</label>
+      <input
+        formControlName="s3PublicEndPoint"
+        placeholder="Example: https://cdn.example.com"
+        tuiInput
+      />
+    </tui-textfield>
+    <tui-error formControlName="s3PublicEndPoint"/>
+
+    <tui-textfield>
+      <label tuiLabel>Access key</label>
+      <input
+        formControlName="s3AccessKey"
+        placeholder="Example: AKIAIOSFODNN7EXAMPLE"
+        tuiInput
+      />
+      <tui-icon tuiPassword/>
+    </tui-textfield>
+    <tui-error formControlName="s3AccessKey"/>
+
+    <tui-textfield>
+      <label tuiLabel>Access secret</label>
+      <input
+        formControlName="s3AccessSecret"
+        placeholder="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        tuiInput
+      />
+      <tui-icon tuiPassword/>
+    </tui-textfield>
+    <tui-error formControlName="s3AccessSecret"/>
+
+    <tui-textfield>
+      <label tuiLabel>Endpoint</label>
+      <input
+        formControlName="s3Endpoint"
+        placeholder="Example: https://minio.example.com"
+        tuiInput
+      />
+    </tui-textfield>
+    <tui-error formControlName="s3Endpoint"/>
+
+    <tui-textfield>
+      <label tuiLabel>Region (optional)</label>
+      <input
+        formControlName="s3Region"
+        placeholder="e.g. us-east-1"
+        tuiInput
+      />
+    </tui-textfield>
+    <tui-error formControlName="s3Region"/>
+
+    <footer>
+      <button
+        appearance="secondary"
+        size="m"
+        tuiButton
+        type="button"
+        [disabled]="loading()"
+        (click)="cancel()"
+      >
+        Cancel
+      </button>
+      <button
+        appearance="primary"
+        size="m"
+        tuiButton
+        type="button"
+        loading
+        [loading]="loading()"
+        [disabled]="loading()"
+        (click)="submit()"
+      >
+        OK
+      </button>
+    </footer>
+  </form>
+</div>

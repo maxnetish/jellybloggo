@@ -1,13 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { TuiCardLarge, TuiHeader } from '@taiga-ui/layout';
-import { TuiAppearance, TuiIcon, TuiTitle } from '@taiga-ui/core';
+import { TuiAppearance, TuiButton, TuiIcon, TuiTitle } from '@taiga-ui/core';
 import { TuiButtonGroup, TuiTreeComponent } from '@taiga-ui/kit';
-import { AuthService } from '../../../auth/auth.service';
 import { S3ConfigService } from '../../s3config.service';
 import { BehaviorSubject } from 'rxjs';
 import { S3Treenode } from '../../model/s3-treenode';
-import { nanoid } from 'nanoid';
 import { AsyncPipe } from '@angular/common';
+import { S3ConfigEditModal } from '../s3-config-edit/s3-config-edit.modal';
 
 @Component({
   selector: 'app-file-manager',
@@ -27,17 +26,30 @@ import { AsyncPipe } from '@angular/common';
 })
 export class FileManagerComponent {
   private readonly s3ConfigService = inject(S3ConfigService);
+  private readonly s3ConfigEditModal = inject(S3ConfigEditModal);
 
   protected readonly treeRootNodes$ = new BehaviorSubject<S3Treenode[]>([]);
 
   constructor() {
-    // Fill in root entries (buckets)
+    this.loadConfigs();
+  }
+
+  protected openAddDialog(): void {
+    this.s3ConfigEditModal.show({ inputs: {} }).subscribe({
+      next: () => this.loadConfigs(),
+      error: (err) => {
+        console.warn(err);
+      },
+    });
+  }
+
+  private loadConfigs(): void {
     this.s3ConfigService.getAll().subscribe({
       next: (response) => {
         this.treeRootNodes$.next(
           (response || []).map((entry) => {
             return {
-              id: nanoid(6),
+              id: entry.id,
               label: entry.config_name || entry.s3_bucket,
               prefix: '/',
               s3Config: entry,
