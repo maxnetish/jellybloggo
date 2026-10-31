@@ -5,10 +5,13 @@
  */
 
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 
 // next/font автоматически скачивает шрифты и оптимизирует их
 // variable — CSS переменная, которую можно использовать в стилях
 import { Geist, Geist_Mono } from 'next/font/google';
+import { AuthProvider } from '@/lib/auth';
+import { getUser } from '@/lib/api/auth';
 import './globals.css';
 
 // Загружаем основной шрифт (заменит system-ui)
@@ -40,7 +43,16 @@ export const metadata: Metadata = {
  * @param children — содержимое текущей страницы (page.tsx).
  *                   Next.js передаёт его автоматически.
  */
-export default function RootLayout({ children }: LayoutProps<'/'>) {
+export default async function RootLayout({ children }: LayoutProps<'/'>) {
+  // Получаем cookies для SSR аутентификации
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('access_token');
+
+  // Если есть токен — получаем данные пользователя
+  // NOTE: Для работы SSR требуется настроенное проксирование в next.config.ts
+  // и чтобы backend был доступен по /api/*
+  const user = accessToken ? await getUser() : null;
+
   return (
     // <html> — корневой элемент. lang — для accessibility.
     <html
@@ -51,8 +63,11 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
     >
       {/* <body> — сюда попадают все страницы приложения */}
       <body className='min-h-full flex flex-col'>
-        {/* children — это <Page /> текущего route */}
-        {children}
+        {/* AuthProvider передаёт user вниз по дереву компонентов */}
+        <AuthProvider user={user}>
+          {/* children — это <Page /> текущего route */}
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
