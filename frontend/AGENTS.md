@@ -1,144 +1,155 @@
-You are an expert in TypeScript, Angular, and scalable web application development. You write functional, maintainable, performant, and accessible code following Angular and TypeScript best practices.
+# AGENTS.md
+
+You are an expert in TypeScript, React, Next.js, and scalable web application development.
 
 ## Node.js
 
-- **Required version: v20+ or v22** (Angular CLI v21 requires Node 20+)
-- Use **nvm** to manage Node.js versions: `nvm use 22` (or `nvm use 20`)
+- **Required version: v22+** (Vitest requires Node 22+)
+- Use **nvm** to manage Node.js versions: `nvm use 22`
 - **DO NOT install Node.js globally** or upgrade system Node — use nvm only
-- Example: `export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && nvm use 22`
+
+## Tech Stack
+
+- **Framework**: Next.js 16 with App Router
+- **UI**: React 19
+- **Styling**: Tailwind CSS 4
+- **Components**: shadcn/ui (copy-paste approach)
+- **Language**: TypeScript (strict mode)
+- **Testing**: Vitest + React Testing Library
 
 ## TypeScript Best Practices
 
 - Use strict type checking
 - Prefer type inference when the type is obvious
 - Avoid the `any` type; use `unknown` when type is uncertain
+- Use explicit return types for exported functions
 
-## Angular Best Practices
+## Next.js App Router
 
-- Always use standalone components over NgModules
-- Must NOT set `standalone: true` inside Angular decorators. It's the default in Angular v21+.
-- Use signals for state management
-- Implement lazy loading for feature routes
-- Do NOT use the `@HostBinding` and `@HostListener` decorators. Put host bindings inside the `host` object of the `@Component` or `@Directive` decorator instead
-- Use `NgOptimizedImage` for all static images.
-  - `NgOptimizedImage` does not work for inline base64 images.
+### Server Components vs Client Components
 
-## Accessibility Requirements
+- **Server Components** (default): async/await, no hooks, no browser APIs
+- **Client Components**: `'use client'` directive at top of file
+- Prefer Server Components; add `'use client'` only when needed:
+  - `useState`, `useEffect`, `useRef`
+  - Event handlers (onClick, onChange, etc.)
+  - Browser APIs (window, document)
+  - Third-party libraries that need client-side rendering
 
-- It MUST pass all AXE checks.
-- It MUST follow all WCAG AA minimums, including focus management, color contrast, and ARIA attributes.
+### Routing
 
-### Components
+- File-based routing in `src/app/`
+- Route groups with `(group)` folders (no URL segment)
+- Dynamic segments: `[id]`, `[...slug]`
+- `layout.tsx` — persists across route changes
+- `page.tsx` — page content
+- `loading.tsx` — loading skeleton
+- `error.tsx` — error boundary
 
-- Keep components small and focused on a single responsibility
-- Use `input()` and `output()` functions instead of decorators
-- Use `computed()` for derived state
-- Set `changeDetection: ChangeDetectionStrategy.OnPush` in `@Component` decorator
-- Prefer inline templates for small components
-- Prefer Reactive forms instead of Template-driven ones
-- Do NOT use `ngClass`, use `class` bindings instead
-- Do NOT use `ngStyle`, use `style` bindings instead
-- When using external templates/styles, use paths relative to the component TS file.
+### Data Fetching
 
-## State Management
+- Use `async/await` directly in Server Components
+- Fetch in parallel with `Promise.all()`
+- Use `unstable_noStore()` or `no-store` fetch option for user-specific data
+- Use `revalidate` for cached data
 
-- Use signals for local component state
-- Use `computed()` for derived state
-- Keep state transformations pure and predictable
-- Do NOT use `mutate` on signals, use `update` or `set` instead
+## Components
 
-## Templates
+- Components go in `src/components/`
+- UI components (shadcn/ui) go in `src/components/ui/`
+- Use `'use client'` only when necessary
 
-- Keep templates simple and avoid complex logic
-- Use native control flow (`@if`, `@for`, `@switch`) instead of `*ngIf`, `*ngFor`, `*ngSwitch`
-- Use the async pipe to handle observables
-- Do not assume globals like (`new Date()`) are available.
+## shadcn/ui
 
-## Services
+Components are copy-pasted into the project. To add a component:
 
-- Design services around a single responsibility
-- Use the `providedIn: 'root'` option for singleton services
-- Use the `inject()` function instead of constructor injection
+```bash
+npx shadcn@latest add button
+```
 
-## SSR & Hydration
-
-- SSR is enabled via `@angular/ssr`
-- Hydration is automatic in Angular 17+ with SSR mode
-- Use `TransferState` to pass server data to client and avoid duplicate HTTP requests
-- Never access `window`/`document` directly in constructors or sync code — use `afterNextRender` or check `PLATFORM_ID` with `isPlatformBrowser`
-- For HTTP in SSR context, use `provideHttpClient(withFetch())` for consistent fetch-based requests
+This copies the component code to `src/components/ui/button.tsx`.
 
 ## Backend Integration
 
-- Backend API base URL and proxy are configured via environment files:
-  - `src/environments/environment.ts` (dev): `apiUrl: '/api'`, `backendProxy: 'http://localhost:8080'`
-  - `src/environments/environment.prod.ts` (prod): `apiUrl: '/api'`
-- All API calls go through dedicated services encapsulating API logic
-- Handle HTTP errors centrally (e.g., via interceptor)
-- In development, Express server proxies `/api/*` to `environment.backendProxy` (default: `http://localhost:8080`)
-- In production, nginx handles `/api/*` routing before requests reach Express
+Backend API base URL: `/api`
 
-## Authentication
+### Authentication
 
-See `backend/internal/auth/README_UI.md` for API contract.
-
-**Important**: Backend uses HTTP-only cookies for both `access_token` and `refresh_token`. No manual `Authorization: Bearer` header management is needed — cookies are sent automatically by the browser.
+Backend uses HTTP-only cookies for authentication:
+- `access_token` and `refresh_token` cookies
+- Cookies are sent automatically by the browser
 
 ### Auth Flow
 
 1. **Login**: `POST /api/auth/login` with `{ "login": "...", "password": "..." }`
-   - Response: `{ "user": { "id", "login", "roles" } }`
-   - `access_token` and `refresh_token` are set in HTTP-only cookies by the backend
-   - No client-side token storage
+2. **Protected Requests**: Cookies sent automatically
+3. **Logout**: `POST /api/auth/logout`
+4. **Get Current User**: `GET /api/auth/user`
 
-2. **Protected Requests**: Cookies are sent automatically. No manual headers needed.
+### API Service Pattern
 
-3. **Token Refresh**: Automatic transparent refresh by backend.
-   - If `access_token` is invalid, backend uses `refresh_token` to generate new tokens.
-   - New cookies are set in the response (token rotation).
-   - Manual `POST /api/auth/refresh` available but rarely needed.
+Create services in `src/lib/api/` to encapsulate API logic:
 
-4. **Logout**: `POST /api/auth/logout` (cookies sent automatically)
-   - Backend clears both cookies
-   - No client-side cleanup needed
+```typescript
+// src/lib/api/auth.ts
+async function login(data: { login: string; password: string }) {
+  const res = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+    credentials: 'include',
+  });
+  if (!res.ok) throw new Error('Login failed');
+  return res.json();
+}
+```
 
-5. **Get Current User**: `GET /api/auth/user` (cookie sent automatically)
-   - Response: `{ "user": {...} }` or `{ "user": null }`
+## Environment
 
-### SSR (Server-Side Rendering)
+Development server: `http://localhost:3000`
+Backend API: `http://localhost:8080`
 
-- Express proxy **must forward** `Cookie` header from browser request to backend (`proxyReq.setHeader('Cookie', req.headers.cookie)`)
-- Backend handles token refresh transparently — `authInterceptor` only captures `Set-Cookie` headers on 401 and forwards them via `REQUEST_CONTEXT` to Express
-- Captured `Set-Cookie` headers are accumulated in `REQUEST_CONTEXT` and forwarded to the browser response by Express
+## Running Scripts
 
-### Auth Service Pattern
-
-- `AuthApiService` with methods: `login`, `logout`, `getCurrentUser`
-- `authInterceptor` — captures `Set-Cookie` headers on 401 in SSR and forwards to browser
-- Backend `TransparentRefreshMiddleware` handles all token validation and refresh transparently
-
-### Error Handling
-
-| Status | Meaning | UI Action |
-|--------|---------|-----------|
-| 401 | Both tokens invalid, session expired | Backend refreshes automatically; if seen by UI, show login |
-| 403 | Forbidden | Show "Access denied" message |
-| 500 | Server error | Show generic error message |
+```bash
+npm run dev       # Start development server
+npm run build     # Build for production
+npm run start     # Start production server
+npm run lint      # Run ESLint
+npm run test      # Run tests in watch mode
+npm run test:run  # Run tests once (CI mode)
+```
 
 ## Testing
 
-### Test Setup & Polyfills
+### Framework
 
-- Test setup file: `src/test-setup.ts` — contains polyfills required by Taiga UI
-- Polyfills included:
-  - `window.matchMedia` mock — Taiga UI uses for responsive design
-  - `window.IntersectionObserver` mock — used by infinite scrolls, dropdowns, etc.
-  - `window.ResizeObserver` mock — used by Taiga UI for menu size calculations
-- This file is automatically loaded in `angular.json` under `test.options.setupFiles`
-- If adding tests that use Taiga UI components, ensure `test-setup.ts` is configured in angular.json
+- **Vitest** for unit/integration tests
+- **React Testing Library** for component tests
+- **jsdom** as test environment
 
-### Running Tests
+### Writing Tests
 
-- `npm test` runs all specs via Vitest
-- Backend must be running for tests that make HTTP calls to `/api/auth/user`
-- "Unhandled Errors" for `HttpErrorResponse: 0 Unknown Error` are expected when backend is not running
+Test files should be named `*.test.tsx` or `*.spec.tsx` and placed next to the code being tested.
+
+```tsx
+// src/components/Button.test.tsx
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import { Button } from './Button';
+
+describe('Button', () => {
+  it('renders children', () => {
+    render(<Button>Click me</Button>);
+    expect(screen.getByText('Click me')).toBeInTheDocument();
+  });
+});
+```
+
+### Best Practices
+
+- Test behavior, not implementation details
+- Use `screen` queries for finding elements
+- Use `userEvent` for user interactions (install separately: `npm install -D @testing-library/user-event`)
+- Avoid testing internal state; test rendered output
+- Keep tests close to the code they test (co-location)

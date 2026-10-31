@@ -1,59 +1,58 @@
-# Frontend
+# Jellybloggo Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.11.
+React + Next.js frontend for Jellybloggo blog platform.
 
-## Development server
+## Tech Stack
 
-To start a local development server, run:
+- **Framework**: Next.js 16 (App Router)
+- **UI**: React 19 + Tailwind CSS 4
+- **Components**: shadcn/ui
+- **Language**: TypeScript
 
-```bash
-ng serve
-```
-
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Getting Started
 
 ```bash
-ng generate component component-name
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Start production server
+npm run start
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Development
+
+- Frontend runs on http://localhost:3000
+- Backend API should be running on http://localhost:8080
+- API proxy is configured in `next.config.ts`
+
+## Adding Components
 
 ```bash
-ng generate --help
+# Add a shadcn/ui component
+npx shadcn@latest add button
+
+# This copies the component to src/components/ui/
 ```
 
-## Building
+## Testing
 
-To build the project run:
+Uses Vitest + React Testing Library.
 
 ```bash
-ng build
+npm run test      # Watch mode
+npm run test:run  # Single run
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Learn More
 
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- [Next.js Documentation](https://nextjs.org/docs)
+- [shadcn/ui](https://ui.shadcn.com/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Vitest](https://vitest.dev/)
+- [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)

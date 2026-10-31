@@ -1,0 +1,4 @@
+{
+  "$schema": "https://tailwindcss.com/tailwind-4.schema.json",
+  "content": ["./src/**/*.{ts,tsx}"]
+}
