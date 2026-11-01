@@ -1,1 +1,0 @@
-export { getBaseUrl, createFetchOptions } from "./client";

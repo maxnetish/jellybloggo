@@ -1,16 +1,24 @@
 /**
  * Authentication API client.
  *
- * Uses HTTP-only cookies for authentication (access_token, refresh_token).
- * Cookies are automatically sent with each request.
+ * Browser-only service: talks to the backend through the Next.js proxy
+ * (`/api/*` → backend, see `next.config.ts` rewrites). Authentication is
+ * carried by HTTP-only cookies (access_token, refresh_token) which the
+ * browser attaches to every request automatically.
  *
- * @see https://github.com/your-org/jellybloggo/blob/main/backend/internal/auth/README_UI.md
+ * This is the only place in the app that knows how auth endpoints are
+ * called. Components and the auth context must go through these functions.
+ *
+ * @see backend/internal/auth/README_UI.md
  */
 
-import type { LoginRequest } from "./dto";
-import type { UserResponse } from "./dto";
+import type { LoginRequest, User, UserResponse } from "./dto";
 import { ApiError, parseApiError } from "./errors";
-import { getBaseUrl, createFetchOptions } from "@/lib/api/client";
+
+/** Options shared by every auth request. */
+const defaultOptions: RequestInit = {
+  credentials: "include",
+};
 
 /**
  * Login user.
@@ -18,22 +26,20 @@ import { getBaseUrl, createFetchOptions } from "@/lib/api/client";
  * Sends credentials to the backend. On success, backend sets
  * HTTP-only cookies (access_token, refresh_token).
  *
- * @see https://github.com/your-org/jellybloggo/blob/main/backend/internal/auth/README_UI.md
- *      "POST /api/auth/login"
+ * @see backend/internal/auth/README_UI.md "POST /api/auth/login"
  *
  * @param {LoginRequest} data - Login credentials
  * @returns {Promise<User>} Logged in user info
  * @throws {ApiError} If login fails (non-2xx response)
  */
-export async function login(data: LoginRequest, serverCookies?: string): Promise<NonNullable<UserResponse["user"]>> {
-  const baseUrl = getBaseUrl();
-  const response = await fetch(`${baseUrl}/api/auth/login`, {
+export async function login(data: LoginRequest): Promise<User> {
+  const response = await fetch("/api/auth/login", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
-    ...createFetchOptions(serverCookies),
+    ...defaultOptions,
   });
 
   if (!response.ok) {
@@ -53,16 +59,15 @@ export async function login(data: LoginRequest, serverCookies?: string): Promise
  *
  * Clears authentication cookies on the backend.
  *
- * @see https://github.com/your-org/jellybloggo/blob/main/backend/internal/auth/README_UI.md
- *      "POST /api/auth/logout"
+ * @see backend/internal/auth/README_UI.md "POST /api/auth/logout"
  *
  * @returns {Promise<void>}
+ * @throws {Error} If the request fails (non-2xx response)
  */
-export async function logout(serverCookies?: string): Promise<void> {
-  const baseUrl = getBaseUrl();
-  const response = await fetch(`${baseUrl}/api/auth/logout`, {
+export async function logout(): Promise<void> {
+  const response = await fetch("/api/auth/logout", {
     method: "POST",
-    ...createFetchOptions(serverCookies),
+    ...defaultOptions,
   });
 
   if (!response.ok) {
@@ -76,16 +81,14 @@ export async function logout(serverCookies?: string): Promise<void> {
  * Returns null if user is not authenticated.
  * This function does NOT throw on 401 or when user is not logged in.
  *
- * @see https://github.com/your-org/jellybloggo/blob/main/backend/internal/auth/README_UI.md
- *      "GET /api/auth/user"
+ * @see backend/internal/auth/README_UI.md "GET /api/auth/user"
  *
  * @returns {Promise<User | null>} User info or null if not authenticated
  */
-export async function getUser(serverCookies?: string): Promise<UserResponse["user"] | null> {
-  const baseUrl = getBaseUrl();
-  const response = await fetch(`${baseUrl}/api/auth/user`, {
+export async function getUser(): Promise<User | null> {
+  const response = await fetch("/api/auth/user", {
     method: "GET",
-    ...createFetchOptions(serverCookies),
+    ...defaultOptions,
   });
 
   if (!response.ok) {

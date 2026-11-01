@@ -13,6 +13,7 @@ data/
 .vscode/
 .opencode/
 *.swp
+.agents/
 
 # OS
 .DS_Store

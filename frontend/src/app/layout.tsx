@@ -1,13 +1,19 @@
-"use client";
-
 /**
- * Layout — корневой макет приложения.
- * Клиентский компонент, так как auth загружается клиентским fetch.
+ * Layout — корневой макет приложения. Server Component.
+ *
+ * AuthProvider (client component) подключается на страницах, которым нужна
+ * сессия: при cacheComponents клиентский state в корневом layout сделал бы
+ * все страницы блокирующими для пререндера (CLIENT_HOOK_DYNAMIC).
  */
 
+import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { UserLoader } from "@/components/auth/user-loader";
 import "./globals.css";
+
+export const metadata: Metadata = {
+  title: "Jellybloggo",
+  description: "A blog application",
+};
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,9 +31,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <UserLoader>{children}</UserLoader>
-      </body>
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }
