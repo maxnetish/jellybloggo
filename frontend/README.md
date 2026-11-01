@@ -6,7 +6,7 @@ React + Next.js frontend for Jellybloggo blog platform.
 
 - **Framework**: Next.js 16 (App Router)
 - **UI**: React 19 + Tailwind CSS 4
-- **Components**: shadcn/ui
+- **Components**: Base UI (native HTML + Tailwind, copy-paste)
 - **Language**: TypeScript
 
 ## Getting Started
@@ -29,16 +29,29 @@ npm run start
 
 - Frontend runs on http://localhost:3000
 - Backend API should be running on http://localhost:8080
-- API proxy is configured in `next.config.ts`
+- API proxy is configured in `next.config.ts` (requests to `/api/*` are forwarded to backend)
 
-## Adding Components
+## Project Structure
 
-```bash
-# Add a shadcn/ui component
-npx shadcn@latest add button
-
-# This copies the component to src/components/ui/
 ```
+src/
+├── app/                    # Next.js App Router pages
+│   ├── login/              # Login page
+│   ├── layout.tsx          # Root layout with AuthProvider
+│   └── page.tsx           # Home page
+├── components/ui/          # Base UI components (Button, Card, Input, Label, etc.)
+└── lib/
+    ├── api/auth/           # Auth API client and DTOs
+    │   ├── client.ts       # login(), logout(), getUser()
+    │   └── dto/           # TypeScript DTOs with JSDoc
+    ├── auth/              # Auth context and provider
+    └── utils.ts           # cn() utility for Tailwind classes
+```
+
+## Components
+
+UI components are built with native HTML elements + Tailwind CSS.
+Components are copy-pasted into `src/components/ui/` — no external component libraries.
 
 ## Testing
 
@@ -52,7 +65,6 @@ npm run test:run  # Single run
 ## Learn More
 
 - [Next.js Documentation](https://nextjs.org/docs)
-- [shadcn/ui](https://ui.shadcn.com/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [Vitest](https://vitest.dev/)
 - [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)

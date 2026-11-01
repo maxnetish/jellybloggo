@@ -13,7 +13,7 @@ You are an expert in TypeScript, React, Next.js, and scalable web application de
 - **Framework**: Next.js 16 with App Router
 - **UI**: React 19
 - **Styling**: Tailwind CSS 4
-- **Components**: shadcn/ui (copy-paste approach)
+- **Components**: Base UI (copy-paste approach, native HTML + Tailwind)
 - **Language**: TypeScript (strict mode)
 - **Testing**: Vitest + React Testing Library
 
@@ -56,18 +56,39 @@ You are an expert in TypeScript, React, Next.js, and scalable web application de
 ## Components
 
 - Components go in `src/components/`
-- UI components (shadcn/ui) go in `src/components/ui/`
+- UI components (Base UI style) go in `src/components/ui/`
 - Use `'use client'` only when necessary
 
-## shadcn/ui
+## Base UI Components
 
-Components are copy-pasted into the project. To add a component:
+Components are copy-pasted into the project using native HTML elements + Tailwind CSS.
+No external component libraries (Radix, etc.) — only lightweight utils (`clsx`, `tailwind-merge`).
 
-```bash
-npx shadcn@latest add button
+To add a component:
+1. Create the component in `src/components/ui/<component-name>.tsx`
+2. Use native HTML elements with Tailwind classes
+3. Use `cn()` utility from `@/lib/utils` for class merging
+
+Example:
+```tsx
+// src/components/ui/button.tsx
+import { cn } from "@/lib/utils";
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, ...props }, ref) => {
+    return (
+      <button
+        className={cn(
+          "inline-flex items-center justify-center rounded-md text-sm font-medium...",
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
 ```
-
-This copies the component code to `src/components/ui/button.tsx`.
 
 ## Backend Integration
 

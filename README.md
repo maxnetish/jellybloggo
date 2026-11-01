@@ -5,7 +5,7 @@
 | Директория | Назначение |
 |-----------|-----------|
 | `backend/` | Go API сервер (chi, SQLite, JWT) — см. [backend/README.md](backend/README.md) |
-| `frontend/` | Angular SPA с SSR для UI — см. [frontend/README.md](frontend/README.md) |
+| `frontend/` | Next.js 16 SPA с SSR для UI — см. [frontend/README.md](frontend/README.md) |
 
 ### Быстрый старт
 
@@ -17,7 +17,7 @@ just run                # собрать и запустить API на :8080
 
 # Frontend (в отдельном терминале)
 cd frontend
-npm start               # SSR dev server на :4000
+npm run dev             # dev server на :3000
 ```
 
 ### Требования
