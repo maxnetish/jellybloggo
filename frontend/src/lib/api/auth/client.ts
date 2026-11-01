@@ -10,6 +10,7 @@
 import type { LoginRequest } from "./dto";
 import type { UserResponse } from "./dto";
 import { ApiError, parseApiError } from "./errors";
+import { getBaseUrl, createFetchOptions } from "@/lib/api/client";
 
 /**
  * Login user.
@@ -24,15 +25,15 @@ import { ApiError, parseApiError } from "./errors";
  * @returns {Promise<User>} Logged in user info
  * @throws {ApiError} If login fails (non-2xx response)
  */
-export async function login(data: LoginRequest): Promise<NonNullable<UserResponse["user"]>> {
-  
-  const response = await fetch("/api/auth/login", {
+export async function login(data: LoginRequest, serverCookies?: string): Promise<NonNullable<UserResponse["user"]>> {
+  const baseUrl = getBaseUrl();
+  const response = await fetch(`${baseUrl}/api/auth/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
-    credentials: "include",
+    ...createFetchOptions(serverCookies),
   });
 
   if (!response.ok) {
@@ -57,10 +58,11 @@ export async function login(data: LoginRequest): Promise<NonNullable<UserRespons
  *
  * @returns {Promise<void>}
  */
-export async function logout(): Promise<void> {
-  const response = await fetch("/api/auth/logout", {
+export async function logout(serverCookies?: string): Promise<void> {
+  const baseUrl = getBaseUrl();
+  const response = await fetch(`${baseUrl}/api/auth/logout`, {
     method: "POST",
-    credentials: "include",
+    ...createFetchOptions(serverCookies),
   });
 
   if (!response.ok) {
@@ -79,10 +81,11 @@ export async function logout(): Promise<void> {
  *
  * @returns {Promise<User | null>} User info or null if not authenticated
  */
-export async function getUser(): Promise<UserResponse['user'] | null> {
-  const response = await fetch("/api/auth/user", {
+export async function getUser(serverCookies?: string): Promise<UserResponse["user"] | null> {
+  const baseUrl = getBaseUrl();
+  const response = await fetch(`${baseUrl}/api/auth/user`, {
     method: "GET",
-    credentials: "include",
+    ...createFetchOptions(serverCookies),
   });
 
   if (!response.ok) {

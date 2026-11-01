@@ -31,6 +31,18 @@ npm run start
 - Backend API should be running on http://localhost:8080
 - API proxy is configured in `next.config.ts` (requests to `/api/*` are forwarded to backend)
 
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8080` | Backend API URL for Server-Side Rendering (SSR). On the client side, requests use relative URLs through the proxy. |
+
+Create `.env.local` in the frontend directory to override defaults:
+
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:8080
+```
+
 ## Project Structure
 
 ```

@@ -14,6 +14,14 @@ import { AuthProvider } from '@/lib/auth';
 import { getUser } from '@/lib/api/auth';
 import './globals.css';
 
+/** Get cookies string for SSR API calls */
+async function getServerCookies(): Promise<string> {
+  const cookieStore = await cookies();
+  return cookieStore.getAll()
+    .map(c => `${c.name}=${c.value}`)
+    .join('; ');
+}
+
 // Загружаем основной шрифт (заменит system-ui)
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -49,9 +57,9 @@ export default async function RootLayout({ children }: LayoutProps<'/'>) {
   const accessToken = cookieStore.get('access_token');
 
   // Если есть токен — получаем данные пользователя
-  // NOTE: Для работы SSR требуется настроенное проксирование в next.config.ts
-  // и чтобы backend был доступен по /api/*
-  const user = accessToken ? await getUser() : null;
+  // NOTE: Для SSR нужно передавать cookies в fetch вручную
+  const serverCookies = accessToken ? await getServerCookies() : undefined;
+  const user = accessToken ? await getUser(serverCookies) : null;
 
   return (
     // <html> — корневой элемент. lang — для accessibility.

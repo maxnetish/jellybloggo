@@ -10,6 +10,7 @@ import { login } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/auth/errors";
 import { ErrorCodes } from "@/lib/api/dto";
 
+export { LoginPage as default };
 export function LoginPage() {
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);

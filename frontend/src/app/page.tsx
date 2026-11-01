@@ -12,6 +12,8 @@
  * ✓ Код выполняется на сервере, HTML отдаётся готовым
  */
 
+import { UserInfo } from "@/components/user";
+
 /**
  * Каждый page.tsx экспортирует компонент по умолчанию (default export).
  * Next.js использует его как содержимое route.
@@ -24,6 +26,11 @@ export default function Home() {
      * Этот синтаксис работает потому что tailwind настроен в проекте.
      */
     <main className='flex min-h-screen flex-col items-center justify-center p-24'>
+      {/* UserInfo widget — Client Component, показывает login/logout */}
+      <div className='absolute top-4 right-4'>
+        <UserInfo />
+      </div>
+
       {/* <h1> — заголовок первого уровня */}
       <h1 className='text-4xl font-bold'>Hello World!</h1>
 
@@ -42,6 +49,10 @@ export default function Home() {
  * items-center  — align-items: center
  * justify-center — justify-content: center
  * p-24          — padding: 6rem (96px)
+ *
+ * absolute      — позиционирование
+ * top-4         — top: 1rem
+ * right-4       — right: 1rem
  *
  * text-4xl      — font-size: 2.25rem
  * font-bold     — font-weight: 700
