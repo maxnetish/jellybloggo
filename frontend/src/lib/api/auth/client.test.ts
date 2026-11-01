@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { login, logout, getUser } from "./client";
+import { ApiError } from "./errors";
 
 describe("auth client", () => {
   let fetchMock: ReturnType<typeof vi.fn>;
@@ -41,15 +42,22 @@ describe("auth client", () => {
       expect(user).toEqual({ id: "1", login: "admin", roles: ["admin"] });
     });
 
-    it("throws error on non-ok response", async () => {
+    it("throws ApiError on non-ok response", async () => {
       fetchMock.mockResolvedValueOnce({
         ok: false,
         status: 401,
+        json: () => Promise.resolve({ error: "invalid credentials", code: "INVALID_CREDENTIALS" }),
       });
 
-      await expect(login({ login: "bad", password: "creds" })).rejects.toThrow(
-        "Login failed: 401"
-      );
+      try {
+        await login({ login: "bad", password: "creds" });
+        expect.fail("Should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(ApiError);
+        expect((err as ApiError).message).toBe("invalid credentials");
+        expect((err as ApiError).code).toBe("INVALID_CREDENTIALS");
+        expect((err as ApiError).status).toBe(401);
+      }
     });
 
     it("throws error when user is missing in response", async () => {

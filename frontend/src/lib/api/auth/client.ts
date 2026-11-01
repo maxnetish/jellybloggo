@@ -9,6 +9,7 @@
 
 import type { LoginRequest } from "./dto";
 import type { UserResponse } from "./dto";
+import { ApiError, parseApiError } from "./errors";
 
 /**
  * Login user.
@@ -21,9 +22,10 @@ import type { UserResponse } from "./dto";
  *
  * @param {LoginRequest} data - Login credentials
  * @returns {Promise<User>} Logged in user info
- * @throws {Error} If login fails (non-2xx response)
+ * @throws {ApiError} If login fails (non-2xx response)
  */
-export async function login(data: LoginRequest): Promise<UserResponse['user']> {
+export async function login(data: LoginRequest): Promise<NonNullable<UserResponse["user"]>> {
+  
   const response = await fetch("/api/auth/login", {
     method: "POST",
     headers: {
@@ -34,12 +36,12 @@ export async function login(data: LoginRequest): Promise<UserResponse['user']> {
   });
 
   if (!response.ok) {
-    throw new Error(`Login failed: ${response.status}`);
+    throw await parseApiError(response);
   }
 
   const result: UserResponse = await response.json();
   if (!result.user) {
-    throw new Error("Login response missing user");
+    throw new ApiError("Login response missing user", "INTERNAL_ERROR", 500);
   }
 
   return result.user;
