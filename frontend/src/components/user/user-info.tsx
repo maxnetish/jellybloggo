@@ -8,12 +8,27 @@ export function UserInfo() {
 
   if (user) {
     const displayName = user.full_name || user.login;
+
+    // Logout через клиентский fetch: убирает cookies на бэкенде,
+    // затем полная перезагрузка документа на "/".
+    // window.location (а не router.push) нужен, чтобы сбросить
+    // клиентское состояние React (AuthProvider) после logout.
+    async function handleLogout() {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+      // Полная перезагрузка документа (не router.push) — нужна для сброса
+      // клиентского состояния (AuthProvider) после logout.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.href = "/";
+    }
+
     return (
       <button
-        onClick={() => {
-          /* TODO: logout action */
-        }}
-        className="text-sm text-gray-600 hover:text-gray-900"
+        type="button"
+        onClick={handleLogout}
+        className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer"
       >
         {displayName}
       </button>

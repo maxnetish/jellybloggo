@@ -1,24 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { login } from "@/lib/api/auth";
-import { ApiError } from "@/lib/api/auth/errors";
-import { ErrorCodes } from "@/lib/api/dto";
 
 export { LoginPage as default };
 export function LoginPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const nextUrl = searchParams.get("next") || "/";
 
-  async function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
@@ -26,28 +24,40 @@ export function LoginPage() {
     const form = e.currentTarget;
     const formData = new FormData(form);
 
-    const loginValue = formData.get("login") as string;
-    const password = formData.get("password") as string;
+    const loginData = {
+      login: formData.get("login") as string,
+      password: formData.get("password") as string,
+    };
 
     try {
-      await login({ login: loginValue, password });
-      // Full page reload to refresh auth state
-      window.location.href = nextUrl;
-    } catch (err) {
-      if (err instanceof ApiError) {
-        switch (err.code) {
-          case ErrorCodes.INVALID_CREDENTIALS:
-            setError("Invalid login or password");
-            break;
-          case ErrorCodes.VALIDATION:
-            setError("Please check your input");
-            break;
-          default:
-            setError(err.message || "Login failed");
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(loginData),
+      });
+
+      if (!res.ok) {
+        let errorMessage = "Login failed";
+        try {
+          const err = await res.json();
+          if (err.code === "INVALID_CREDENTIALS") {
+            errorMessage = "Invalid login or password";
+          } else if (err.error) {
+            errorMessage = err.error;
+          }
+        } catch {
+          // Use default message
         }
-      } else {
-        setError("An unexpected error occurred");
+        setError(errorMessage);
+        return;
       }
+
+      // Cookies are set by the server response
+      // Redirect to next page
+      router.push(nextUrl);
+    } catch {
+      setError("Network error. Please try again.");
     } finally {
       setIsLoading(false);
     }

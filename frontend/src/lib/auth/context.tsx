@@ -19,8 +19,8 @@ const AuthContext = createContext<AuthContextValue | null>(null);
  * AuthProvider props.
  */
 export interface AuthProviderProps {
-  /** Initial user data fetched on the server. Can be null if not authenticated. */
-  user: User | null;
+  /** User data. Can be null if not authenticated. */
+  user?: User | null;
   children: ReactNode;
 }
 

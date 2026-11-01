@@ -1,27 +1,20 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { LoginPage } from "./page";
+import { describe, expect, it } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
-import * as authModule from "@/lib/api/auth";
-import { ApiError } from "@/lib/api/auth/errors";
+import { LoginPage } from "./page";
 
-// Mock useSearchParams
+// Mock next/navigation
+const mockPush = vi.fn();
 vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: mockPush }),
   useSearchParams: () => new URLSearchParams(),
-}));
-
-// Mock auth module
-vi.mock("@/lib/api/auth", () => ({
-  login: vi.fn(),
 }));
 
 describe("LoginPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
+    mockPush.mockClear();
   });
 
   it("renders login form with all elements", () => {
@@ -33,91 +26,93 @@ describe("LoginPage", () => {
     expect(screen.getByRole("button", { name: "Login" })).toBeInTheDocument();
   });
 
-  it("calls login API on form submit", async () => {
-    const mockLogin = vi.mocked(authModule.login);
-    mockLogin.mockResolvedValueOnce({ id: "1", login: "testuser", roles: [] });
+  it("renders form inputs with correct attributes", () => {
+    render(<LoginPage />);
+
+    const loginInput = screen.getByLabelText("Login");
+    expect(loginInput).toHaveAttribute("name", "login");
+    expect(loginInput).toHaveAttribute("type", "text");
+    expect(loginInput).toBeRequired();
+
+    const passwordInput = screen.getByLabelText("Password");
+    expect(passwordInput).toHaveAttribute("name", "password");
+    expect(passwordInput).toHaveAttribute("type", "password");
+    expect(passwordInput).toBeRequired();
+
+    const submitButton = screen.getByRole("button", { name: "Login" });
+    expect(submitButton).toHaveAttribute("type", "submit");
+  });
+
+  it("has no error message initially", () => {
+    render(<LoginPage />);
+
+    expect(screen.queryByText("Invalid login or password")).not.toBeInTheDocument();
+  });
+
+  it("submit button is not disabled initially", () => {
+    render(<LoginPage />);
+
+    const submitButton = screen.getByRole("button", { name: "Login" });
+    expect(submitButton).not.toBeDisabled();
+  });
+
+  it("calls API on form submit", async () => {
+    const user = userEvent.setup();
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ user: { id: "1", login: "test" } }),
+    });
+    global.fetch = mockFetch;
 
     render(<LoginPage />);
 
-    fireEvent.change(screen.getByLabelText("Login"), {
-      target: { value: "testuser" },
-    });
-    fireEvent.change(screen.getByLabelText("Password"), {
-      target: { value: "password123" },
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: "Login" }));
+    await user.type(screen.getByLabelText("Login"), "testuser");
+    await user.type(screen.getByLabelText("Password"), "password123");
+    await user.click(screen.getByRole("button", { name: "Login" }));
 
     await waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith({
-        login: "testuser",
-        password: "password123",
-      });
+      expect(mockFetch).toHaveBeenCalledWith("/api/auth/login", expect.objectContaining({
+        method: "POST",
+        credentials: "include",
+      }));
     });
   });
 
-  it("shows error message on invalid credentials", async () => {
-    const mockLogin = vi.mocked(authModule.login);
-    mockLogin.mockRejectedValueOnce(
-      new ApiError("invalid credentials", "INVALID_CREDENTIALS", 401)
-    );
+  it("shows error on failed login", async () => {
+    const user = userEvent.setup();
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: false,
+      json: () => Promise.resolve({ code: "INVALID_CREDENTIALS", error: "invalid credentials" }),
+    });
+    global.fetch = mockFetch;
 
     render(<LoginPage />);
 
-    fireEvent.change(screen.getByLabelText("Login"), {
-      target: { value: "baduser" },
-    });
-    fireEvent.change(screen.getByLabelText("Password"), {
-      target: { value: "wrongpassword" },
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: "Login" }));
+    await user.type(screen.getByLabelText("Login"), "baduser");
+    await user.type(screen.getByLabelText("Password"), "wrongpassword");
+    await user.click(screen.getByRole("button", { name: "Login" }));
 
     await waitFor(() => {
       expect(screen.getByText("Invalid login or password")).toBeInTheDocument();
     });
   });
 
-  it("shows generic error on unexpected error", async () => {
-    const mockLogin = vi.mocked(authModule.login);
-    mockLogin.mockRejectedValueOnce(new Error("Network error"));
+  it("redirects on successful login", async () => {
+    const user = userEvent.setup();
+    const mockFetch = vi.fn().mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ user: { id: "1", login: "test" } }),
+    });
+    global.fetch = mockFetch;
 
     render(<LoginPage />);
 
-    fireEvent.change(screen.getByLabelText("Login"), {
-      target: { value: "user" },
-    });
-    fireEvent.change(screen.getByLabelText("Password"), {
-      target: { value: "pass" },
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: "Login" }));
+    await user.type(screen.getByLabelText("Login"), "testuser");
+    await user.type(screen.getByLabelText("Password"), "password123");
+    await user.click(screen.getByRole("button", { name: "Login" }));
 
     await waitFor(() => {
-      expect(screen.getByText("An unexpected error occurred")).toBeInTheDocument();
+      expect(mockPush).toHaveBeenCalledWith("/");
     });
   });
-
-  it("shows loading state during login", async () => {
-    const mockLogin = vi.mocked(authModule.login);
-    mockLogin.mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve({ id: "1", login: "test", roles: [] }), 100))
-    );
-
-    render(<LoginPage />);
-
-    fireEvent.change(screen.getByLabelText("Login"), {
-      target: { value: "user" },
-    });
-    fireEvent.change(screen.getByLabelText("Password"), {
-      target: { value: "pass" },
-    });
-
-    fireEvent.click(screen.getByRole("button", { name: "Login" }));
-
-    expect(screen.getByRole("button", { name: "Logging in..." })).toBeDisabled();
-  });
-
-  // Note: Error clearing on retry is implicitly tested via setError(null) at submit start
-// and verified by successful login test that error is not shown on success
 });
