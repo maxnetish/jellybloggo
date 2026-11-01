@@ -77,12 +77,16 @@ type UpdateProfileRequest struct {
 	About *string `json:"about,omitempty" v8:"omitempty,max=4096"`
 }
 
+// LoginResponse возвращает полную форму пользователя (users.UserResponse,
+// как у GET /api/auth/user): у users.User профильные поля скрыты тегами
+// json:"-", и клиент после логина недополучал бы full_name и т.п.
 type LoginResponse struct {
-	User *users.User `json:"user"`
+	User *users.UserResponse `json:"user"`
 }
 
+// RefreshResponse возвращает полную форму пользователя (см. LoginResponse).
 type RefreshResponse struct {
-	User *users.User `json:"user"`
+	User *users.UserResponse `json:"user"`
 }
 
 type UserResponse struct {

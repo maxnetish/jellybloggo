@@ -107,8 +107,9 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 
+	resp := users.UserToResponse(user)
 	validation.RespondJSON(w, http.StatusOK, LoginResponse{
-		User: user,
+		User: &resp,
 	})
 }
 
@@ -169,8 +170,9 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 
+	resp := users.UserToResponse(user)
 	validation.RespondJSON(w, http.StatusOK, LoginResponse{
-		User: user,
+		User: &resp,
 	})
 }
 
@@ -427,8 +429,9 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.Header().Set("Content-Type", "application/json")
+	resp := users.UserToResponse(user)
 	json.NewEncoder(w).Encode(RefreshResponse{
-		User: user,
+		User: &resp,
 	})
 }
 

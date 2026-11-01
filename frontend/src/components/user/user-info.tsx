@@ -6,12 +6,13 @@ import { useAuth } from "@/lib/auth";
 /**
  * Auth widget: shows the logged-in user (click to logout) or a login link.
  * Reads the session from AuthProvider — no direct API calls here.
+ * Renders nothing while the session is not yet resolved.
  */
 export function UserInfo() {
   const { user, status, logout } = useAuth();
 
   if (status === "loading") {
-    return <div className="h-5 w-20 animate-pulse rounded bg-zinc-200" />;
+    return null;
   }
 
   if (!user) {

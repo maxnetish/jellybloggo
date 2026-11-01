@@ -112,7 +112,9 @@ describe("AuthProvider", () => {
       expect(screen.getByTestId("user-info")).toHaveTextContent("Not logged in");
     });
 
-    it("settles on authenticated state under StrictMode double mount", async () => {
+    it("fires exactly ONE /api/auth/user request under StrictMode double mount", async () => {
+      // StrictMode mount → unmount → mount runs this effect twice; the
+      // in-flight request ref must deduplicate them into a single fetch.
       fetchMock.mockImplementation(() =>
         Promise.resolve(jsonResponse(true, { user: mockUser })),
       );
@@ -128,6 +130,11 @@ describe("AuthProvider", () => {
       await waitFor(() => {
         expect(screen.getByTestId("status")).toHaveTextContent("authenticated");
       });
+
+      const userRequests = fetchMock.mock.calls.filter(
+        ([url]) => url === "/api/auth/user",
+      );
+      expect(userRequests).toHaveLength(1);
       expect(screen.getByTestId("user-info")).toHaveTextContent("Logged in as admin");
     });
   });

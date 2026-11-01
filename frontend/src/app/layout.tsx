@@ -1,13 +1,15 @@
 /**
  * Layout — корневой макет приложения. Server Component.
  *
- * AuthProvider (client component) подключается на страницах, которым нужна
- * сессия: при cacheComponents клиентский state в корневом layout сделал бы
- * все страницы блокирующими для пререндера (CLIENT_HOOK_DYNAMIC).
+ * AuthProvider (client component) монтируется здесь один раз: layout
+ * сохраняется при клиентской навигации, поэтому сессия не сбрасывается
+ * при переходах между страницами, а login/logout мгновенно отражаются
+ * в UI на любом роуте.
  */
 
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { AuthProvider } from "@/lib/auth";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -31,7 +33,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

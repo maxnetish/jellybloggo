@@ -1086,7 +1086,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "user": {
-                    "$ref": "#/definitions/users.User"
+                    "$ref": "#/definitions/users.UserResponse"
                 }
             }
         },
@@ -1094,7 +1094,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "user": {
-                    "$ref": "#/definitions/users.User"
+                    "$ref": "#/definitions/users.UserResponse"
                 }
             }
         },
@@ -1458,40 +1458,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "time.Time": {
-                    "type": "string"
-                }
-            }
-        },
-        "users.Role": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "users.User": {
-            "type": "object",
-            "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "login": {
-                    "type": "string"
-                },
-                "roles": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/users.Role"
-                    }
-                },
-                "updated_at": {
                     "type": "string"
                 }
             }

@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -24,7 +25,7 @@ export type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 interface AuthContextValue {
   /** Current user, null when not authenticated. */
   user: User | null;
-  /** Session state. `loading` while the initial user fetch is in flight. */
+  /** Session state. `loading` only until the session is first resolved. */
   status: AuthStatus;
   /** Authenticates the user and updates the session. Throws ApiError on failure. */
   login: (data: LoginRequest) => Promise<void>;
@@ -41,11 +42,16 @@ const AuthContext = createContext<AuthContextValue | null>(null);
  * Provides the authentication session to the client components.
  *
  * The provider owns the session state and exposes login/logout actions that
- * update it. State is fetched once from the backend after hydration; after
- * login/logout the state changes reactively — no page reloads needed.
+ * update it reactively. Mount it ONCE in the root layout: the layout persists
+ * across client-side navigations, so the session survives route changes and
+ * login/logout are instantly reflected on every page — without page reloads
+ * and without depending on router-cache freshness.
  *
- * Place it once in the root layout: layouts persist across client-side
- * navigations, so the session survives route changes.
+ * The initial session is resolved with a single client fetch after hydration.
+ * (A server-side bootstrap was tried and removed: with per-page SSR session
+ * reads, the widget's correctness depended on the freshness of cached RSC
+ * payloads, which broke after client-side login. A root-layout SSR read is
+ * possible but would make every route fully dynamic under cacheComponents.)
  *
  * @example
  * ```tsx
@@ -67,13 +73,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [status, setStatus] = useState<AuthStatus>("loading");
 
-  // Load the session once after hydration.
-  // StrictMode-safe: the cleanup flag discards the result of the discarded
-  // first effect run, instead of a ref-guard that suppresses it.
+  // Resolve the session once after hydration.
+  //
+  // React StrictMode (enabled by default in Next.js dev) mounts → unmounts →
+  // mounts every component, firing this effect twice. The in-flight request
+  // is kept in a ref WITHOUT clearing it in the effect cleanup: the second
+  // run must reuse the first run's request instead of firing a duplicate.
+  // That is safe — the ref lives on the provider instance, so a real remount
+  // of AuthProvider naturally starts fresh (nothing is cached globally).
+  const userRequestRef = useRef<Promise<User | null> | null>(null);
+
   useEffect(() => {
     let cancelled = false;
 
-    getUser()
+    userRequestRef.current ??= getUser();
+    const request = userRequestRef.current;
+
+    request
       .then((loaded) => {
         if (cancelled) return;
         setUser(loaded);

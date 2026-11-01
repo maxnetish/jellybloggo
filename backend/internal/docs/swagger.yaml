@@ -47,12 +47,12 @@ definitions:
   auth.LoginResponse:
     properties:
       user:
-        $ref: '#/definitions/users.User'
+        $ref: '#/definitions/users.UserResponse'
     type: object
   auth.RefreshResponse:
     properties:
       user:
-        $ref: '#/definitions/users.User'
+        $ref: '#/definitions/users.UserResponse'
     type: object
   auth.RegisterRequest:
     properties:
@@ -309,28 +309,6 @@ definitions:
   types.Date:
     properties:
       time.Time:
-        type: string
-    type: object
-  users.Role:
-    properties:
-      id:
-        type: integer
-      name:
-        type: string
-    type: object
-  users.User:
-    properties:
-      created_at:
-        type: string
-      id:
-        type: string
-      login:
-        type: string
-      roles:
-        items:
-          $ref: '#/definitions/users.Role'
-        type: array
-      updated_at:
         type: string
     type: object
   users.UserListResponse:

@@ -103,9 +103,22 @@ func runMigrations(db *sql.DB) error {
 			return fmt.Errorf("failed to read migration %s: %w", filename, err)
 		}
 
-		_, err = db.Exec(string(content))
-		if err != nil {
-			return fmt.Errorf("failed to execute migration %s: %w", filename, err)
+		// SQLite has no "ADD COLUMN IF NOT EXISTS". Migrations may have been
+		// amended after their first release (e.g. a column moved into an
+		// earlier CREATE TABLE), so an ADD COLUMN can legitimately target an
+		// existing column on fresh databases. Try each statement and tolerate
+		// duplicate-column errors instead of failing the whole migration.
+		for _, stmt := range strings.Split(string(content), ";") {
+			stmt = strings.TrimSpace(stmt)
+			if stmt == "" {
+				continue
+			}
+			if _, err := db.Exec(stmt); err != nil {
+				if isDuplicateColumnError(err) {
+					continue
+				}
+				return fmt.Errorf("failed to execute migration %s: %w", filename, err)
+			}
 		}
 
 		if err := recordMigration(db, filename); err != nil {
@@ -116,6 +129,12 @@ func runMigrations(db *sql.DB) error {
 	}
 
 	return nil
+}
+
+// isDuplicateColumnError reports whether err is SQLite's "duplicate column
+// name" error (modernc.org/sqlite, errno 1 / SQL logic error).
+func isDuplicateColumnError(err error) bool {
+	return strings.Contains(err.Error(), "duplicate column name")
 }
 
 // createMigrationsTable creates the _migrations table if it doesn't exist.

@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AuthProvider, useAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api/auth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -97,15 +97,14 @@ function LoginFormSkeleton() {
  * Page — страница входа (default export — точка входа роута).
  * Форма в Suspense: useSearchParams доступен только в рантайме,
  * статический шелл страницы пререндерится без неё.
+ * Сессию предоставляет AuthProvider в корневом layout.
  */
 export default function LoginPage() {
   return (
-    <AuthProvider>
-      <main className="flex min-h-screen items-center justify-center">
-        <Suspense fallback={<LoginFormSkeleton />}>
-          <LoginForm />
-        </Suspense>
-      </main>
-    </AuthProvider>
+    <main className="flex min-h-screen items-center justify-center">
+      <Suspense fallback={<LoginFormSkeleton />}>
+        <LoginForm />
+      </Suspense>
+    </main>
   );
 }
