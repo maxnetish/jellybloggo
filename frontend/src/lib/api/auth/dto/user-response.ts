@@ -1,26 +1,15 @@
-/**
- * @typedef {Object} User
- * @see https://github.com/your-org/jellybloggo/blob/main/backend/internal/auth/model.go
- *      "User struct"
- *
- * @property {string} id - Unique user identifier
- * @property {string} login - User login name
- * @property {string[]} roles - User roles (e.g., ["admin", "user"])
- */
+import { User } from '../../user/dto';
 
 /**
  * @typedef {Object} UserResponse
  * @see https://github.com/your-org/jellybloggo/blob/main/backend/internal/auth/model.go
- *      "UserResponse struct"
+ *      "UserResponse struct" (lines 88-90)
  *
- * @property {User | null} user - User info or null if not authenticated
+ * Response wrapper for user-related endpoints.
+ * Returned by GET /api/auth/user.
+ *
+ * @property {User | null} user - User profile data or null if not authenticated
  */
-
-export interface User {
-  id: string;
-  login: string;
-  roles: string[];
-}
 
 export interface UserResponse {
   user: User | null;

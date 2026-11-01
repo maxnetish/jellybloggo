@@ -1,18 +1,20 @@
 /**
  * @typedef {Object} LoginRequest
  * @see https://github.com/your-org/jellybloggo/blob/main/backend/internal/auth/model.go
- *      "LoginRequest struct"
+ *      "LoginRequest struct" (lines 14-21)
  *
- * @property {string} login - User login (username or email)
- * @property {string} password - User password
+ * Request body for user login endpoint.
+ *
+ * @property {string} login - User login (email or username). Required.
+ * @property {string} password - User password. Required, minimum 8 characters.
  */
 
 /**
  * @typedef {Object} LoginResponse
  * @see https://github.com/your-org/jellybloggo/blob/main/backend/internal/auth/model.go
- *      "LoginResponse struct"
+ *      "LoginResponse struct" (lines 80-82)
  *
- * @property {import('./user-response').User} user - Logged in user info
+ * @property {import('../../user/dto').User} user - Logged in user info
  */
 
 export interface LoginRequest {

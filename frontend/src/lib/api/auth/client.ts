@@ -8,7 +8,7 @@
  */
 
 import type { LoginRequest } from "./dto";
-import type { User, UserResponse } from "./dto";
+import type { UserResponse } from "./dto";
 
 /**
  * Login user.
@@ -23,7 +23,7 @@ import type { User, UserResponse } from "./dto";
  * @returns {Promise<User>} Logged in user info
  * @throws {Error} If login fails (non-2xx response)
  */
-export async function login(data: LoginRequest): Promise<User> {
+export async function login(data: LoginRequest): Promise<UserResponse['user']> {
   const response = await fetch("/api/auth/login", {
     method: "POST",
     headers: {
@@ -77,7 +77,7 @@ export async function logout(): Promise<void> {
  *
  * @returns {Promise<User | null>} User info or null if not authenticated
  */
-export async function getUser(): Promise<User | null> {
+export async function getUser(): Promise<UserResponse['user'] | null> {
   const response = await fetch("/api/auth/user", {
     method: "GET",
     credentials: "include",
