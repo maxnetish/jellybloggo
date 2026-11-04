@@ -7,10 +7,10 @@ import {
   Button,
   Paper,
   Stack,
-  Alert,
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
-import { IconAlertCircle } from "@tabler/icons-react";
+import { notifications } from "@mantine/notifications";
+import { IconCheck } from "@tabler/icons-react";
 import { useAuth } from "@/lib/auth";
 import { updateProfile } from "@/lib/api/auth";
 import { applyDtoToProfileForm, profileFormToUpdateDto, useProfileForm } from '@/components/profile/ProfileForm.form';
@@ -22,9 +22,7 @@ interface ProfileFormProps {
 
 export function ProfileForm({ onSuccess }: ProfileFormProps) {
   const { user, updateUser } = useAuth();
-  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSaved, setShowSaved] = useState(false);
 
   const form = useProfileForm();
 
@@ -39,7 +37,6 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
   }, [user]); // form is stable reference from useForm
 
   const handleSubmit = form.onSubmit(async (values) => {
-    setError(null);
     setIsSubmitting(true);
 
     try {
@@ -55,14 +52,21 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
           ...updatedUser,
         });
         form.resetDirty();
-        setShowSaved(true);
+        notifications.show({
+          title: 'Success',
+          message: 'Profile saved successfully',
+          color: 'green',
+          icon: <IconCheck size={16} />,
+          autoClose: 5000,
+        });
         onSuccess?.();
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Failed to save profile');
-      }
+      notifications.show({
+        title: 'Error',
+        message: err instanceof Error ? err.message : 'Failed to save profile',
+        color: 'red',
+        autoClose: 5000,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -76,16 +80,6 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
     <Paper withBorder shadow="md" p="xl" w={500}>
       <form onSubmit={handleSubmit}>
         <Stack gap="md">
-          {error && (
-            <Alert
-              icon={<IconAlertCircle size={16} />}
-              color="red"
-              variant="light"
-            >
-              {error}
-            </Alert>
-          )}
-
           <TextInput
             label="Full name"
             placeholder="Optional full name or nickname"
@@ -122,7 +116,6 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
             type="submit"
             loading={isSubmitting}
             disabled={!form.isDirty()}
-            variant={showSaved ? 'filled' : 'primary'}
           >
             Save
           </Button>
