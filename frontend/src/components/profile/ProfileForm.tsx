@@ -11,17 +11,9 @@ import {
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import { IconAlertCircle } from "@tabler/icons-react";
-import { useForm } from "@mantine/form";
 import { useAuth } from "@/lib/auth";
 import { updateProfile } from "@/lib/api/auth";
-import type { User } from "@/lib/api/auth/dto";
-
-interface ProfileFormValues {
-  full_name: string;
-  birth_date: string | null; // YYYY-MM-DD format from DateInput
-  location: string;
-  about: string;
-}
+import { applyDtoToProfileForm, profileFormToUpdateDto, useProfileForm } from '@/components/profile/ProfileForm.form';
 
 interface ProfileFormProps {
   /** Callback when profile is successfully updated */
@@ -34,34 +26,15 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
 
-  const form = useForm<ProfileFormValues>({
-    initialValues: {
-      full_name: '',
-      birth_date: null,
-      location: '',
-      about: '',
-    },
-    onValuesChange: () => {
-      // Only reset "Saved!" state when form is actually dirty
-      // (not when resetDirty() is called after save)
-      if (form.isDirty()) {
-        setShowSaved(false);
-      }
-    },
-  });
+  const form = useProfileForm();
 
   // Populate form with user data when available
   useEffect(() => {
-    if (user) {
-      form.setValues({
-        full_name: user.full_name || '',
-        birth_date: user.birth_date || null,
-        location: user.location || '',
-        about: user.about || '',
-      });
-      // Reset dirty state after populating
-      form.resetDirty();
-    }
+    applyDtoToProfileForm({
+      form,
+      dto: user,
+    });
+    form.resetDirty();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]); // form is stable reference from useForm
 
@@ -71,31 +44,19 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
 
     try {
       // Convert to API format
-      const data: Record<string, unknown> = {};
-      if (values.full_name !== (user?.full_name || '')) {
-        data.full_name = values.full_name || null;
-      }
-      if (values.birth_date !== user?.birth_date) {
-        data.birth_date = values.birth_date || null;
-      }
-      if (values.location !== (user?.location || '')) {
-        data.location = values.location || null;
-      }
-      if (values.about !== (user?.about || '')) {
-        data.about = values.about || null;
-      }
+      const data = profileFormToUpdateDto({
+        formValue: values,
+      });
 
-      // Only send if there are changes
-      if (Object.keys(data).length > 0) {
-        const updatedUser = await updateProfile(
-          data as Parameters<typeof updateProfile>[0]
-        );
+        const updatedUser = await updateProfile(data);
         // Update AuthProvider with new user data
-        updateUser(updatedUser as User);
+        updateUser({
+          ...user,
+          ...updatedUser,
+        });
         form.resetDirty();
         setShowSaved(true);
         onSuccess?.();
-      }
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -160,10 +121,10 @@ export function ProfileForm({ onSuccess }: ProfileFormProps) {
           <Button
             type="submit"
             loading={isSubmitting}
-            disabled={!form.isDirty() || showSaved}
+            disabled={!form.isDirty()}
             variant={showSaved ? 'filled' : 'primary'}
           >
-            {showSaved ? 'Saved!' : 'Save'}
+            Save
           </Button>
         </Stack>
       </form>
