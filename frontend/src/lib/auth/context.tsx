@@ -31,6 +31,8 @@ interface AuthContextValue {
   login: (data: LoginRequest) => Promise<void>;
   /** Logs the user out. Best-effort: session state is cleared even if the API call fails. */
   logout: () => Promise<void>;
+  /** Updates the user data in the session (e.g., after profile update). */
+  updateUser: (user: User) => void;
 }
 
 /**
@@ -125,9 +127,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const updateUser = useCallback((updatedUser: User) => {
+    setUser(updatedUser);
+  }, []);
+
   const value = useMemo<AuthContextValue>(
-    () => ({ user, status, login, logout }),
-    [user, status, login, logout],
+    () => ({ user, status, login, logout, updateUser }),
+    [user, status, login, logout, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

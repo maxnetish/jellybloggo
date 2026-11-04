@@ -12,12 +12,12 @@
  * @see backend/internal/auth/README_UI.md
  */
 
-import type { LoginRequest, User, UserResponse } from "./dto";
-import { ApiError, parseApiError } from "./errors";
+import type { LoginRequest, User, UserResponse } from './dto';
+import { ApiError, parseApiError } from './errors';
 
 /** Options shared by every auth request. */
 const defaultOptions: RequestInit = {
-  credentials: "include",
+  credentials: 'include',
 };
 
 /**
@@ -33,10 +33,10 @@ const defaultOptions: RequestInit = {
  * @throws {ApiError} If login fails (non-2xx response)
  */
 export async function login(data: LoginRequest): Promise<User> {
-  const response = await fetch("/api/auth/login", {
-    method: "POST",
+  const response = await fetch('/api/auth/login', {
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(data),
     ...defaultOptions,
@@ -48,7 +48,7 @@ export async function login(data: LoginRequest): Promise<User> {
 
   const result: UserResponse = await response.json();
   if (!result.user) {
-    throw new ApiError("Login response missing user", "INTERNAL_ERROR", 500);
+    throw new ApiError('Login response missing user', 'INTERNAL_ERROR', 500);
   }
 
   return result.user;
@@ -65,8 +65,8 @@ export async function login(data: LoginRequest): Promise<User> {
  * @throws {Error} If the request fails (non-2xx response)
  */
 export async function logout(): Promise<void> {
-  const response = await fetch("/api/auth/logout", {
-    method: "POST",
+  const response = await fetch('/api/auth/logout', {
+    method: 'POST',
     ...defaultOptions,
   });
 
@@ -86,8 +86,8 @@ export async function logout(): Promise<void> {
  * @returns {Promise<User | null>} User info or null if not authenticated
  */
 export async function getUser(): Promise<User | null> {
-  const response = await fetch("/api/auth/user", {
-    method: "GET",
+  const response = await fetch('/api/auth/user', {
+    method: 'GET',
     ...defaultOptions,
   });
 
@@ -97,5 +97,40 @@ export async function getUser(): Promise<User | null> {
   }
 
   const result: UserResponse = await response.json();
+  return result.user;
+}
+
+/**
+ * Update current user's profile.
+ *
+ * Sends partial profile data to the backend. Only provided fields are updated.
+ *
+ * @see backend/internal/auth/README_UI.md "PATCH /api/auth/user"
+ *
+ * @param {Partial<User>} data - Profile fields to update
+ * @returns {Promise<User>} Updated user info
+ * @throws {ApiError} If update fails (non-2xx response)
+ */
+export async function updateProfile(
+  data: Partial<Pick<User, 'full_name' | 'birth_date' | 'location' | 'about'>>
+): Promise<User> {
+  const response = await fetch('/api/auth/user', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+    ...defaultOptions,
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response);
+  }
+
+  const result: UserResponse = await response.json();
+  if (!result.user) {
+    throw new ApiError('Update response missing user', 'INTERNAL_ERROR', 500);
+  }
+
   return result.user;
 }
