@@ -12,8 +12,8 @@ You are an expert in TypeScript, React, Next.js, and scalable web application de
 
 - **Framework**: Next.js 16 with App Router
 - **UI**: React 19
-- **Styling**: Tailwind CSS 4
-- **Components**: Base UI (copy-paste approach, native HTML + Tailwind)
+- **Styling**: Tailwind CSS 4 + Mantine component library
+- **Components**: Mantine UI (import from `@mantine/core`)
 - **Language**: TypeScript (strict mode)
 - **Testing**: Vitest + React Testing Library
 
@@ -56,39 +56,36 @@ You are an expert in TypeScript, React, Next.js, and scalable web application de
 ## Components
 
 - Components go in `src/components/`
-- UI components (Base UI style) go in `src/components/ui/`
+- UI components go in `src/components/ui/`
 - Use `'use client'` only when necessary
 
-## Base UI Components
+## Mantine UI
 
-Components are copy-pasted into the project using native HTML elements + Tailwind CSS.
-No external component libraries (Radix, etc.) — only lightweight utils (`clsx`, `tailwind-merge`).
+Use Mantine components from `@mantine/core`. Import only what you need.
 
-To add a component:
-1. Create the component in `src/components/ui/<component-name>.tsx`
-2. Use native HTML elements with Tailwind classes
-3. Use `cn()` utility from `@/lib/utils` for class merging
-
-Example:
 ```tsx
-// src/components/ui/button.tsx
-import { cn } from "@/lib/utils";
-
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, ...props }, ref) => {
-    return (
-      <button
-        className={cn(
-          "inline-flex items-center justify-center rounded-md text-sm font-medium...",
-          className
-        )}
-        ref={ref}
-        {...props}
-      />
-    );
-  }
-);
+import { Menu, Button, TextInput } from "@mantine/core";
 ```
+
+### Adding MantineProvider
+
+MantineProvider is already set up in `src/components/providers/MantineProvider.tsx`.
+Wrap any new client components that need Mantine hooks with it.
+
+### Common Components
+
+- **Menu** — dropdown menus
+- **Button** — buttons with variants
+- **TextInput, NumberInput** — form inputs
+- **Textarea** — multiline text input
+- **Select, Combobox** — select/dropdown components
+- **Modal, Drawer** — overlays
+- **Tabs** — tabbed navigation
+
+### Styling
+
+Use Mantine's `className` for custom Tailwind classes alongside Mantine's `c` or `style` props.
+Prefer Mantine's built-in styling props (color, size, variant) over custom CSS when possible.
 
 ## Backend Integration
 

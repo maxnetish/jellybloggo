@@ -24,9 +24,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div>
-      <nav className="border-b p-4">
-        <AdminNavMenu />
-      </nav>
+      <AdminNavMenu />
       <main>{children}</main>
     </div>
   );

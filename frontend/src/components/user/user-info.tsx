@@ -1,15 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { Menu } from "@mantine/core";
 import { useAuth } from "@/lib/auth";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuLinkItem,
-  DropdownMenuSeparator,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
 
 /**
  * Auth widget: shows the logged-in user with a dropdown menu or a login link.
@@ -34,23 +27,32 @@ export function UserInfo() {
   const displayName = user.full_name || user.login;
 
   return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer outline-none">
-        {displayName}
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-48">
-        <DropdownMenuLinkItem render={<Link href="/admin" />} closeOnClick>
+    <Menu shadow="md" width={200}>
+      <Menu.Target>
+        <button
+          type="button"
+          className="text-sm text-gray-600 hover:text-gray-900 cursor-pointer outline-none"
+        >
+          {displayName}
+        </button>
+      </Menu.Target>
+
+      <Menu.Dropdown>
+        <Menu.Item component={Link} href="/admin">
           Admin
-        </DropdownMenuLinkItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
+        </Menu.Item>
+
+        <Menu.Divider />
+
+        <Menu.Item
+          component="button"
           onClick={() => logout()}
-          closeOnClick
-          className="text-red-600"
+          color="red"
+          className="w-full text-left"
         >
           Logout
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </Menu.Item>
+      </Menu.Dropdown>
+    </Menu>
   );
 }

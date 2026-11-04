@@ -2,12 +2,10 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Paper, TextInput, PasswordInput, Button, Alert } from "@mantine/core";
+import { IconAlertCircle } from "@tabler/icons-react";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api/auth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 
 /**
  * The interactive login form. Reads the `next` query param, so it must render
@@ -24,7 +22,7 @@ function LoginForm() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setError(null);
+    // setError(null);
     setIsLoading(true);
 
     const formData = new FormData(e.currentTarget);
@@ -34,8 +32,6 @@ function LoginForm() {
     };
 
     try {
-      // Cookies land in the browser via the /api proxy; AuthProvider
-      // updates its state, so the UI reflects the session immediately.
       await login(loginData);
       router.push(nextUrl);
     } catch (err) {
@@ -50,46 +46,48 @@ function LoginForm() {
   }
 
   return (
-    <Card className="w-87.5">
-      <CardHeader>
-        <CardTitle className="text-center">Login</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-          <div className="space-y-2">
-            <Label htmlFor="login">Login</Label>
-            <Input id="login" name="login" type="text" required disabled={isLoading} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" name="password" type="password" required disabled={isLoading} />
-          </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Logging in..." : "Login"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+    <Paper withBorder shadow="md" p="xl" w={350}>
+      <h1 className="text-center text-xl font-semibold mb-6">Login</h1>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <Alert icon={<IconAlertCircle size={16} />} color="red" variant="light">
+            {error}
+          </Alert>
+        )}
+        <TextInput
+          id="login"
+          name="login"
+          label="Login"
+          placeholder="Your login"
+          required
+          disabled={isLoading}
+        />
+        <PasswordInput
+          id="password"
+          name="password"
+          label="Password"
+          placeholder="Your password"
+          required
+          disabled={isLoading}
+        />
+        <Button type="submit" fullWidth loading={isLoading}>
+          {isLoading ? "Logging in..." : "Login"}
+        </Button>
+      </form>
+    </Paper>
   );
 }
 
 /** Placeholder shown while the form streams in. */
 function LoginFormSkeleton() {
   return (
-    <Card className="w-87.5">
-      <CardContent className="p-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-10 rounded bg-zinc-200" />
-          <div className="h-10 rounded bg-zinc-200" />
-          <div className="h-10 rounded bg-zinc-200" />
-        </div>
-      </CardContent>
-    </Card>
+    <Paper withBorder shadow="md" p="xl" w={350}>
+      <div className="animate-pulse space-y-4">
+        <div className="h-10 rounded bg-zinc-200" />
+        <div className="h-10 rounded bg-zinc-200" />
+        <div className="h-10 rounded bg-zinc-200" />
+      </div>
+    </Paper>
   );
 }
 
