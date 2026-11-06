@@ -104,6 +104,20 @@ Backend uses HTTP-only cookies for authentication:
 3. **Logout**: `POST /api/auth/logout`
 4. **Get Current User**: `GET /api/auth/user`
 
+### DTO Organization
+
+Each DTO (Data Transfer Object) must be in its own file. Group related DTOs in a directory:
+
+```
+src/lib/api/user/dto/
+├── index.ts
+├── user.ts        # User interface
+├── user-role.ts   # UserRole const
+└── user.dto.ts    # Other user-related DTOs
+```
+
+Export all DTOs from the directory's `index.ts`.
+
 ### API Service Pattern
 
 Create services in `src/lib/api/` to encapsulate API logic:
