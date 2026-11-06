@@ -23,6 +23,15 @@ You are an expert in TypeScript, React, Next.js, and scalable web application de
 - Prefer type inference when the type is obvious
 - Avoid the `any` type; use `unknown` when type is uncertain
 - Use explicit return types for exported functions
+- **Quotes**: use single quotes in JS/TS (`'foo'`), double quotes only in JSX/HTML attributes (`<div className="foo">`)
+- **Function parameters**: if a function has more than one parameter, use named spread style:
+  ```typescript
+  // Good: named spread
+  async function listUsers({ query = {}, cookieHeader = null }: ListUsersOptions)
+  
+  // Bad: positional arguments
+  async function listUsers(query: ListUsersQuery, cookieHeader: string)
+  ```
 
 ## Next.js App Router
 
