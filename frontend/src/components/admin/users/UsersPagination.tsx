@@ -1,6 +1,5 @@
 'use client';
 
-import { useRef } from 'react';
 import { Pagination } from '@mantine/core';
 import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 
@@ -14,20 +13,16 @@ export function UsersPagination({ total, perPage }: UsersPaginationProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const routerRef = useRef(router);
-  const pathnameRef = useRef(pathname);
-  const searchParamsRef = useRef(searchParams);
-  routerRef.current = router;
-  pathnameRef.current = pathname;
-  searchParamsRef.current = searchParams;
-
   const totalPages = Math.ceil(total / perPage);
-  const currentPage = Number(searchParamsRef.current.get('page')) || 1;
+  const currentPage = Number(searchParams.get('page')) || 1;
 
   function handlePageChange(page: number) {
-    const params = new URLSearchParams(searchParamsRef.current.toString());
+    const params = new URLSearchParams(searchParams.toString());
     params.set('page', String(page));
-    routerRef.current.push(`${pathnameRef.current}?${params.toString()}`);
+    const newUrl = `${pathname}?${params.toString()}`;
+
+    window.history.pushState({}, '', newUrl);
+    router.refresh();
   }
 
   if (totalPages <= 1) {

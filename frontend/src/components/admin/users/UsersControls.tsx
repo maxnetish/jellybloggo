@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useState } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import type { UserResponse } from '@/lib/api/user/dto';
 import { UsersFilter } from './UsersFilter';
 import { UsersPagination } from './UsersPagination';
@@ -14,24 +14,21 @@ interface UsersControlsProps {
 }
 
 function parseFromSearchParams(searchParams: URLSearchParams): {
-  search: string;
-  roles: string[];
   sortBy: 'login' | 'created_at' | 'updated_at' | undefined;
   sortDir: 'asc' | 'desc' | undefined;
-  page: number;
+  search: string;
+  roles: string[];
 } {
   const roles = searchParams.getAll('roles');
   const search = searchParams.get('search') || '';
   const sortBy = (searchParams.get('sort_by') as 'login' | 'created_at' | 'updated_at') || undefined;
   const sortDir = (searchParams.get('sort_dir') as 'asc' | 'desc') || undefined;
-  const page = searchParams.get('page');
 
   return {
     search,
     roles: roles.length > 0 ? roles : [],
     sortBy,
     sortDir,
-    page: page ? Math.max(1, Number(page)) : 1,
   };
 }
 
@@ -40,22 +37,13 @@ export function UsersControls({ users, total, perPage }: UsersControlsProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Keep refs to current values for use in callbacks
-  const routerRef = useRef(router);
-  const pathnameRef = useRef(pathname);
-  const searchParamsRef = useRef(searchParams);
-  routerRef.current = router;
-  pathnameRef.current = pathname;
-  searchParamsRef.current = searchParams;
-
-  // Parse current URL params
   const params = parseFromSearchParams(searchParams);
 
   const [sortBy, setSortBy] = useState(params.sortBy);
   const [sortDir, setSortDir] = useState(params.sortDir);
 
   function updateUrl(updates: Record<string, string | string[] | undefined>, resetPage = true) {
-    const newParams = new URLSearchParams(searchParamsRef.current.toString());
+    const newParams = new URLSearchParams(searchParams.toString());
 
     for (const [key, value] of Object.entries(updates)) {
       newParams.delete(key);
@@ -75,7 +63,10 @@ export function UsersControls({ users, total, perPage }: UsersControlsProps) {
     }
 
     const queryString = newParams.toString();
-    routerRef.current.push(`${pathnameRef.current}${queryString ? `?${queryString}` : ''}`);
+    const newUrl = `${pathname}${queryString ? `?${queryString}` : ''}`;
+
+    window.history.pushState({}, '', newUrl);
+    router.refresh();
   }
 
   function handleSortChange(newSortBy: 'login' | 'created_at', newSortDir: 'asc' | 'desc') {

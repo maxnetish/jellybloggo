@@ -26,6 +26,6 @@ export function useDebouncedCallback<T extends (...args: never[]) => unknown>(
         callback(...args);
       }, delay);
     },
-    [callback, delay], // eslint-disable-line react-hooks/exhaustive-deps
+    [callback, delay],
   );
 }

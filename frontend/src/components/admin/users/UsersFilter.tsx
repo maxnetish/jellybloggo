@@ -1,11 +1,11 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useState } from 'react';
 import { TextInput, MultiSelect } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
 import { UserRole } from '@/lib/api/user/dto';
 import { useDebouncedCallback } from '@/lib/utils';
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
 interface UsersFilterProps {
   initialSearch: string;
@@ -20,35 +20,9 @@ export function UsersFilter({ initialSearch, initialRoles }: UsersFilterProps) {
   const [search, setSearch] = useState(initialSearch);
   const [roles, setRoles] = useState<string[]>(initialRoles);
 
-  // Keep refs to current values for use in debounced callback
-  const pathnameRef = useRef(pathname);
-  const searchParamsRef = useRef(searchParams);
-  pathnameRef.current = pathname;
-  searchParamsRef.current = searchParams;
-
-  // Track last pushed URL to avoid duplicate navigations
-  const lastPushedUrlRef = useRef<string | null>(null);
-
-  // Create debounced function - stable reference
+  // Debounced update using current searchParams from hook
   const debouncedUpdate = useDebouncedCallback((newSearch: string, newRoles: string[]) => {
-    const currentParams = searchParamsRef.current;
-
-    // Check if values actually changed from what was originally in URL
-    const currentSearch = currentParams.get('search') || '';
-    const currentRoles = currentParams.getAll('roles');
-
-    const searchMatches = newSearch === currentSearch;
-    const rolesMatch =
-      newRoles.length === currentRoles.length &&
-      newRoles.every((r) => currentRoles.includes(r));
-
-    if (searchMatches && rolesMatch) {
-      // No actual change, skip
-      return;
-    }
-
-    // Build new URL
-    const params = new URLSearchParams(currentParams.toString());
+    const params = new URLSearchParams(searchParams.toString());
 
     if (newSearch) {
       params.set('search', newSearch);
@@ -56,7 +30,6 @@ export function UsersFilter({ initialSearch, initialRoles }: UsersFilterProps) {
       params.delete('search');
     }
 
-    // Clear existing roles and add new ones
     params.delete('roles');
     for (const role of newRoles) {
       if (role) {
@@ -64,34 +37,14 @@ export function UsersFilter({ initialSearch, initialRoles }: UsersFilterProps) {
       }
     }
 
-    // Reset page when filter changes
     params.delete('page');
 
     const queryString = params.toString();
-    const newUrl = `${pathnameRef.current}${queryString ? `?${queryString}` : ''}`;
+    const newUrl = `${pathname}${queryString ? `?${queryString}` : ''}`;
 
-    // Avoid pushing same URL twice
-    if (newUrl === lastPushedUrlRef.current) {
-      return;
-    }
-
-    lastPushedUrlRef.current = newUrl;
-
-    // Use native history API to avoid Next.js router overhead
     window.history.pushState({}, '', newUrl);
-
-    // Trigger Next.js navigation to re-fetch data
     router.refresh();
   }, 2000);
-
-  // Sync with URL on mount
-  useEffect(() => {
-    const urlSearch = searchParams.get('search') || '';
-    const urlRoles = searchParams.getAll('roles');
-
-    setSearch(urlSearch);
-    setRoles(urlRoles.length > 0 ? urlRoles : []);
-  }, [searchParams]);
 
   function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.currentTarget.value;
