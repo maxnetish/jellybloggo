@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useForm } from '@mantine/form';
 import { TextInput, MultiSelect } from '@mantine/core';
 import { IconX } from '@tabler/icons-react';
 import { UserRole } from '@/lib/api/user/dto';
@@ -12,77 +12,70 @@ interface UsersFilterProps {
   initialRoles: string[];
 }
 
+/**
+ * Filter form component.
+ * Remounts when initialValues change (controlled by key in parent).
+ * On mount: form is initialized from props.
+ * On change: debounced URL update.
+ */
 export function UsersFilter({ initialSearch, initialRoles }: UsersFilterProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [search, setSearch] = useState(initialSearch);
-  const [roles, setRoles] = useState<string[]>(initialRoles);
+  const updateUrl = useDebouncedCallback(
+    (values: { search: string; roles: string[] }) => {
+      const params = new URLSearchParams(searchParams.toString());
 
-  // Debounced update using current searchParams from hook
-  const debouncedUpdate = useDebouncedCallback((newSearch: string, newRoles: string[]) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    if (newSearch) {
-      params.set('search', newSearch);
-    } else {
-      params.delete('search');
-    }
-
-    params.delete('roles');
-    for (const role of newRoles) {
-      if (role) {
-        params.append('roles', role);
+      if (values.search) {
+        params.set('search', values.search);
+      } else {
+        params.delete('search');
       }
-    }
 
-    params.delete('page');
+      params.delete('roles');
+      for (const role of values.roles) {
+        if (role) {
+          params.append('roles', role);
+        }
+      }
 
-    const queryString = params.toString();
-    const newUrl = `${pathname}${queryString ? `?${queryString}` : ''}`;
+      params.delete('page');
 
-    window.history.pushState({}, '', newUrl);
-    router.refresh();
-  }, 2000);
+      const queryString = params.toString();
+      const newUrl = `${pathname}${queryString ? `?${queryString}` : ''}`;
 
-  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const value = e.currentTarget.value;
-    setSearch(value);
-    debouncedUpdate(value, roles);
-  }
+      window.history.pushState({}, '', newUrl);
+      router.refresh();
+    },
+    2000,
+  );
 
-  function handleRolesChange(value: string[]) {
-    setRoles(value);
-    debouncedUpdate(search, value);
-  }
-
-  function handleSearchClear() {
-    setSearch('');
-    debouncedUpdate('', roles);
-  }
-
-  function handleRolesClear() {
-    setRoles([]);
-    debouncedUpdate(search, []);
-  }
+  const form = useForm({
+    initialValues: {
+      search: initialSearch,
+      roles: initialRoles,
+    },
+    onValuesChange: (values) => {
+      updateUrl(values);
+    },
+  });
 
   return (
     <div className="flex gap-4 mb-4">
       <TextInput
         placeholder="Search by login..."
-        value={search}
-        onChange={handleSearchChange}
         maxLength={32}
         rightSection={
-          search ? (
+          form.values.search ? (
             <IconX
               size={14}
               className="cursor-pointer"
-              onClick={handleSearchClear}
+              onClick={() => form.setFieldValue('search', '')}
             />
           ) : null
         }
+        {...form.getInputProps('search')}
         style={{ flex: 1, maxWidth: 280 }}
       />
       <MultiSelect
@@ -92,10 +85,8 @@ export function UsersFilter({ initialSearch, initialRoles }: UsersFilterProps) {
           { value: UserRole.AUTHOR, label: 'Author' },
           { value: UserRole.READER, label: 'Reader' },
         ]}
-        value={roles}
-        onChange={handleRolesChange}
         clearable
-        onClear={handleRolesClear}
+        {...form.getInputProps('roles')}
         style={{ flex: 1, maxWidth: 280 }}
       />
     </div>

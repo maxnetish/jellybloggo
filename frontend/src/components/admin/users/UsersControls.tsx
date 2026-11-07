@@ -75,9 +75,14 @@ export function UsersControls({ users, total, perPage }: UsersControlsProps) {
     updateUrl({ sort_by: newSortBy, sort_dir: newSortDir });
   }
 
+  // Key remounts component when filter params change.
+  // This ensures clean state: form is created with fresh initialValues from URL.
+  const filterKey = `${params.search}|${params.roles.sort().join(',')}`;
+
   return (
     <>
       <UsersFilter
+        key={filterKey}
         initialSearch={params.search}
         initialRoles={params.roles}
       />
