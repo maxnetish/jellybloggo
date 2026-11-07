@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
-  partialPrefetching: true,
+  partialPrefetching: false, // Disabled - causes duplicate RSC requests on URL param changes
   turbopack: {
     rules: {
       "*.css": {

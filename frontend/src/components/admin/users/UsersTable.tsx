@@ -8,8 +8,15 @@ import {
 } from '@mantine/core';
 import type { UserResponse } from '@/lib/api/user/dto';
 
+interface SortState {
+  sortBy: string | undefined;
+  sortDir: 'asc' | 'desc' | undefined;
+}
+
 interface UsersTableProps {
   users: UserResponse[];
+  sort: SortState;
+  onSortChange: (sortBy: 'login' | 'created_at', sortDir: 'asc' | 'desc') => void;
 }
 
 function formatDate(dateString: string): string {
@@ -21,15 +28,75 @@ function formatDate(dateString: string): string {
   });
 }
 
-export function UsersTable({ users }: UsersTableProps) {
+function SortableTh({
+  label,
+  sortKey,
+  sort,
+  onSortChange,
+}: {
+  label: string;
+  sortKey: 'login' | 'created_at';
+  sort: SortState;
+  onSortChange: (sortBy: 'login' | 'created_at', sortDir: 'asc' | 'desc') => void;
+}) {
+  const isActive = sort.sortBy === sortKey;
+  const direction = isActive ? sort.sortDir : undefined;
+
+  function handleClick() {
+    if (isActive) {
+      // Toggle direction
+      onSortChange(sortKey, sort.sortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New column, default to asc
+      onSortChange(sortKey, 'asc');
+    }
+  }
+
+  return (
+    <TableTh
+      aria-sort={isActive ? (direction === 'asc' ? 'ascending' : 'descending') : undefined}
+    >
+      <button
+        type="button"
+        onClick={handleClick}
+        style={{
+          background: 'none',
+          border: 'none',
+          padding: 0,
+          textAlign: 'left',
+          cursor: 'pointer',
+          fontWeight: 'inherit',
+          color: 'inherit',
+          fontSize: 'inherit',
+        }}
+      >
+        {label}
+        {direction === 'asc' && ' ↑'}
+        {direction === 'desc' && ' ↓'}
+      </button>
+    </TableTh>
+  );
+}
+
+function UsersTableInner({ users, sort, onSortChange }: UsersTableProps) {
   return (
     <Table striped highlightOnHover>
       <TableThead>
         <TableTr>
-          <TableTh>Login</TableTh>
+          <SortableTh
+            label="Login"
+            sortKey="login"
+            sort={sort}
+            onSortChange={onSortChange}
+          />
           <TableTh>Full name</TableTh>
           <TableTh>Roles</TableTh>
-          <TableTh>Created date</TableTh>
+          <SortableTh
+            label="Created date"
+            sortKey="created_at"
+            sort={sort}
+            onSortChange={onSortChange}
+          />
         </TableTr>
       </TableThead>
       <TableTbody>
@@ -45,3 +112,6 @@ export function UsersTable({ users }: UsersTableProps) {
     </Table>
   );
 }
+
+export { UsersTableInner as UsersTable };
+export type { UsersTableProps };

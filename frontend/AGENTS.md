@@ -62,6 +62,41 @@ You are an expert in TypeScript, React, Next.js, and scalable web application de
 - Use `unstable_noStore()` or `no-store` fetch option for user-specific data
 - Use `revalidate` for cached data
 
+### URL Parameters as Filter/Pagination State
+
+When implementing search, filters, or pagination where URL params serve as state (not navigation between pages):
+
+**✅ Correct pattern:**
+```tsx
+import { useRouter } from 'next/navigation';
+
+function FilterComponent() {
+  const router = useRouter();
+  
+  function updateUrl(newParams: URLSearchParams) {
+    const newUrl = `/path?${newParams.toString()}`;
+    window.history.pushState({}, '', newUrl);
+    router.refresh();
+  }
+}
+```
+
+**❌ Do NOT use `router.push()` for this:**
+- `router.push()` triggers Next.js PPR prefetch for multiple URL variants
+- Results in duplicate RSC requests when params are added/removed
+- `router.replace()` has the same issue
+
+**Why this works:**
+- `window.history.pushState` — native browser API, no Next.js prefetch
+- `router.refresh()` — explicitly re-renders Server Components with new searchParams
+
+**When to use which:**
+| Scenario | Approach |
+|----------|----------|
+| Navigation to a new page | `router.push()` or `<Link>` |
+| Changing filters/pagination on current page | `history.pushState` + `router.refresh()` |
+| Deep links that need prefetch | `router.push()` (acceptable tradeoff) |
+
 ## Components
 
 - Components go in `src/components/`
