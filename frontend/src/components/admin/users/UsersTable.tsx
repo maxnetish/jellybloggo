@@ -5,7 +5,10 @@ import {
   TableTh,
   TableThead,
   TableTr,
+  ActionIcon,
+  Group,
 } from '@mantine/core';
+import { IconPencil } from '@tabler/icons-react';
 import type { UserResponse } from '@/lib/api/user/dto';
 
 interface SortState {
@@ -17,6 +20,7 @@ interface UsersTableProps {
   users: UserResponse[];
   sort: SortState;
   onSortChange: (sortBy: 'login' | 'created_at', sortDir: 'asc' | 'desc') => void;
+  onEditRoles: (user: UserResponse) => void;
 }
 
 function formatDate(dateString: string): string {
@@ -78,9 +82,9 @@ function SortableTh({
   );
 }
 
-function UsersTableInner({ users, sort, onSortChange }: UsersTableProps) {
+function UsersTableInner({ users, sort, onSortChange, onEditRoles }: UsersTableProps) {
   return (
-    <Table striped highlightOnHover>
+    <Table striped highlightOnHover layout="fixed">
       <TableThead>
         <TableTr>
           <SortableTh
@@ -89,8 +93,8 @@ function UsersTableInner({ users, sort, onSortChange }: UsersTableProps) {
             sort={sort}
             onSortChange={onSortChange}
           />
-          <TableTh>Full name</TableTh>
-          <TableTh>Roles</TableTh>
+          <TableTh style={{ width: 200 }}>Full name</TableTh>
+          <TableTh style={{ width: 220 }}>Roles</TableTh>
           <SortableTh
             label="Created date"
             sortKey="created_at"
@@ -102,9 +106,21 @@ function UsersTableInner({ users, sort, onSortChange }: UsersTableProps) {
       <TableTbody>
         {users.map((user) => (
           <TableTr key={user.id}>
-            <TableTd>{user.login}</TableTd>
-            <TableTd>{user.full_name}</TableTd>
-            <TableTd>{user.roles.join(', ')}</TableTd>
+            <TableTd style={{ width: 160 }}>{user.login}</TableTd>
+            <TableTd style={{ width: 200 }}>{user.full_name}</TableTd>
+            <TableTd style={{ width: 220 }}>
+              <Group gap="xs">
+                <span>{user.roles.length > 0 ? user.roles.join(', ') : <span className="text-muted-foreground">&lt;Empty&gt;</span>}</span>
+                <ActionIcon
+                  variant="subtle"
+                  size="sm"
+                  onClick={() => onEditRoles(user)}
+                  aria-label="Edit roles"
+                >
+                  <IconPencil size={14} />
+                </ActionIcon>
+              </Group>
+            </TableTd>
             <TableTd>{formatDate(user.created_at)}</TableTd>
           </TableTr>
         ))}

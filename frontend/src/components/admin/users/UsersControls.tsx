@@ -6,6 +6,7 @@ import type { UserResponse } from '@/lib/api/user/dto';
 import { UsersFilter } from './UsersFilter';
 import { UsersPagination } from './UsersPagination';
 import { UsersTable } from './UsersTable';
+import { EditRolesModal } from './EditRolesModal';
 
 interface UsersControlsProps {
   users: UserResponse[];
@@ -41,6 +42,7 @@ export function UsersControls({ users, total, perPage }: UsersControlsProps) {
 
   const [sortBy, setSortBy] = useState(params.sortBy);
   const [sortDir, setSortDir] = useState(params.sortDir);
+  const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
 
   function updateUrl(updates: Record<string, string | string[] | undefined>, resetPage = true) {
     const newParams = new URLSearchParams(searchParams.toString());
@@ -75,6 +77,14 @@ export function UsersControls({ users, total, perPage }: UsersControlsProps) {
     updateUrl({ sort_by: newSortBy, sort_dir: newSortDir });
   }
 
+  function handleEditRoles(user: UserResponse) {
+    setEditingUser(user);
+  }
+
+  function handleRolesSaved() {
+    router.refresh();
+  }
+
   // Key remounts component when filter params change.
   // This ensures clean state: form is created with fresh initialValues from URL.
   const filterKey = `${params.search}|${params.roles.sort().join(',')}`;
@@ -90,11 +100,20 @@ export function UsersControls({ users, total, perPage }: UsersControlsProps) {
         users={users}
         sort={{ sortBy, sortDir }}
         onSortChange={handleSortChange}
+        onEditRoles={handleEditRoles}
       />
       <UsersPagination
         total={total}
         perPage={perPage}
       />
+      {editingUser && (
+        <EditRolesModal
+          user={editingUser}
+          opened={true}
+          onClose={() => setEditingUser(null)}
+          onSuccess={handleRolesSaved}
+        />
+      )}
     </>
   );
 }

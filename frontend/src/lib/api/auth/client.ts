@@ -134,3 +134,30 @@ export async function updateProfile(
 
   return result.user;
 }
+
+/**
+ * Update user roles.
+ *
+ * Allows an admin to change roles for a target user.
+ *
+ * @see backend/internal/auth/README_UI.md "POST /api/auth/roles"
+ *
+ * @param {string} login - Target user login
+ * @param {string[]} roles - Roles to assign (can be empty to remove all)
+ * @returns {Promise<void>}
+ * @throws {ApiError} If update fails (401, 403, 400, 500)
+ */
+export async function updateUserRoles(login: string, roles: string[]): Promise<void> {
+  const response = await fetch('/api/auth/roles', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ login, roles }),
+    ...defaultOptions,
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response);
+  }
+}
