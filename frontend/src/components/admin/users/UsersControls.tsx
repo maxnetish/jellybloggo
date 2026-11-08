@@ -12,36 +12,24 @@ interface UsersControlsProps {
   users: UserResponse[];
   total: number;
   perPage: number;
+  sortBy: 'login' | 'created_at' | 'updated_at';
+  sortDir: 'asc' | 'desc';
 }
 
-function parseFromSearchParams(searchParams: URLSearchParams): {
-  sortBy: 'login' | 'created_at' | 'updated_at' | undefined;
-  sortDir: 'asc' | 'desc' | undefined;
-  search: string;
-  roles: string[];
-} {
-  const roles = searchParams.getAll('roles');
-  const search = searchParams.get('search') || '';
-  const sortBy = (searchParams.get('sort_by') as 'login' | 'created_at' | 'updated_at') || undefined;
-  const sortDir = (searchParams.get('sort_dir') as 'asc' | 'desc') || undefined;
-
-  return {
-    search,
-    roles: roles.length > 0 ? roles : [],
-    sortBy,
-    sortDir,
-  };
-}
-
-export function UsersControls({ users, total, perPage }: UsersControlsProps) {
+export function UsersControls({ users, total, perPage, sortBy: defaultSortBy, sortDir: defaultSortDir }: UsersControlsProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const params = parseFromSearchParams(searchParams);
+  // Read sort directly from URL, fall back to server-provided defaults.
+  // No local state — URL is the single source of truth for sort.
+  const sortBy = (searchParams.get('sort_by') as 'login' | 'created_at' | 'updated_at') || defaultSortBy;
+  const sortDir = (searchParams.get('sort_dir') as 'asc' | 'desc') || defaultSortDir;
 
-  const [sortBy, setSortBy] = useState(params.sortBy);
-  const [sortDir, setSortDir] = useState(params.sortDir);
+  // Filter values from URL (same pattern as sort — no local state).
+  const search = searchParams.get('search') || '';
+  const roles = searchParams.getAll('roles').filter(Boolean);
+
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
 
   function updateUrl(updates: Record<string, string | string[] | undefined>, resetPage = true) {
@@ -72,8 +60,6 @@ export function UsersControls({ users, total, perPage }: UsersControlsProps) {
   }
 
   function handleSortChange(newSortBy: 'login' | 'created_at', newSortDir: 'asc' | 'desc') {
-    setSortBy(newSortBy);
-    setSortDir(newSortDir);
     updateUrl({ sort_by: newSortBy, sort_dir: newSortDir });
   }
 
@@ -85,16 +71,16 @@ export function UsersControls({ users, total, perPage }: UsersControlsProps) {
     router.refresh();
   }
 
-  // Key remounts component when filter params change.
-  // This ensures clean state: form is created with fresh initialValues from URL.
-  const filterKey = `${params.search}|${params.roles.sort().join(',')}`;
+  // Key remounts filter when search/roles change.
+  // This ensures form is initialized with fresh values from URL.
+  const filterKey = `${search}|${roles.sort().join(',')}`;
 
   return (
     <>
       <UsersFilter
         key={filterKey}
-        initialSearch={params.search}
-        initialRoles={params.roles}
+        initialSearch={search}
+        initialRoles={roles}
       />
       <UsersTable
         users={users}

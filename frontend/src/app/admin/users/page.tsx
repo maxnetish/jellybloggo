@@ -35,6 +35,8 @@ async function UsersContent({ searchParams }: UsersPageProps) {
       users={users}
       total={pagination.total}
       perPage={pagination.per_page}
+      sortBy={pagination.sort_by as 'login' | 'created_at' | 'updated_at'}
+      sortDir={pagination.sort_dir as 'asc' | 'desc'}
     />
   );
 }
@@ -42,7 +44,7 @@ async function UsersContent({ searchParams }: UsersPageProps) {
 export default async function UsersPage(props: UsersPageProps) {
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Users</h1>
+      <h1 className="text-2xl font-bold mb-6 text">Users</h1>
       <Suspense fallback={null}>
         <UsersContent {...props} />
       </Suspense>
