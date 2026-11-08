@@ -7,6 +7,7 @@ import { UsersFilter } from './UsersFilter';
 import { UsersPagination } from './UsersPagination';
 import { UsersTable } from './UsersTable';
 import { EditRolesModal } from './EditRolesModal';
+import { DeleteUserModal } from './DeleteUserModal';
 
 interface UsersControlsProps {
   users: UserResponse[];
@@ -31,6 +32,7 @@ export function UsersControls({ users, total, perPage, sortBy: defaultSortBy, so
   const roles = searchParams.getAll('roles').filter(Boolean);
 
   const [editingUser, setEditingUser] = useState<UserResponse | null>(null);
+  const [deletingUser, setDeletingUser] = useState<UserResponse | null>(null);
 
   function updateUrl(updates: Record<string, string | string[] | undefined>, resetPage = true) {
     const newParams = new URLSearchParams(searchParams.toString());
@@ -67,6 +69,10 @@ export function UsersControls({ users, total, perPage, sortBy: defaultSortBy, so
     setEditingUser(user);
   }
 
+  function handleDeleteUser(user: UserResponse) {
+    setDeletingUser(user);
+  }
+
   function handleRolesSaved() {
     router.refresh();
   }
@@ -87,6 +93,7 @@ export function UsersControls({ users, total, perPage, sortBy: defaultSortBy, so
         sort={{ sortBy, sortDir }}
         onSortChange={handleSortChange}
         onEditRoles={handleEditRoles}
+        onDeleteUser={handleDeleteUser}
       />
       <UsersPagination
         total={total}
@@ -97,6 +104,14 @@ export function UsersControls({ users, total, perPage, sortBy: defaultSortBy, so
           user={editingUser}
           opened={true}
           onClose={() => setEditingUser(null)}
+          onSuccess={handleRolesSaved}
+        />
+      )}
+      {deletingUser && (
+        <DeleteUserModal
+          user={deletingUser}
+          opened={true}
+          onClose={() => setDeletingUser(null)}
           onSuccess={handleRolesSaved}
         />
       )}

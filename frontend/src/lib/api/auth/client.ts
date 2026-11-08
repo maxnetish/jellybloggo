@@ -161,3 +161,28 @@ export async function updateUserRoles(login: string, roles: string[]): Promise<v
     throw await parseApiError(response);
   }
 }
+
+/**
+ * Delete a user.
+ *
+ * Permanently removes a user account. This action cannot be undone.
+ *
+ * @see backend/internal/auth/README_UI.md "DELETE /api/auth/user"
+ *
+ * @param {string} login - Login of the user to delete
+ * @returns {Promise<void>}
+ * @throws {ApiError} If delete fails (401, 403, 404, 500)
+ */
+export async function deleteUser(login: string): Promise<void> {
+  const url = new URL('/api/auth/user', window.location.origin);
+  url.searchParams.set('login', login);
+
+  const response = await fetch(url.toString(), {
+    method: 'DELETE',
+    ...defaultOptions,
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response);
+  }
+}

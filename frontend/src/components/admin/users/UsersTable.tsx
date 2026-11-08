@@ -8,7 +8,7 @@ import {
   ActionIcon,
   Group,
 } from '@mantine/core';
-import { IconPencil } from '@tabler/icons-react';
+import { IconPencil, IconTrash } from '@tabler/icons-react';
 import type { UserResponse } from '@/lib/api/user/dto';
 
 interface SortState {
@@ -21,6 +21,7 @@ interface UsersTableProps {
   sort: SortState;
   onSortChange: (sortBy: 'login' | 'created_at', sortDir: 'asc' | 'desc') => void;
   onEditRoles: (user: UserResponse) => void;
+  onDeleteUser: (user: UserResponse) => void;
 }
 
 function formatDate(dateString: string): string {
@@ -82,7 +83,7 @@ function SortableTh({
   );
 }
 
-function UsersTableInner({ users, sort, onSortChange, onEditRoles }: UsersTableProps) {
+function UsersTableInner({ users, sort, onSortChange, onEditRoles, onDeleteUser }: UsersTableProps) {
   return (
     <Table striped highlightOnHover layout="fixed">
       <TableThead>
@@ -101,6 +102,7 @@ function UsersTableInner({ users, sort, onSortChange, onEditRoles }: UsersTableP
             sort={sort}
             onSortChange={onSortChange}
           />
+          <TableTh style={{ width: 48 }} />
         </TableTr>
       </TableThead>
       <TableTbody>
@@ -122,6 +124,17 @@ function UsersTableInner({ users, sort, onSortChange, onEditRoles }: UsersTableP
               </Group>
             </TableTd>
             <TableTd>{formatDate(user.created_at)}</TableTd>
+            <TableTd style={{ width: 48 }}>
+              <ActionIcon
+                variant="subtle"
+                color="red"
+                size="sm"
+                onClick={() => onDeleteUser(user)}
+                aria-label="Delete user"
+              >
+                <IconTrash size={14} />
+              </ActionIcon>
+            </TableTd>
           </TableTr>
         ))}
       </TableTbody>
