@@ -296,7 +296,7 @@ const docTemplate = `{
                         "description": "No Content"
                     },
                     "400": {
-                        "description": "Invalid login, roles, or target user not found",
+                        "description": "Invalid login, roles, target user not found, or attempt to remove the last admin (LAST_ADMIN)",
                         "schema": {
                             "$ref": "#/definitions/auth.ErrorResponse"
                         }
@@ -370,7 +370,7 @@ const docTemplate = `{
                         "description": "No Content"
                     },
                     "400": {
-                        "description": "User not found or invalid request",
+                        "description": "User not found, invalid request, or attempt to remove the last admin (LAST_ADMIN)",
                         "schema": {
                             "$ref": "#/definitions/auth.ErrorResponse"
                         }

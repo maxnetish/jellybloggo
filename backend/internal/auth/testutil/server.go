@@ -108,6 +108,9 @@ func NewAuthTestServer(t *testing.T) *TestServer {
 type AdminSession struct {
 	Server  *httptest.Server
 	Cookies []*http.Cookie
+	// Repo exposes the underlying user repository so tests can seed extra users
+	// (e.g. a second admin) without going through the public API.
+	Repo users.UserRepository
 }
 
 // URL returns the server base URL.
@@ -157,7 +160,7 @@ func NewAuthTestServerWithAdmin(t *testing.T) *AdminSession {
 	_, _ = io.ReadAll(resp.Body)
 
 	cookies := resp.Cookies()
-	return &AdminSession{Server: ts.Server, Cookies: cookies}
+	return &AdminSession{Server: ts.Server, Cookies: cookies, Repo: ts.UserRepo}
 }
 
 // InviteTokenResponse mirrors CreateInviteResponse from auth/model.go.

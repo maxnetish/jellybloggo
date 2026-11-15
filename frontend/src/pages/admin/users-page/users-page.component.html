@@ -23,6 +23,7 @@
             <th tuiTh [style.width.rem]="18">Full name</th>
             <th tuiTh [style.width.rem]="14">Roles</th>
             <th tuiTh [style.width.rem]="12">Created at</th>
+            <th tuiTh [style.width.rem]="4"></th>
           </tr>
         </thead>
         <tbody tuiTbody>
@@ -34,10 +35,23 @@
                 <app-user-roles [user]="user" (rolesChange)="onRolesChange(user.login, $event)" />
               </td>
               <td tuiTd>{{ user.created_at | date: 'dd.MM.yyyy' }}</td>
+              <td tuiTd>
+                <button
+                  appearance="flat-destructive"
+                  iconStart="@tui.user-x"
+                  size="s"
+                  tuiIconButton
+                  type="button"
+                  title="Delete user"
+                  (click)="onDelete(user.login)"
+                >
+                  Delete user
+                </button>
+              </td>
             </tr>
           } @empty {
             <tr>
-              <td [colSpan]="4" tuiTd>No users found</td>
+              <td [colSpan]="5" tuiTd>No users found</td>
             </tr>
           }
         </tbody>

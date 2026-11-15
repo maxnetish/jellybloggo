@@ -71,6 +71,8 @@ export class UsersService {
    * @see DELETE /api/auth/user
    */
   deleteUser(login: string): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/auth/user`, {body: {login}});
+    // Бэкенд читает login из query-параметров (r.URL.Query().Get("login")),
+    // без него он удалит аккаунт текущего пользователя.
+    return this.http.delete<void>(`${this.baseUrl}/auth/user`, { params: { login } });
   }
 }

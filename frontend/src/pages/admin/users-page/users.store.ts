@@ -1,4 +1,5 @@
 import { computed, inject } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { TuiNotificationService } from '@taiga-ui/core';
 import {
   getState,
@@ -50,7 +51,16 @@ export const UsersStore = signalStore(
     }
 
     function onError(error: unknown, label = 'Error loading users') {
-      const message = error instanceof Error ? error.message : 'An error occurred';
+      // Для HttpErrorResponse показываем текст, пришедший от сервера
+      // (например, "cannot remove the last admin"), а не generic-сообщение.
+      let message = 'An error occurred';
+
+      if (error instanceof HttpErrorResponse) {
+        message = error.error?.error ?? error.message;
+      } else if (error instanceof Error) {
+        message = error.message;
+      }
+
       notificationService.open(message, { appearance: 'negative', label }).subscribe();
       patchState(store, { isLoading: false });
     }
@@ -70,6 +80,18 @@ export const UsersStore = signalStore(
           }),
         )
         .subscribe();
+    }
+
+    // После удаления единственной строки на непустой странице переходим
+    // на предыдущую — иначе пользователь останется на пустой таблице.
+    function reloadAfterDelete() {
+      const { pageNumber } = getState(store);
+
+      if (pageNumber > 0 && store.content().length === 1) {
+        patchState(store, { pageNumber: pageNumber - 1 });
+      }
+
+      reload();
     }
 
     return {
@@ -104,6 +126,26 @@ export const UsersStore = signalStore(
               }),
               catchError((error: unknown) => {
                 onError(error, 'Failed to update roles');
+                return of(undefined);
+              }),
+            ),
+          ),
+        ),
+      ),
+      deleteUser: rxMethod<string>(
+        pipe(
+          // concatMap: удаления уходят на сервер по очереди — важно для
+          // инварианта "последний админ", чтобы не было гонок между запросами
+          concatMap((login) =>
+            usersService.deleteUser(login).pipe(
+              tap(() => {
+                notificationService
+                  .open(`User ${login} deleted`, { appearance: 'positive' })
+                  .subscribe();
+                reloadAfterDelete();
+              }),
+              catchError((error: unknown) => {
+                onError(error, 'Failed to delete user');
                 return of(undefined);
               }),
             ),

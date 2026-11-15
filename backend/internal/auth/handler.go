@@ -300,7 +300,7 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param request body UpdateRolesRequest true "Target login and roles to assign"
 // @Success 204 "No Content"
-// @Failure 400 {object} ErrorResponse "Invalid login, roles, or target user not found"
+// @Failure 400 {object} ErrorResponse "Invalid login, roles, target user not found, or attempt to remove the last admin (LAST_ADMIN)"
 // @Failure 401 {object} ErrorResponse "Not authenticated"
 // @Failure 403 {object} ErrorResponse "Admin role required"
 // @Failure 500 {object} ErrorResponse "Internal server error"
@@ -327,6 +327,13 @@ func (h *AuthHandler) UpdateRoles(w http.ResponseWriter, r *http.Request) {
 			validation.RespondJSON(w, http.StatusForbidden, validation.ErrorResponse{
 				Error: "forbidden",
 				Code:  "FORBIDDEN",
+			})
+			return
+		}
+		if errors.Is(err, ErrLastAdmin) {
+			validation.RespondJSON(w, http.StatusBadRequest, validation.ErrorResponse{
+				Error: "cannot remove the last admin",
+				Code:  "LAST_ADMIN",
 			})
 			return
 		}
@@ -566,7 +573,7 @@ func (h *AuthHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 // @Security BearerAuth
 // @Param login query string false "Target user login (admin only)"
 // @Success 204 "No Content"
-// @Failure 400 {object} ErrorResponse "User not found or invalid request"
+// @Failure 400 {object} ErrorResponse "User not found, invalid request, or attempt to remove the last admin (LAST_ADMIN)"
 // @Failure 401 {object} ErrorResponse "Not authenticated"
 // @Failure 403 {object} ErrorResponse "Forbidden (admin required)"
 // @Failure 500 {object} ErrorResponse "Internal server error"
@@ -599,6 +606,13 @@ func (h *AuthHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 			validation.RespondJSON(w, http.StatusForbidden, validation.ErrorResponse{
 				Error: "forbidden",
 				Code:  "FORBIDDEN",
+			})
+			return
+		}
+		if errors.Is(err, ErrLastAdmin) {
+			validation.RespondJSON(w, http.StatusBadRequest, validation.ErrorResponse{
+				Error: "cannot remove the last admin",
+				Code:  "LAST_ADMIN",
 			})
 			return
 		}

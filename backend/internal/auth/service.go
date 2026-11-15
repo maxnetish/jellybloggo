@@ -22,6 +22,9 @@ var (
 	// ErrUserNotFound — re-export users.ErrUserNotFound для согласованного
 	// errors.Is() в вызывающем коде (например, в UpdateRoles и UpdateProfile).
 	ErrUserNotFound = users.ErrUserNotFound
+	// ErrLastAdmin — попытка удалить последнего администратора или снять
+	// с него роль admin. Инвариант: админ в системе должен оставаться всегда.
+	ErrLastAdmin = users.ErrLastAdmin
 
 	// ErrInviteTokenInvalid — токен приглашения не найден или невалиден.
 	ErrInviteTokenInvalid = errors.New("invalid invitation token")
