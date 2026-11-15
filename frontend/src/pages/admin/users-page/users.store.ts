@@ -9,11 +9,12 @@ import {
   withState,
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe, switchMap, tap, catchError } from 'rxjs';
+import { pipe, switchMap, tap, catchError, concatMap } from 'rxjs';
 import { of } from 'rxjs';
 import { PaginatedResponse } from '../../../common/api/paginated-response';
 import { Paged } from '../../../common/api/paged';
 import { User } from '../../../common/auth/model/user';
+import { UpdateRolesRequest } from '../../../common/users/model/update-roles-request';
 import { UsersService } from '../../../common/users/users.service';
 
 type UsersState = {
@@ -48,11 +49,9 @@ export const UsersStore = signalStore(
       });
     }
 
-    function onError(error: unknown) {
+    function onError(error: unknown, label = 'Error loading users') {
       const message = error instanceof Error ? error.message : 'An error occurred';
-      notificationService
-        .open(message, { appearance: 'error', label: 'Error loading users' })
-        .subscribe();
+      notificationService.open(message, { appearance: 'negative', label }).subscribe();
       patchState(store, { isLoading: false });
     }
 
@@ -90,6 +89,25 @@ export const UsersStore = signalStore(
               }),
             );
           }),
+        ),
+      ),
+      updateRoles: rxMethod<UpdateRolesRequest>(
+        pipe(
+          // concatMap: правки разных строк уходят на сервер по очереди, без гонок
+          concatMap((request) =>
+            usersService.setRoles(request).pipe(
+              tap(() => {
+                notificationService
+                  .open(`Roles updated for ${request.login}`, { appearance: 'positive' })
+                  .subscribe();
+                reload();
+              }),
+              catchError((error: unknown) => {
+                onError(error, 'Failed to update roles');
+                return of(undefined);
+              }),
+            ),
+          ),
         ),
       ),
       setPageNumber: (pageNumber: number) => {

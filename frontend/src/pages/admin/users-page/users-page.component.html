@@ -30,7 +30,9 @@
             <tr>
               <td class="ellipsis" tuiTd>{{ user.login }}</td>
               <td class="ellipsis" tuiTd>{{ user.full_name || '—' }}</td>
-              <td class="ellipsis" tuiTd>{{ user.roles.join(', ') || '—' }}</td>
+              <td tuiTd>
+                <app-user-roles [user]="user" (rolesChange)="onRolesChange(user.login, $event)" />
+              </td>
               <td tuiTd>{{ user.created_at | date: 'dd.MM.yyyy' }}</td>
             </tr>
           } @empty {
