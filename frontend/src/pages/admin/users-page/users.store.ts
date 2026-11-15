@@ -43,7 +43,8 @@ export const UsersStore = signalStore(
 
     function loadUsers(state: UsersState) {
       return usersService.getUsers({
-        page: { page: state.pageNumber, per_page: state.pageSize } satisfies Paged,
+        // API is 1-based, while pageNumber in the store is 0-based (UI semantics)
+        page: { page: state.pageNumber + 1, per_page: state.pageSize } satisfies Paged,
       });
     }
 
@@ -58,16 +59,18 @@ export const UsersStore = signalStore(
     function reload() {
       patchState(store, { isLoading: true });
       const state = getState(store);
-      loadUsers(state).pipe(
-        tap({
-          next: (users: PaginatedResponse<User>) =>
-            patchState(store, { users, isLoading: false }),
-        }),
-        catchError((error: unknown) => {
-          onError(error);
-          return of(undefined);
-        }),
-      ).subscribe();
+      loadUsers(state)
+        .pipe(
+          tap({
+            next: (users: PaginatedResponse<User>) =>
+              patchState(store, { users, isLoading: false }),
+          }),
+          catchError((error: unknown) => {
+            onError(error);
+            return of(undefined);
+          }),
+        )
+        .subscribe();
     }
 
     return {

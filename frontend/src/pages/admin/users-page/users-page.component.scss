@@ -1,50 +1,39 @@
 .users-page {
-  padding: var(--tui-spacing, 1rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
 }
 
 .page-header {
-  margin-bottom: var(--tui-spacing, 1.5rem);
   display: flex;
   align-items: baseline;
-  gap: var(--tui-spacing, 0.75rem);
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
 }
 
 .page-title {
-  font: var(--tui-font-heading-3);
   margin: 0;
+  font: var(--tui-typography-heading-h4);
 }
 
 .total-count {
-  font: var(--tui-font-text-m);
+  font: var(--tui-typography-body-m);
   color: var(--tui-text-tertiary);
 }
 
-.user-count {
-  font: var(--tui-font-text-s);
-  color: var(--tui-text-secondary);
+.table-container {
+  display: block;
 }
 
-.users-table-placeholder {
-  background: var(--tui-background-base);
-  border-radius: var(--tui-radius-m);
-  border: 1px dashed var(--tui-border);
-  padding: var(--tui-spacing, 2rem);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 300px;
+.users-table {
+  width: 100%;
+  min-width: 58rem;
+  table-layout: fixed;
 }
 
-.placeholder {
-  text-align: center;
-  color: var(--tui-text-tertiary);
-
-  p {
-    margin: 0.25rem 0;
-  }
-}
-
-.placeholder-icon {
-  font-size: 3rem;
-  margin-bottom: var(--tui-spacing, 0.5rem);
+.ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
