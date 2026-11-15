@@ -6,7 +6,6 @@ import { AdminHeaderComponent } from './admin-header.component';
   selector: 'app-admin-root-page',
   imports: [RouterOutlet, AdminHeaderComponent],
   templateUrl: './admin-root-page.html',
-  styleUrl: './admin-root-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminRootPage {}
