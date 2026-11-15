@@ -1,13 +1,18 @@
 <div class="users-page">
   <header class="page-header">
     <h1 class="page-title">Users</h1>
+    <span class="total-count">{{ store.total() }} total</span>
   </header>
 
   <section class="users-table-placeholder">
-    <!-- TODO: add users table -->
-    <div class="placeholder">
-      <tui-icon icon="@tui.table" class="placeholder-icon" />
-      <p>Table with users coming soon...</p>
-    </div>
+    @if (store.isLoading()) {
+      <tui-loader />
+    } @else {
+      <div class="placeholder">
+        <tui-icon icon="@tui.table" class="placeholder-icon" />
+        <p>Table with users coming soon...</p>
+        <p class="user-count">{{ store.content().length }} users on this page</p>
+      </div>
+    }
   </section>
 </div>
