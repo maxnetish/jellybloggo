@@ -149,3 +149,8 @@ See `backend/internal/auth/README_UI.md` for API contract.
 - `npm test` runs all specs via Vitest
 - Tests that use services making HTTP calls (e.g. `S3ConfigService`) must mock those services via `TestBed.configureTestingModule({ providers: [{ provide: ServiceClass, useValue: { method: () => of(mockData) } }] })` to avoid real HTTP requests
 - "Unhandled Errors" for `HttpErrorResponse: 0 Unknown Error` are expected when backend is not running — fix by mocking the service that initiates the request
+
+## Version Control
+
+- **DO NOT commit automatically.** Only commit when explicitly requested by the user.
+- Wait for a clear command like "make a commit" or "commit" before committing.

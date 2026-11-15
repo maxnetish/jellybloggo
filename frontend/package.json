@@ -22,6 +22,7 @@
     "@angular/router": "^22.2.6",
     "@angular/ssr": "^22.2.7",
     "@ng-web-apis/universal": "^5.3.0",
+    "@ngrx/signals": "^22.0.1",
     "@taiga-ui/addon-mobile": "^5.32.0",
     "@taiga-ui/cdk": "^5.32.0",
     "@taiga-ui/core": "^5.32.0",
