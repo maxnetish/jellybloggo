@@ -110,7 +110,7 @@ export class LoginComponent {
   }
 
   private navigateAfter() {
-    const afterLoginUrl = this.route.snapshot.queryParamMap.get('afterLogin');
+    const afterLoginUrl = this.route.snapshot.queryParamMap.get('afterLogin') || '/';
     if (afterLoginUrl) {
       this.router.navigateByUrl(afterLoginUrl);
     }

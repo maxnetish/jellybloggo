@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from '../../../common/auth/auth.guard';
 
 export const adminChildRoutes: Routes = [
+  { path: '', redirectTo: 'profile', pathMatch: 'full' },
   {
     path: 'profile',
     loadComponent: () =>
