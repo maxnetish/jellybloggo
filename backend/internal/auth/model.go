@@ -97,11 +97,11 @@ type UpdateProfileRequest struct {
 }
 
 type LoginResponse struct {
-	User *users.User `json:"user"`
+	User *users.UserResponse `json:"user"`
 }
 
 type RefreshResponse struct {
-	User *users.User `json:"user"`
+	User *users.UserResponse `json:"user"`
 }
 
 type UserResponse struct {
