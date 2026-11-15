@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from '../../../common/auth/auth.guard';
+import { Role } from '../../../common/auth/model/user-role';
 
 export const adminChildRoutes: Routes = [
   { path: '', redirectTo: 'profile', pathMatch: 'full' },
@@ -17,5 +18,11 @@ export const adminChildRoutes: Routes = [
       );
     },
     canActivate: [authGuard()],
+  },
+  {
+    path: 'users',
+    loadComponent: () =>
+      import('../users-page/users-page.component').then((m) => m.UsersPageComponent),
+    canActivate: [authGuard({ role: [Role.admin] })],
   },
 ];

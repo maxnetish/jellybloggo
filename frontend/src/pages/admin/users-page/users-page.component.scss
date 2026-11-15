@@ -1,0 +1,33 @@
+.users-page {
+  padding: var(--tui-spacing, 1rem);
+}
+
+.page-header {
+  margin-bottom: var(--tui-spacing, 1.5rem);
+}
+
+.page-title {
+  font: var(--tui-font-heading-3);
+  margin: 0;
+}
+
+.users-table-placeholder {
+  background: var(--tui-background-base);
+  border-radius: var(--tui-radius-m);
+  border: 1px dashed var(--tui-border);
+  padding: var(--tui-spacing, 2rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+}
+
+.placeholder {
+  text-align: center;
+  color: var(--tui-text-tertiary);
+}
+
+.placeholder-icon {
+  font-size: 3rem;
+  margin-bottom: var(--tui-spacing, 0.5rem);
+}
