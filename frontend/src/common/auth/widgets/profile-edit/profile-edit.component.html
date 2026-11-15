@@ -1,24 +1,19 @@
 <div tuiPlatform="web" class="login-page">
-  <form
-    appearance="floating"
-    tuiCardLarge
-    tuiForm="l"
-    [formGroup]="form"
-  >
+  <form appearance="floating" tuiCardLarge tuiForm="l" [formGroup]="form">
     <header tuiHeader>
       <h2 tuiTitle>Profile</h2>
 
       <aside tuiAccessories>
         <div
           [appearance]="(formStatus$ | async)?.appearance || 'info'"
-          [tuiAvatar]="(formStatus$ | async)?.icon"
+          [tuiAvatar]="(formStatus$ | async)?.icon || '@tui.cloud-check'"
           size="s"
           [class.rotating-icon]="(formStatus$ | async)?.rotating"
         ></div>
       </aside>
     </header>
 
-    <tui-error [error]="(formStatus$ | async)?.errorMessage || null"/>
+    <tui-error [error]="(formStatus$ | async)?.errorMessage || null" />
 
     <tui-textfield>
       <label tuiLabel>Full name</label>
@@ -29,14 +24,11 @@
         [maxlength]="256"
       ></textarea>
     </tui-textfield>
-    <tui-error formControlName="fullName"/>
+    <tui-error formControlName="fullName" />
 
     <tui-textfield>
       <label tuiLabel>Date of birth</label>
-      <input
-        tuiInputDate
-        formControlName="birthDate"
-      />
+      <input tuiInputDate formControlName="birthDate" />
       <tui-calendar *tuiDropdown />
     </tui-textfield>
 
@@ -49,7 +41,7 @@
         [maxlength]="256"
       ></textarea>
     </tui-textfield>
-    <tui-error formControlName="location"/>
+    <tui-error formControlName="location" />
 
     <tui-textfield>
       <label tuiLabel>About me</label>
@@ -60,7 +52,6 @@
         [maxlength]="4096"
       ></textarea>
     </tui-textfield>
-    <tui-error formControlName="about"/>
-
+    <tui-error formControlName="about" />
   </form>
 </div>

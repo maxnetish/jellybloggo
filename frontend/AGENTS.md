@@ -2,10 +2,17 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 
 ## Node.js
 
-- **Required version: v20+ or v22** (Angular CLI v21 requires Node 20+)
-- Use **nvm** to manage Node.js versions: `nvm use 22` (or `nvm use 20`)
+- **Required version: v22** (Angular 22 dropped Node 20 support)
+- Use **nvm** to manage Node.js versions: `nvm use 22`
 - **DO NOT install Node.js globally** or upgrade system Node — use nvm only
 - Example: `export NVM_DIR="$HOME/.nvm" && [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" && nvm use 22`
+
+## Angular 22 Changes
+
+- **OnPush is the default** change detection strategy. Components that rely on the old default have `changeDetection: ChangeDetectionStrategy.Eager` set explicitly.
+- **Route params inherit from all parent routes** (`paramsInheritanceStrategy: 'always'`). Check components using `ActivatedRoute` — params that were `undefined` before may now have values.
+- **Standalone components**: Angular 22 still supports NgModules (like `AppModule`), but for test compatibility and modern patterns, prefer standalone components. If a component is standalone, import it in `imports`, not `declarations`.
+- **Vitest builder**: Angular 22's `@angular/build:unit-test` compiles templates in isolation. Custom elements (Taiga UI, RouterOutlet, etc.) must be resolvable from the component's `imports` array, not from a parent NgModule.
 
 ## TypeScript Best Practices
 
@@ -140,5 +147,5 @@ See `backend/internal/auth/README_UI.md` for API contract.
 ### Running Tests
 
 - `npm test` runs all specs via Vitest
-- Backend must be running for tests that make HTTP calls to `/api/auth/user`
-- "Unhandled Errors" for `HttpErrorResponse: 0 Unknown Error` are expected when backend is not running
+- Tests that use services making HTTP calls (e.g. `S3ConfigService`) must mock those services via `TestBed.configureTestingModule({ providers: [{ provide: ServiceClass, useValue: { method: () => of(mockData) } }] })` to avoid real HTTP requests
+- "Unhandled Errors" for `HttpErrorResponse: 0 Unknown Error` are expected when backend is not running — fix by mocking the service that initiates the request

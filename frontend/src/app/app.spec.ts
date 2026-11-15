@@ -6,8 +6,7 @@ import { provideTaiga, TuiRoot } from '@taiga-ui/core';
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [RouterModule.forRoot([]), TuiRoot],
-      declarations: [App],
+      imports: [RouterModule.forRoot([]), TuiRoot, App],
       providers: [provideTaiga()],
     }).compileComponents();
   });

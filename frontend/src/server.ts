@@ -12,7 +12,10 @@ import { environment } from './environments/environment';
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
+const angularApp = new AngularNodeAppEngine({
+  // TODO: This is a security-sensitive option. Remove if not needed. For more information, see https://angular.dev/best-practices/security#configuring-trusted-proxy-headers
+  trustProxyHeaders: ['x-forwarded-host', 'x-forwarded-proto'],
+});
 
 if (!environment.production) {
   app.use(
@@ -64,13 +67,8 @@ app.use((req, res, next) => {
           if (response.headers.has('set-cookie')) {
             res.setHeader = ((name: string, value: string | number | readonly string[]) => {
               if (name.toLowerCase() === 'set-cookie' && !setHeaderModified) {
-                const existing = Array.isArray(value)
-                  ? value
-                  : [value as string];
-                originalSetHeader(name, [
-                  ...existing,
-                  ...requestContext.setCookies,
-                ]);
+                const existing = Array.isArray(value) ? value : [value as string];
+                originalSetHeader(name, [...existing, ...requestContext.setCookies]);
                 setHeaderModified = true;
               } else {
                 originalSetHeader(name, value);

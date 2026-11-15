@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
 
 import { FileManagerComponent } from './file-manager.component';
+import { S3ConfigService } from '../../s3config.service';
 
 describe('FileManagerComponent', () => {
   let component: FileManagerComponent;
@@ -9,6 +11,12 @@ describe('FileManagerComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [FileManagerComponent],
+      providers: [
+        {
+          provide: S3ConfigService,
+          useValue: { getAll: () => of([]) },
+        },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(FileManagerComponent);
