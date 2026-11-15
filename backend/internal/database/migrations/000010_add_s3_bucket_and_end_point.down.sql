@@ -1,2 +1,2 @@
-ALTER TABLE user_s3_configs DROP COLUMN IF EXISTS s3_bucket;
-ALTER TABLE user_s3_configs DROP COLUMN IF EXISTS s3_public_end_point;
+-- These columns are now part of the base table created by 000009.
+-- No-op for idempotency.

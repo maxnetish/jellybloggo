@@ -15,6 +15,49 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/api/auth/invite": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Generates an invitation token valid for 24 hours. Admin only.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Create invitation token",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auth.CreateInviteResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Not authenticated",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Admin role required",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/auth.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/auth/login": {
             "post": {
                 "description": "Authenticates user with login and password. Returns access token and sets refresh token cookie.",
@@ -169,7 +212,7 @@ const docTemplate = `{
         },
         "/api/auth/register": {
             "post": {
-                "description": "Creates a new user account with the given login and password, then returns access token and sets refresh token cookie. New users have no roles.",
+                "description": "Creates a new user account with the given login, password, and invitation token. Returns access token and sets refresh token cookie. New users have no roles.",
                 "consumes": [
                     "application/json"
                 ],
@@ -182,7 +225,7 @@ const docTemplate = `{
                 "summary": "Register a new user",
                 "parameters": [
                     {
-                        "description": "Registration credentials",
+                        "description": "Registration credentials with invitation token",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -199,7 +242,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Validation failed",
+                        "description": "Validation failed or invalid invitation token",
                         "schema": {
                             "$ref": "#/definitions/auth.ErrorResponse"
                         }
@@ -1049,6 +1092,17 @@ const docTemplate = `{
                 }
             }
         },
+        "auth.CreateInviteResponse": {
+            "type": "object",
+            "properties": {
+                "expires_at": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
         "auth.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -1101,6 +1155,10 @@ const docTemplate = `{
         "auth.RegisterRequest": {
             "type": "object",
             "properties": {
+                "invitation_token": {
+                    "description": "Invitation token. Required. Admin generates it via POST /api/auth/invite.",
+                    "type": "string"
+                },
                 "login": {
                     "description": "User login. Must be unique.\nRequired. Maximum 100 characters.",
                     "type": "string"

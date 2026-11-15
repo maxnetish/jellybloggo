@@ -23,6 +23,7 @@ func NewRouter(service *AuthService, userRepo users.UserRepository) *chi.Mux {
 		r.Delete("/user", handler.DeleteUser)
 		r.Post("/password", handler.ChangePassword)
 		r.Post("/roles", handler.UpdateRoles)
+		r.Post("/invite", handler.CreateInvite)
 	})
 
 	return r
