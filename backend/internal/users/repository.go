@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -12,6 +13,11 @@ import (
 // не затронули ни одной строки (т.е. пользователь с указанным id не найден).
 // Содержит красивое текстовое сообщение для логов и errors.Is для сравнения.
 var ErrUserNotFound = errors.New("user not found")
+
+// ErrLastAdmin возвращается, когда операция оставила бы систему без
+// администраторов. Инвариант: в системе всегда должен оставаться хотя бы
+// один пользователь с ролью admin.
+var ErrLastAdmin = errors.New("cannot remove the last admin")
 
 // UserRepository defines operations for user management in the database.
 type UserRepository interface {
@@ -140,7 +146,34 @@ func (r *userRepository) SetRoles(ctx context.Context, userID string, roles []st
 		}
 	}
 
+	// Инвариант: нельзя снять роль admin с последнего администратора.
+	// Проверяем пост-состояние внутри транзакции — при нуле админов
+	// defer tx.Rollback() откатит и удаление, и вставку ролей.
+	if !slices.Contains(roles, "admin") {
+		admins, err := countAdmins(ctx, tx)
+		if err != nil {
+			return err
+		}
+		if admins == 0 {
+			return ErrLastAdmin
+		}
+	}
+
 	return tx.Commit()
+}
+
+// countAdmins returns the number of users with the admin role.
+func countAdmins(ctx context.Context, tx *sql.Tx) (int, error) {
+	var count int
+	err := tx.QueryRowContext(ctx,
+		`SELECT COUNT(*) FROM user_roles ur
+		 JOIN roles r ON ur.role_id = r.id
+		 WHERE r.name = 'admin'`,
+	).Scan(&count)
+	if err != nil {
+		return 0, fmt.Errorf("failed to count admins: %w", err)
+	}
+	return count, nil
 }
 
 // getRolesByUserID loads all roles assigned to a user.
@@ -341,15 +374,48 @@ func (r *userRepository) List(ctx context.Context, params ListParams) ([]*User, 
 }
 
 func (r *userRepository) Delete(ctx context.Context, userID string) error {
-	result, err := r.db.ExecContext(ctx, "DELETE FROM users WHERE id = ?", userID)
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Запоминаем, был ли удаляемый пользователь админом: инвариант
+	// "последний админ" касается только удаления администратора.
+	var wasAdmin bool
+	if err := tx.QueryRowContext(ctx,
+		`SELECT EXISTS(
+			SELECT 1 FROM user_roles ur
+			JOIN roles r ON ur.role_id = r.id
+			WHERE ur.user_id = ? AND r.name = 'admin'
+		)`,
+		userID,
+	).Scan(&wasAdmin); err != nil {
+		return fmt.Errorf("failed to check admin role: %w", err)
+	}
+
+	result, err := tx.ExecContext(ctx, "DELETE FROM users WHERE id = ?", userID)
 	if err != nil {
 		return fmt.Errorf("failed to delete user: %w", err)
 	}
-	rows, _ := result.RowsAffected()
-	if rows == 0 {
-		return fmt.Errorf("user not found")
+	if rows, _ := result.RowsAffected(); rows == 0 {
+		return ErrUserNotFound
 	}
-	return nil
+
+	// Инвариант: нельзя удалить последнего администратора. Проверяем
+	// пост-состояние внутри транзакции — при нуле админов defer tx.Rollback()
+	// вернёт удалённого пользователя.
+	if wasAdmin {
+		admins, err := countAdmins(ctx, tx)
+		if err != nil {
+			return err
+		}
+		if admins == 0 {
+			return ErrLastAdmin
+		}
+	}
+
+	return tx.Commit()
 }
 
 func (r *userRepository) HasRole(ctx context.Context, roleName string) (bool, error) {

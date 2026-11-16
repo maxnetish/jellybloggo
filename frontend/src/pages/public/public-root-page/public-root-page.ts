@@ -1,17 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
-import { AuthService } from '../../../common/auth/auth.service';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { AsyncPipe, JsonPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { UserInfoComponent } from '../../../common/auth/widgets/user-info/user-info.component';
 
 @Component({
   selector: 'app-public-root-page',
-  imports: [JsonPipe, AsyncPipe],
+  imports: [UserInfoComponent],
   templateUrl: './public-root-page.html',
   styleUrl: './public-root-page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PublicRootPage implements OnInit {
-  protected readonly autService = inject(AuthService);
-
-  ngOnInit(): void {}
-}
+export class PublicRootPage {}

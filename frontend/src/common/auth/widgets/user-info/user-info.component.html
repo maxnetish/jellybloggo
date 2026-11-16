@@ -1,0 +1,44 @@
+@if (currentUser(); as user) {
+  <button
+    size="s"
+    tuiButton
+    type="button"
+    appearance="flat"
+    tuiDropdownAlign="end"
+    tuiDropdownManual
+    tuiDropdownLimitWidth="min"
+    [tuiDropdown]="dropdownContent"
+    [(tuiDropdownOpen)]="dropdownOpen"
+  >
+    {{ userLabel }}
+    <tui-icon icon="@tui.chevron-down"/>
+  </button>
+
+  <ng-template #dropdownContent>
+    <tui-data-list (click)="dropdownOpen.set(false)" size="s">
+      <a tuiOption tuiLink routerLink="/admin">
+        <tui-icon icon="@tui.shield" [style.font-size.px]="16"/>
+        Admin
+      </a>
+      <button
+        tuiOption
+        class="logout-btn"
+        tuiLink
+        type="button"
+        (click)="logout()"
+      >
+        <tui-icon icon="@tui.log-out" [style.font-size.px]="16"/>
+        Logout
+      </button>
+    </tui-data-list>
+  </ng-template>
+} @else {
+  <a
+    appearance="flat"
+    size="s"
+    tuiButton
+    routerLink="/login"
+  >
+    Login
+  </a>
+}

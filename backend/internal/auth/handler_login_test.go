@@ -55,9 +55,9 @@ func decodeError(t *testing.T, resp *http.Response) validation.ErrorResponse {
 // TestLogin_InvalidJSON verifies that malformed JSON in the request body
 // produces a 400 INVALID_JSON response.
 func TestLogin_InvalidJSON(t *testing.T) {
-	server := testutil.NewAuthTestServer(t)
+	ts := testutil.NewAuthTestServer(t)
 
-	resp := postJSON(t, server.URL+"/login", `{not json}`)
+	resp := postJSON(t, ts.URL()+"/login", `{not json}`)
 	assertStatus(t, resp, http.StatusBadRequest)
 
 	er := decodeError(t, resp)
@@ -70,7 +70,7 @@ func TestLogin_InvalidJSON(t *testing.T) {
 // failure produces a 400 VALIDATION_ERROR with the offending field listed
 // in Details.
 func TestLogin_ValidationErrors(t *testing.T) {
-	server := testutil.NewAuthTestServer(t)
+	ts := testutil.NewAuthTestServer(t)
 
 	cases := []struct {
 		name      string
@@ -96,7 +96,7 @@ func TestLogin_ValidationErrors(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			resp := postJSON(t, server.URL+"/login", tc.body)
+			resp := postJSON(t, ts.URL()+"/login", tc.body)
 			assertStatus(t, resp, http.StatusBadRequest)
 
 			er := decodeError(t, resp)
@@ -121,10 +121,10 @@ func TestLogin_ValidationErrors(t *testing.T) {
 // TestLogin_UnknownUser verifies that a non-existent login produces 401
 // INVALID_CREDENTIALS (we do not leak account existence).
 func TestLogin_UnknownUser(t *testing.T) {
-	server := testutil.NewAuthTestServer(t)
+	ts := testutil.NewAuthTestServer(t)
 
-	resp := postJSON(t, server.URL+"/login",
-		`{"login":"nobody","password":"TestPass1!"}`)
+	resp := postJSON(t, ts.URL()+"/login",
+		`{"login":"nobody","password":"`+testutil.TestUserPassword+`"}`)
 	assertStatus(t, resp, http.StatusUnauthorized)
 
 	er := decodeError(t, resp)
@@ -136,9 +136,9 @@ func TestLogin_UnknownUser(t *testing.T) {
 // TestLogin_WrongPassword verifies that a valid login with a wrong password
 // produces 401 INVALID_CREDENTIALS.
 func TestLogin_WrongPassword(t *testing.T) {
-	server := testutil.NewAuthTestServer(t)
+	ts := testutil.NewAuthTestServer(t)
 
-	resp := postJSON(t, server.URL+"/login",
+	resp := postJSON(t, ts.URL()+"/login",
 		`{"login":"testuser","password":"WrongPass1!"}`)
 	assertStatus(t, resp, http.StatusUnauthorized)
 
@@ -151,10 +151,10 @@ func TestLogin_WrongPassword(t *testing.T) {
 // TestLogin_Success verifies that valid credentials produce a 200 response
 // with a user body and the two expected authentication cookies.
 func TestLogin_Success(t *testing.T) {
-	server := testutil.NewAuthTestServer(t)
+	ts := testutil.NewAuthTestServer(t)
 
-	resp := postJSON(t, server.URL+"/login",
-		`{"login":"testuser","password":"TestPass1!"}`)
+	resp := postJSON(t, ts.URL()+"/login",
+		`{"login":"testuser","password":"`+testutil.TestUserPassword+`"}`)
 	assertStatus(t, resp, http.StatusOK)
 
 	// Body must contain a user with the correct login.

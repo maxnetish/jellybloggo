@@ -108,20 +108,20 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	})
 
 	validation.RespondJSON(w, http.StatusOK, LoginResponse{
-		User: user,
+		User: users.UserToResponsePtr(user),
 	})
 }
 
 // Register creates a new user account and logs them in automatically.
-// New users have no roles assigned — an administrator grants roles later.
+// Requires a valid invitation token. New users have no roles assigned — an administrator grants roles later.
 // @Summary Register a new user
-// @Description Creates a new user account with the given login and password, then returns access token and sets refresh token cookie. New users have no roles.
+// @Description Creates a new user account with the given login, password, and invitation token. Returns access token and sets refresh token cookie. New users have no roles.
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param request body RegisterRequest true "Registration credentials"
+// @Param request body RegisterRequest true "Registration credentials with invitation token"
 // @Success 200 {object} LoginResponse
-// @Failure 400 {object} ErrorResponse "Validation failed"
+// @Failure 400 {object} ErrorResponse "Validation failed or invalid invitation token"
 // @Failure 409 {object} ErrorResponse "Login already taken"
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /api/auth/register [post]
@@ -133,12 +133,33 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	accessToken, refreshToken, user, err := h.service.Register(ctx, req.Login, req.Password)
+	accessToken, refreshToken, user, err := h.service.Register(ctx, req.Login, req.Password, req.InvitationToken)
 	if err != nil {
 		if errors.Is(err, ErrDuplicateLogin) {
 			validation.RespondJSON(w, http.StatusConflict, validation.ErrorResponse{
 				Error: "login already taken",
 				Code:  "DUPLICATE_LOGIN",
+			})
+			return
+		}
+		if errors.Is(err, ErrInviteTokenInvalid) {
+			validation.RespondJSON(w, http.StatusBadRequest, validation.ErrorResponse{
+				Error: "invalid invitation token",
+				Code:  "INVALID_INVITE_TOKEN",
+			})
+			return
+		}
+		if errors.Is(err, ErrInviteTokenExpired) {
+			validation.RespondJSON(w, http.StatusBadRequest, validation.ErrorResponse{
+				Error: "invitation token has expired",
+				Code:  "INVITE_TOKEN_EXPIRED",
+			})
+			return
+		}
+		if errors.Is(err, ErrInviteTokenUsed) {
+			validation.RespondJSON(w, http.StatusBadRequest, validation.ErrorResponse{
+				Error: "invitation token already used",
+				Code:  "INVITE_TOKEN_USED",
 			})
 			return
 		}
@@ -170,7 +191,54 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	})
 
 	validation.RespondJSON(w, http.StatusOK, LoginResponse{
-		User: user,
+		User: users.UserToResponsePtr(user),
+	})
+}
+
+// CreateInvite generates a new invitation token valid for 24 hours.
+// Requires admin role.
+// @Summary Create invitation token
+// @Description Generates an invitation token valid for 24 hours. Admin only.
+// @Tags auth
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} CreateInviteResponse
+// @Failure 401 {object} ErrorResponse "Not authenticated"
+// @Failure 403 {object} ErrorResponse "Admin role required"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /api/auth/invite [post]
+func (h *AuthHandler) CreateInvite(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(ContextKeyUserID).(string)
+	if !ok || userID == "" {
+		validation.RespondJSON(w, http.StatusUnauthorized, validation.ErrorResponse{
+			Error: "not authenticated",
+			Code:  "NOT_AUTHENTICATED",
+		})
+		return
+	}
+
+	// Check admin role.
+	user, err := h.userRepo.GetByID(r.Context(), userID)
+	if err != nil || user == nil || !user.HasRole("admin") {
+		validation.RespondJSON(w, http.StatusForbidden, validation.ErrorResponse{
+			Error: "admin role required",
+			Code:  "FORBIDDEN",
+		})
+		return
+	}
+
+	token, expiresAt, err := h.service.CreateInviteToken(r.Context(), userID)
+	if err != nil {
+		validation.RespondJSON(w, http.StatusInternalServerError, validation.ErrorResponse{
+			Error: "internal error",
+			Code:  "INTERNAL_ERROR",
+		})
+		return
+	}
+
+	validation.RespondJSON(w, http.StatusOK, CreateInviteResponse{
+		Token:     token,
+		ExpiresAt: expiresAt,
 	})
 }
 
@@ -232,7 +300,7 @@ func (h *AuthHandler) ChangePassword(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param request body UpdateRolesRequest true "Target login and roles to assign"
 // @Success 204 "No Content"
-// @Failure 400 {object} ErrorResponse "Invalid login, roles, or target user not found"
+// @Failure 400 {object} ErrorResponse "Invalid login, roles, target user not found, or attempt to remove the last admin (LAST_ADMIN)"
 // @Failure 401 {object} ErrorResponse "Not authenticated"
 // @Failure 403 {object} ErrorResponse "Admin role required"
 // @Failure 500 {object} ErrorResponse "Internal server error"
@@ -259,6 +327,13 @@ func (h *AuthHandler) UpdateRoles(w http.ResponseWriter, r *http.Request) {
 			validation.RespondJSON(w, http.StatusForbidden, validation.ErrorResponse{
 				Error: "forbidden",
 				Code:  "FORBIDDEN",
+			})
+			return
+		}
+		if errors.Is(err, ErrLastAdmin) {
+			validation.RespondJSON(w, http.StatusBadRequest, validation.ErrorResponse{
+				Error: "cannot remove the last admin",
+				Code:  "LAST_ADMIN",
 			})
 			return
 		}
@@ -428,7 +503,7 @@ func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(RefreshResponse{
-		User: user,
+		User: users.UserToResponsePtr(user),
 	})
 }
 
@@ -498,7 +573,7 @@ func (h *AuthHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 // @Security BearerAuth
 // @Param login query string false "Target user login (admin only)"
 // @Success 204 "No Content"
-// @Failure 400 {object} ErrorResponse "User not found or invalid request"
+// @Failure 400 {object} ErrorResponse "User not found, invalid request, or attempt to remove the last admin (LAST_ADMIN)"
 // @Failure 401 {object} ErrorResponse "Not authenticated"
 // @Failure 403 {object} ErrorResponse "Forbidden (admin required)"
 // @Failure 500 {object} ErrorResponse "Internal server error"
@@ -531,6 +606,13 @@ func (h *AuthHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 			validation.RespondJSON(w, http.StatusForbidden, validation.ErrorResponse{
 				Error: "forbidden",
 				Code:  "FORBIDDEN",
+			})
+			return
+		}
+		if errors.Is(err, ErrLastAdmin) {
+			validation.RespondJSON(w, http.StatusBadRequest, validation.ErrorResponse{
+				Error: "cannot remove the last admin",
+				Code:  "LAST_ADMIN",
 			})
 			return
 		}

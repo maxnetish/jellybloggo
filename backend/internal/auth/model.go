@@ -21,7 +21,7 @@ type LoginRequest struct {
 }
 
 // RegisterRequest is used for user registration.
-// New users have no roles — roles are assigned by an administrator later.
+// Requires a valid invitation token. New users have no roles — roles are assigned by an administrator later.
 type RegisterRequest struct {
 	// User login. Must be unique.
 	// Required. Maximum 100 characters.
@@ -29,6 +29,25 @@ type RegisterRequest struct {
 	// User password.
 	// Required. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character. Maximum 128 characters.
 	Password string `json:"password" v8:"required,passwd,max=128"`
+	// Invitation token. Required. Admin generates it via POST /api/auth/invite.
+	InvitationToken string `json:"invitation_token" v8:"required"`
+}
+
+// InviteToken represents an invitation token stored in the database.
+type InviteToken struct {
+	ID          int64
+	TokenHash   string
+	CreatedBy   string
+	ExpiresAt   time.Time
+	UsedAt      *time.Time
+	UsedByLogin *string
+	CreatedAt   time.Time
+}
+
+// CreateInviteResponse is returned after admin creates an invitation.
+type CreateInviteResponse struct {
+	Token     string    `json:"token"`
+	ExpiresAt time.Time `json:"expires_at"`
 }
 
 // ChangePasswordRequest is used to change the current user's password.
@@ -78,11 +97,11 @@ type UpdateProfileRequest struct {
 }
 
 type LoginResponse struct {
-	User *users.User `json:"user"`
+	User *users.UserResponse `json:"user"`
 }
 
 type RefreshResponse struct {
-	User *users.User `json:"user"`
+	User *users.UserResponse `json:"user"`
 }
 
 type UserResponse struct {

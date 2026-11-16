@@ -13,6 +13,13 @@ definitions:
           Required. Must be at least 8 characters and contain uppercase, lowercase, digit, and special character. Maximum 128 characters.
         type: string
     type: object
+  auth.CreateInviteResponse:
+    properties:
+      expires_at:
+        type: string
+      token:
+        type: string
+    type: object
   auth.ErrorResponse:
     properties:
       code:
@@ -47,15 +54,18 @@ definitions:
   auth.LoginResponse:
     properties:
       user:
-        $ref: '#/definitions/users.User'
+        $ref: '#/definitions/users.UserResponse'
     type: object
   auth.RefreshResponse:
     properties:
       user:
-        $ref: '#/definitions/users.User'
+        $ref: '#/definitions/users.UserResponse'
     type: object
   auth.RegisterRequest:
     properties:
+      invitation_token:
+        description: Invitation token. Required. Admin generates it via POST /api/auth/invite.
+        type: string
       login:
         description: |-
           User login. Must be unique.
@@ -311,28 +321,6 @@ definitions:
       time.Time:
         type: string
     type: object
-  users.Role:
-    properties:
-      id:
-        type: integer
-      name:
-        type: string
-    type: object
-  users.User:
-    properties:
-      created_at:
-        type: string
-      id:
-        type: string
-      login:
-        type: string
-      roles:
-        items:
-          $ref: '#/definitions/users.Role'
-        type: array
-      updated_at:
-        type: string
-    type: object
   users.UserListResponse:
     properties:
       content:
@@ -403,6 +391,33 @@ info:
   title: Jellybloggo API
   version: "1.0"
 paths:
+  /api/auth/invite:
+    post:
+      description: Generates an invitation token valid for 24 hours. Admin only.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.CreateInviteResponse'
+        "401":
+          description: Not authenticated
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "403":
+          description: Admin role required
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/auth.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create invitation token
+      tags:
+      - auth
   /api/auth/login:
     post:
       consumes:
@@ -508,10 +523,11 @@ paths:
     post:
       consumes:
       - application/json
-      description: Creates a new user account with the given login and password, then
-        returns access token and sets refresh token cookie. New users have no roles.
+      description: Creates a new user account with the given login, password, and
+        invitation token. Returns access token and sets refresh token cookie. New
+        users have no roles.
       parameters:
-      - description: Registration credentials
+      - description: Registration credentials with invitation token
         in: body
         name: request
         required: true
@@ -525,7 +541,7 @@ paths:
           schema:
             $ref: '#/definitions/auth.LoginResponse'
         "400":
-          description: Validation failed
+          description: Validation failed or invalid invitation token
           schema:
             $ref: '#/definitions/auth.ErrorResponse'
         "409":
@@ -558,7 +574,8 @@ paths:
         "204":
           description: No Content
         "400":
-          description: Invalid login, roles, or target user not found
+          description: Invalid login, roles, target user not found, or attempt to
+            remove the last admin (LAST_ADMIN)
           schema:
             $ref: '#/definitions/auth.ErrorResponse'
         "401":
@@ -591,7 +608,8 @@ paths:
         "204":
           description: No Content
         "400":
-          description: User not found or invalid request
+          description: User not found, invalid request, or attempt to remove the last
+            admin (LAST_ADMIN)
           schema:
             $ref: '#/definitions/auth.ErrorResponse'
         "401":

@@ -1,2 +1,2 @@
-ALTER TABLE user_s3_configs ADD COLUMN s3_bucket TEXT NOT NULL DEFAULT '';
-ALTER TABLE user_s3_configs ADD COLUMN s3_public_end_point TEXT NOT NULL DEFAULT '';
+-- s3_bucket and s3_public_end_point were already added in 000009_user_s3_configs.up.sql.
+-- This migration only adds IF NOT EXISTS guards for idempotency.

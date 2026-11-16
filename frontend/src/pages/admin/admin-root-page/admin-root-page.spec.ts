@@ -1,10 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 
 import { AdminRootPage } from './admin-root-page';
-import { TuiButton, TuiIcon } from '@taiga-ui/core';
-import { TuiFade } from '@taiga-ui/kit';
-import { TuiNavigation } from '@taiga-ui/layout';
-import { provideRouter, RouterLink, RouterOutlet } from '@angular/router';
+import { AdminHeaderComponent } from './admin-header.component';
+import { RouterOutlet } from '@angular/router';
+import { UserInfoComponent } from '../../../common/auth/widgets/user-info/user-info.component';
+import { AuthService } from '../../../common/auth/auth.service';
 
 describe('AdminRootPage', () => {
   let component: AdminRootPage;
@@ -14,15 +16,13 @@ describe('AdminRootPage', () => {
     await TestBed.configureTestingModule({
       imports: [
         AdminRootPage,
-        TuiIcon,
-        TuiFade,
-        TuiNavigation,
-        TuiButton,
-        RouterLink,
         RouterOutlet,
+        AdminHeaderComponent,
+        UserInfoComponent,
       ],
       providers: [
         provideRouter([]),
+        { provide: AuthService, useValue: { currentUser$: of(null) } },
       ],
     }).compileComponents();
 

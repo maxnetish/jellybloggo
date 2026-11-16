@@ -80,8 +80,11 @@ cookie, HTTP-status, and middleware layers — not just the unit under test.
 | File | Purpose |
 |------|---------|
 | `internal/database/db.go` | `NewInMemory() (*sql.DB, error)` — opens `":memory:?_foreign_keys=on"`, runs all migrations. Caller closes the `*sql.DB`. |
-| `internal/auth/testutil/server.go` | `NewAuthTestServer(t *testing.T) *httptest.Server` — wires `database → userRepo → refreshTokenRepo → authService → router`, seeds one test user (`TestUserLogin` / `TestUserPassword`, both exported), starts `httptest.NewServer`, registers `t.Cleanup` for both server and DB. |
+| `internal/auth/testutil/server.go` | `NewAuthTestServer(t *testing.T) *TestServer` — wires `database → userRepo → refreshTokenRepo → inviteTokenRepo → authService → router`, seeds one test user (`TestUserLogin` / `TestUserPassword`, both exported), starts `httptest.NewServer`, registers `t.Cleanup` for both server and DB. `NewAuthTestServerWithAdmin(t)` returns an `AdminSession` with admin cookies set. |
 | `internal/auth/handler_login_test.go` | Reference test file. Contains reusable unexported helpers: `postJSON`, `assertStatus`, `decodeError`. Copy these into new test files rather than re-creating. |
+
+**Note:** The test server mounts the router directly at the root (no `/api/auth/` prefix),
+so tests use paths like `/login`, `/register`, `/invite`, `/user` — not `/api/auth/*`.
 
 **Why a sub-package `auth/testutil`?** The helper must import `auth` (to build
 `AuthService`, `NewRouter`, etc.), and `auth/*_test.go` files must import the
@@ -127,15 +130,16 @@ The `testutil` package exports:
 const (
     TestUserLogin    = "testuser"
     TestUserPassword = "TestPass1!"
+
+    TestAdminLogin    = "testadmin"
+    TestAdminPassword = "AdminPass1!"
 )
 ```
 
-Hardcode these in test bodies — don't redefine string literals. The user has
-no roles by default; for admin-only tests, either:
-
-- Add a second seeding helper (`testutil.NewAuthTestServerWithAdmin(t)`), or
-- Reuse the `userRepo` reference (returned alongside the server) and call
-  `SetRoles(ctx, userID, []string{"admin"})` directly in the test.
+Passwords must satisfy the `passwd` validator (uppercase, lowercase, digit, special char).
+Use `TestUserLogin` / `TestUserPassword` for regular users; use `NewAuthTestServerWithAdmin(t)`
+for tests that require an admin session. The `AdminSession` returned by that helper
+holds cookies from a successful admin login — attach them with `req.AddCookie(...)`.
 
 ### Adding Tests for a New Endpoint
 
@@ -145,32 +149,35 @@ no roles by default; for admin-only tests, either:
    (or build a sibling helper for other routers, e.g. `users/testutil`).
 3. Get the server:
    ```go
-   server := testutil.NewAuthTestServer(t) // or the appropriate helper
+   ts := testutil.NewAuthTestServer(t)  // or NewAuthTestServerWithAdmin(t)
    ```
+   The test server mounts routes at the **root** (e.g. `/register`, not `/api/auth/register`).
 4. Drive requests with `http.Post`, `http.NewRequest` + `server.Client().Do`,
    etc. Prefer `http.Post` for one-shot calls.
 5. Use the unexported helpers (`postJSON`, `assertStatus`, `decodeError`) —
    copy them from `handler_login_test.go` into the new file. Keep them
    identical across test files.
-6. For protected endpoints (JWT required), see the next subsection.
+6. For protected endpoints (JWT required), attach cookies with
+   `req.AddCookie(...)` and use `session.Server.Client().Do(req)`.
 
-### Protected Endpoints (TODO — not yet implemented)
+### Protected Endpoints
 
 For routes behind `TransparentRefreshMiddleware` (anything in the `r.Group`
-in `auth/routes.go`), the test needs to attach `access_token` (header or
-cookie) and/or `refresh_token` (cookie). When the first such test is written,
-add a sibling helper to `auth/testutil`:
+in `auth/routes.go`), the test needs to attach cookies from a logged-in session.
+Use `testutil.NewAuthTestServerWithAdmin(t)` which returns an `AdminSession`
+with cookies already set. Attach cookies with `req.AddCookie(...)`:
 
 ```go
-// NewAuthTestServerWithSession starts a server and logs in the test user,
-// returning the cookies the test should send with subsequent requests.
-func NewAuthTestServerWithSession(t *testing.T) (*httptest.Server, []*http.Cookie)
+session := testutil.NewAuthTestServerWithAdmin(t)
+req, _ := http.NewRequest("POST", session.URL()+"/invite", nil)
+for _, c := range session.Cookies {
+    req.AddCookie(c)
+}
+resp, err := session.Server.Client().Do(req)
 ```
 
-Attach those cookies to requests via `req.AddCookie(...)` and
-`server.Client().Do(req)`. The login response itself is the source of the
-cookies (`resp.Cookies()`); call `/api/auth/login` once at setup, then reuse
-the cookies.
+For non-admin sessions, use `NewAuthTestServer(t)`, login manually, then reuse
+the cookies from the login response.
 
 ### Known Noise
 

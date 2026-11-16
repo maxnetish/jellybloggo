@@ -1,0 +1,39 @@
+.users-page {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.page-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.page-title {
+  margin: 0;
+  font: var(--tui-typography-heading-h4);
+}
+
+.total-count {
+  font: var(--tui-typography-body-m);
+  color: var(--tui-text-tertiary);
+}
+
+.table-container {
+  display: block;
+}
+
+.users-table {
+  width: 100%;
+  min-width: 62rem;
+  table-layout: fixed;
+}
+
+.ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

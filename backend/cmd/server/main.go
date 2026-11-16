@@ -80,7 +80,8 @@ func main() {
 	refreshExpiry := getDurationEnv("REFRESH_EXPIRY", 168*time.Hour)
 
 	refreshTokenRepo := auth.NewRefreshTokenRepository(db)
-	authService := auth.NewAuthService(userRepo, refreshTokenRepo, auth.AuthConfig{
+	inviteTokenRepo := auth.NewInviteTokenRepository(db)
+	authService := auth.NewAuthService(userRepo, refreshTokenRepo, inviteTokenRepo, auth.AuthConfig{
 		JWTSecret:     jwtSecret,
 		TokenExpiry:   tokenExpiry,
 		RefreshExpiry: refreshExpiry,

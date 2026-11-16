@@ -128,3 +128,11 @@ func UserToResponse(u *User) UserResponse {
 		UpdatedAt: u.UpdatedAt,
 	}
 }
+
+func UserToResponsePtr(u *User) *UserResponse {
+	if u == nil {
+		return nil
+	}
+	resp := UserToResponse(u)
+	return &resp
+}

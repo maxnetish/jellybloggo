@@ -1,0 +1,27 @@
+<header class="header">
+  <div class="header-left">
+    <tui-icon icon="@tui.layers" class="logo-icon" />
+    <span class="logo-text">Jellybloggo private</span>
+  </div>
+
+  <nav class="header-nav">
+    <a routerLink="profile">
+      <tui-icon icon="@tui.user-pen" />
+      My profile
+    </a>
+    @if (currentUser()?.roles?.includes(Role.admin)) {
+      <a routerLink="users">
+        <tui-icon icon="@tui.users" />
+        Users
+      </a>
+    }
+    <a routerLink="filemanager">
+      <tui-icon icon="@tui.cloud" />
+      File manager
+    </a>
+  </nav>
+
+  <div class="header-right">
+    <app-user-info />
+  </div>
+</header>

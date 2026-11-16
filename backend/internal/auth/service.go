@@ -22,14 +22,28 @@ var (
 	// ErrUserNotFound — re-export users.ErrUserNotFound для согласованного
 	// errors.Is() в вызывающем коде (например, в UpdateRoles и UpdateProfile).
 	ErrUserNotFound = users.ErrUserNotFound
+	// ErrLastAdmin — попытка удалить последнего администратора или снять
+	// с него роль admin. Инвариант: админ в системе должен оставаться всегда.
+	ErrLastAdmin = users.ErrLastAdmin
+
+	// ErrInviteTokenInvalid — токен приглашения не найден или невалиден.
+	ErrInviteTokenInvalid = errors.New("invalid invitation token")
+	// ErrInviteTokenExpired — срок действия токена истёк.
+	ErrInviteTokenExpired = errors.New("invitation token expired")
+	// ErrInviteTokenUsed — токен уже использован.
+	ErrInviteTokenUsed = errors.New("invitation token already used")
+
+	// InviteExpiry is the validity period of an invitation token (24 hours).
+	InviteExpiry = 24 * time.Hour
 )
 
 type AuthService struct {
-	userRepo       users.UserRepository
-	refreshTokenRepo RefreshTokenRepository
-	jwtSecret      []byte
-	tokenExpiry    time.Duration
-	refreshExpiry  time.Duration
+	userRepo         users.UserRepository
+	refreshTokenRepo  RefreshTokenRepository
+	inviteTokenRepo  InviteTokenRepository
+	jwtSecret        []byte
+	tokenExpiry      time.Duration
+	refreshExpiry    time.Duration
 }
 
 type AuthConfig struct {
@@ -41,11 +55,13 @@ type AuthConfig struct {
 func NewAuthService(
 	userRepo users.UserRepository,
 	refreshTokenRepo RefreshTokenRepository,
+	inviteTokenRepo InviteTokenRepository,
 	cfg AuthConfig,
 ) *AuthService {
 	return &AuthService{
-		userRepo:       userRepo,
+		userRepo:         userRepo,
 		refreshTokenRepo: refreshTokenRepo,
+		inviteTokenRepo:  inviteTokenRepo,
 		jwtSecret:      []byte(cfg.JWTSecret),
 		tokenExpiry:    cfg.TokenExpiry,
 		refreshExpiry:  cfg.RefreshExpiry,
@@ -73,7 +89,12 @@ func (s *AuthService) Login(ctx context.Context, login, password string) (string
 	return accessToken, user, nil
 }
 
-func (s *AuthService) Register(ctx context.Context, login, password string) (string, string, *users.User, error) {
+func (s *AuthService) Register(ctx context.Context, login, password, invitationToken string) (string, string, *users.User, error) {
+	// Validate and consume the invitation token.
+	if err := s.ValidateAndConsumeInviteToken(ctx, invitationToken, login); err != nil {
+		return "", "", nil, err
+	}
+
 	existing, _ := s.userRepo.GetByLogin(ctx, login)
 	if existing != nil {
 		return "", "", nil, ErrDuplicateLogin
@@ -100,6 +121,40 @@ func (s *AuthService) Register(ctx context.Context, login, password string) (str
 	}
 
 	return accessToken, refreshToken, created, nil
+}
+
+// CreateInviteToken generates a new invitation token valid for 24 hours.
+// The creator must have admin role (checked in the handler).
+func (s *AuthService) CreateInviteToken(ctx context.Context, creatorUserID string) (string, time.Time, error) {
+	expiresAt := time.Now().Add(InviteExpiry)
+	token, err := s.inviteTokenRepo.Create(ctx, creatorUserID, expiresAt)
+	return token, expiresAt, err
+}
+
+// ValidateAndConsumeInviteToken checks the invitation token and marks it as used.
+// Returns an error if the token is invalid, expired, or already used.
+func (s *AuthService) ValidateAndConsumeInviteToken(ctx context.Context, token, login string) error {
+	stored, err := s.inviteTokenRepo.GetByToken(ctx, token)
+	if err != nil {
+		return fmt.Errorf("failed to get invitation token: %w", err)
+	}
+	if stored == nil {
+		return ErrInviteTokenInvalid
+	}
+
+	if time.Now().After(stored.ExpiresAt) {
+		return ErrInviteTokenExpired
+	}
+
+	if stored.UsedAt != nil {
+		return ErrInviteTokenUsed
+	}
+
+	if err := s.inviteTokenRepo.MarkAsUsed(ctx, HashToken(token), login); err != nil {
+		return fmt.Errorf("failed to mark invitation token as used: %w", err)
+	}
+
+	return nil
 }
 
 func (s *AuthService) CreateRefreshToken(ctx context.Context, userID string) (string, error) {
