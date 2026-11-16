@@ -4,6 +4,8 @@ import { environment } from '../../environments/environment';
 import { UserResponse } from './model/user-response';
 import { ProfileUpdate } from './model/profile-update';
 import { LoginRequest } from './model/login-request';
+import { RegisterRequest } from './model/register-request';
+import { InviteResponse } from './model/invite-response';
 import { Observable, shareReplay, Subject, tap } from 'rxjs';
 import { User } from './model/user';
 import { isPlatformBrowser } from '@angular/common';
@@ -54,12 +56,35 @@ export class AuthService {
     );
   }
 
-  register(credentials: LoginRequest) {
+  /**
+   * Регистрация нового пользователя по приглашению.
+   *
+   * @param credentials — логин, пароль и токен приглашения
+   * @returns Observable с данными пользователя
+   *
+   * @see backend/internal/auth/README_UI.md — раздел "Register"
+   * @see backend/internal/auth/handler.go — метод RegisterHandler
+   */
+  register(credentials: RegisterRequest): Observable<UserResponse> {
     return this.http.post<UserResponse>(`${environment.apiUrl}/auth/register`, credentials).pipe(
       tap((response) => {
         this.currentUserStream$.next(response.user);
       }),
     );
+  }
+
+  /**
+   * Создание приглашения для нового пользователя.
+   *
+   * Доступно только пользователям с ролью admin.
+   *
+   * @returns Observable с токеном приглашения и временем его истечения
+   *
+   * @see backend/internal/auth/README_UI.md — раздел "Invite"
+   * @see backend/internal/auth/handler.go — метод InviteHandler
+   */
+  createInvite(): Observable<InviteResponse> {
+    return this.http.post<InviteResponse>(`${environment.apiUrl}/auth/invite`, null);
   }
 
   /**

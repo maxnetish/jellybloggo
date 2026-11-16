@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, TemplateRef } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { TuiDialogService, provideTaiga, TuiRoot, TuiNotificationService } from '@taiga-ui/core';
 import { EMPTY, Observable, of } from 'rxjs';
 import { PaginatedResponse } from '../../../common/api/paginated-response';
+import { AuthService } from '../../../common/auth/auth.service';
 import { Role } from '../../../common/auth/model/user-role';
 import { User } from '../../../common/auth/model/user';
 import { UsersService } from '../../../common/users/users.service';
@@ -119,5 +120,80 @@ describe('UsersPageComponent delete', () => {
 
     expect(options.data.content).toContain('&#60;img');
     expect(options.data.content).not.toContain('<img');
+  });
+});
+
+describe('UsersPageComponent invite', () => {
+  let fixture: ComponentFixture<Host>;
+  let openDialog: ReturnType<typeof vi.fn>;
+  let openNotification: ReturnType<typeof vi.fn>;
+  let createInvite: ReturnType<typeof vi.fn>;
+
+  const inviteResponse = { token: 'test-token-abc', expires_at: '2026-11-18T12:00:00Z' };
+
+  beforeEach(async () => {
+    openDialog = vi.fn((): Observable<unknown> => of(undefined));
+    openNotification = vi.fn((): Observable<unknown> => of(undefined));
+    createInvite = vi.fn((): Observable<{ token: string; expires_at: string }> => of(inviteResponse));
+
+    const usersService = { getUsers: () => of(response), setRoles: () => of(undefined), deleteUser: vi.fn() };
+    const authService = { createInvite };
+
+    await TestBed.configureTestingModule({
+      imports: [Host],
+      providers: [
+        provideTaiga(),
+        { provide: UsersService, useValue: usersService },
+        { provide: AuthService, useValue: authService },
+        { provide: TuiDialogService, useValue: { open: openDialog } },
+        { provide: TuiNotificationService, useValue: { open: openNotification } },
+      ],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(Host);
+    await fixture.whenStable();
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    fixture.destroy();
+  });
+
+  function inviteButton(): HTMLButtonElement {
+    return fixture.nativeElement.querySelector('button[title="Invite"]') as HTMLButtonElement;
+  }
+
+  it('renders an Invite button in the header', () => {
+    const button = inviteButton();
+    expect(button).toBeTruthy();
+    expect(button.textContent?.trim()).toBe('Invite');
+  });
+
+  it('creates invite and opens dialog with invite link', async () => {
+    inviteButton().click();
+    await fixture.whenStable();
+
+    expect(createInvite).toHaveBeenCalled();
+    const [template, options] = openDialog.mock.calls[0];
+    expect(options.label).toBe('Invite link');
+    expect(options.size).toBe('s');
+    expect((template as unknown as TemplateRef<unknown>)).toBeTruthy();
+  });
+
+  it('shows notification on invite error', async () => {
+    createInvite.mockReturnValue(
+      new Observable((subscriber) => {
+        subscriber.error({ message: 'Forbidden' });
+      }),
+    );
+
+    inviteButton().click();
+    await fixture.whenStable();
+
+    expect(openNotification).toHaveBeenCalled();
+    const [message, opts] = openNotification.mock.calls[0];
+    expect(message).toBe('Forbidden');
+    expect(opts.appearance).toBe('negative');
+    expect(openDialog).not.toHaveBeenCalled();
   });
 });

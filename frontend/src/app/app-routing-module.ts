@@ -14,6 +14,10 @@ const routes: Routes = [
   {
     path: 'login',
     loadComponent: () => import('../common/auth/widgets/login/login.component').then(m => m.LoginComponent),
+  },
+  {
+    path: 'register',
+    loadComponent: () => import('../common/auth/widgets/login/login.component').then(m => m.LoginComponent),
   }
 ];
 

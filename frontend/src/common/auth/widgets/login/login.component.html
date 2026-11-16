@@ -5,7 +5,7 @@
     tuiForm="m"
     [formRoot]="form"
     class="login-card"
-    (submit)="login()"
+    (submit)="onSubmit()"
   >
     <header tuiHeader>
       <h2 tuiTitle>Enter</h2>
@@ -44,22 +44,8 @@
     }
 
     <footer>
-      <button
-        appearance="flat"
-        size="m"
-        tuiButton
-        type="button"
-        (click)="register()"
-      >
-        Register
-      </button>
-      <button
-        appearance="primary"
-        size="m"
-        tuiButton
-        type="submit"
-      >
-        Login
+      <button appearance="primary" size="m" tuiButton type="submit">
+        {{ isRegister() ? 'Register' : 'Login' }}
       </button>
     </footer>
   </form>

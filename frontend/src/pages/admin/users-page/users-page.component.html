@@ -2,6 +2,18 @@
   <header class="page-header">
     <h1 class="page-title">Users</h1>
     <span class="total-count">{{ store.total() }} total</span>
+    <button
+      appearance="flat"
+      iconStart="@tui.user-plus"
+      size="s"
+      tuiButton
+      type="button"
+      class="invite-button"
+      title="Invite"
+      (click)="onInvite()"
+    >
+      Invite
+    </button>
   </header>
 
   <tui-table-pagination
@@ -66,4 +78,19 @@
     [total]="store.total()"
     (paginationChange)="onPagination($event)"
   />
+
+  <ng-template #inviteDialog let-observer>
+    <tui-textfield>
+      <label tuiLabel>Link</label>
+      <input [value]="inviteLink" [readOnly]="true" tuiInput />
+    </tui-textfield>
+    <p class="invite-hint">
+      Share this link to invite a new user. The link expires in 24 hours and can only be used once.
+    </p>
+    <footer>
+      <button appearance="primary" tuiButton type="button" (click)="observer.complete()">
+        Close
+      </button>
+    </footer>
+  </ng-template>
 </div>

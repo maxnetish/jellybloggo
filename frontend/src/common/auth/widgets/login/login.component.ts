@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { TuiCard, TuiForm, TuiHeader } from '@taiga-ui/layout';
 import {
   TuiButton,
@@ -44,12 +44,27 @@ export class LoginComponent {
   protected readonly router = inject(Router);
   protected readonly route = inject(ActivatedRoute);
 
+  protected readonly isRegister = computed(() => this.route.snapshot.routeConfig?.path === 'register');
   protected readonly warn = signal<string | null>(null);
+
+  protected onSubmit(): void {
+    if (this.isRegister()) {
+      this.register();
+    } else {
+      this.login();
+    }
+  }
 
   protected register() {
     this.form().markAsTouched();
 
     if (!this.form().valid()) {
+      return;
+    }
+
+    const token = this.route.snapshot.queryParamMap.get('token');
+    if (!token) {
+      this.warn.set('Invitation token is missing');
       return;
     }
 
@@ -62,9 +77,10 @@ export class LoginComponent {
       .register({
         login,
         password,
+        invitation_token: token,
       })
       .subscribe({
-        next: (result) => {
+        next: () => {
           this.navigateAfter();
         },
         error: (err) => {
