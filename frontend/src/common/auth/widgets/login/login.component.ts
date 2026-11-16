@@ -11,7 +11,7 @@ import {
 } from '@taiga-ui/core';
 import { TuiPlatform } from '@taiga-ui/cdk';
 import { createLoginForm } from './login.form';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormField, FormRoot } from '@angular/forms/signals';
 import { TuiPassword } from '@taiga-ui/kit';
 import { AuthService } from '../../auth.service';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -24,7 +24,6 @@ import { ActivatedRoute, Router } from '@angular/router';
     TuiButton,
     TuiPlatform,
     TuiForm,
-    ReactiveFormsModule,
     TuiTextfield,
     TuiInputDirective,
     TuiError,
@@ -32,6 +31,8 @@ import { ActivatedRoute, Router } from '@angular/router';
     TuiPassword,
     TuiHeader,
     TuiNotificationDirective,
+    FormField,
+    FormRoot,
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss',
@@ -46,13 +47,13 @@ export class LoginComponent {
   protected readonly warn = signal<string | null>(null);
 
   protected register() {
-    this.form.markAllAsTouched();
+    this.form().markAsTouched();
 
-    if (!this.form.valid) {
+    if (!this.form().valid()) {
       return;
     }
 
-    const { login, password } = this.form.value;
+    const { login, password } = this.form().value();
 
     if (!(login && password)) {
       throw new Error('Missed login or password');
@@ -73,13 +74,13 @@ export class LoginComponent {
   }
 
   protected login() {
-    this.form.markAllAsTouched();
+    this.form().markAsTouched();
 
-    if (!this.form.valid) {
+    if (!this.form().valid()) {
       return;
     }
 
-    const { login, password } = this.form.value;
+    const { login, password } = this.form().value();
 
     if (!(login && password)) {
       throw new Error('Missed login or password');

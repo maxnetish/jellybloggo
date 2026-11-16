@@ -1,34 +1,32 @@
 <div tuiPlatform="web" class="login-page">
-  <form appearance="floating" tuiCardLarge tuiForm="l" [formGroup]="form">
+  <form appearance="floating" tuiCardLarge tuiForm="l" [formRoot]="form" class="form">
     <header tuiHeader>
       <h2 tuiTitle>Profile</h2>
 
       <aside tuiAccessories>
         <div
-          [appearance]="(formStatus$ | async)?.appearance || 'info'"
-          [tuiAvatar]="(formStatus$ | async)?.icon || '@tui.cloud-check'"
+          [tuiAppearance]="formStatusAppearance()"
+          [tuiAvatar]="formStatusIcon()"
           size="s"
-          [class.rotating-icon]="(formStatus$ | async)?.rotating"
         ></div>
       </aside>
     </header>
 
-    <tui-error [error]="(formStatus$ | async)?.errorMessage || null" />
+    <tui-error [error]="formStatusErrorMessage()" />
 
     <tui-textfield>
       <label tuiLabel>Full name</label>
       <textarea
         placeholder="Optional full name or nickname"
         tuiTextarea
-        formControlName="fullName"
-        [maxlength]="256"
+        [formField]="form.fullName"
       ></textarea>
     </tui-textfield>
-    <tui-error formControlName="fullName" />
+    <tui-error [formField]="form.fullName" />
 
     <tui-textfield>
       <label tuiLabel>Date of birth</label>
-      <input tuiInputDate formControlName="birthDate" />
+      <input tuiInputDate [formField]="form.birthDate" />
       <tui-calendar *tuiDropdown />
     </tui-textfield>
 
@@ -37,21 +35,19 @@
       <textarea
         placeholder="Where are you? For example, Tatooine"
         tuiTextarea
-        formControlName="location"
-        [maxlength]="256"
+        [formField]="form.location"
       ></textarea>
     </tui-textfield>
-    <tui-error formControlName="location" />
+    <tui-error [formField]="form.location" />
 
     <tui-textfield>
       <label tuiLabel>About me</label>
       <textarea
         placeholder="Public information about me. For example, Jedi knight"
         tuiTextarea
-        formControlName="about"
-        [maxlength]="4096"
+        [formField]="form.about"
       ></textarea>
     </tui-textfield>
-    <tui-error formControlName="about" />
+    <tui-error [formField]="form.about" />
   </form>
 </div>

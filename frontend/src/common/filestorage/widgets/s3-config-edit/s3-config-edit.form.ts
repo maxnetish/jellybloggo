@@ -1,94 +1,102 @@
-import { FormControl, FormGroup } from '@angular/forms';
-import { AppValidators } from '../../../utils/validators/app-validators';
+import { signal } from '@angular/core';
+import { form, maxLength, required, validate } from '@angular/forms/signals';
+import { notBlankValidator } from '../../../utils/validators/not-blank';
+import { urlValidator } from '../../../utils/validators/url';
 import {
   S3ConfigResponse,
   CreateS3ConfigRequest,
   UpdateS3ConfigRequest,
 } from '../../model/s3-config';
 
+/**
+ * Поля формы — ровно поля запроса на создание, нормализованные к строкам
+ * (пустая строка означает "значение не задано").
+ */
+export type S3ConfigFormModel = Record<keyof CreateS3ConfigRequest, string>;
+
 export type S3ConfigEditForm = ReturnType<typeof createS3ConfigForm>;
 
-export function createS3ConfigForm(): FormGroup {
-  return new FormGroup({
-    configName: new FormControl<string | null>(null, {
-      validators: [AppValidators.notBlank(), AppValidators.maxLength({ maxLength: 100 })],
-    }),
-    s3AccessKey: new FormControl<string | null>(null, {
-      validators: [AppValidators.required(), AppValidators.maxLength({ maxLength: 255 })],
-    }),
-    s3AccessSecret: new FormControl<string | null>(null, {
-      validators: [AppValidators.required(), AppValidators.maxLength({ maxLength: 500 })],
-    }),
-    s3Endpoint: new FormControl<string | null>(null, {
-      validators: [AppValidators.url(), AppValidators.maxLength({ maxLength: 500 })],
-    }),
-    s3Region: new FormControl<string | null>(null, {
-      validators: [AppValidators.maxLength({ maxLength: 50 })],
-    }),
-    s3Bucket: new FormControl<string | null>(null, {
-      validators: [AppValidators.required(), AppValidators.maxLength({ maxLength: 63 })],
-    }),
-    s3PublicEndPoint: new FormControl<string | null>(null, {
-      validators: [
-        AppValidators.required(),
-        AppValidators.url(),
-        AppValidators.maxLength({ maxLength: 500 }),
-      ],
-    }),
+export function createS3ConfigForm() {
+  const model = signal<S3ConfigFormModel>({
+    config_name: '',
+    s3_access_key: '',
+    s3_access_secret: '',
+    s3_endpoint: '',
+    s3_region: '',
+    s3_bucket: '',
+    s3_public_end_point: '',
+  });
+
+  return form(model, (schemaPath) => {
+    validate(schemaPath.config_name, notBlankValidator);
+    maxLength(schemaPath.config_name, 100, { message: 'Maximum 100 characters' });
+
+    required(schemaPath.s3_access_key, { message: 'Can not be empty' });
+    maxLength(schemaPath.s3_access_key, 255, { message: 'Maximum 255 characters' });
+
+    required(schemaPath.s3_access_secret, { message: 'Can not be empty' });
+    maxLength(schemaPath.s3_access_secret, 500, { message: 'Maximum 500 characters' });
+
+    validate(schemaPath.s3_endpoint, urlValidator);
+    maxLength(schemaPath.s3_endpoint, 500, { message: 'Maximum 500 characters' });
+
+    maxLength(schemaPath.s3_region, 50, { message: 'Maximum 50 characters' });
+
+    required(schemaPath.s3_bucket, { message: 'Can not be empty' });
+    maxLength(schemaPath.s3_bucket, 63, { message: 'Maximum 63 characters' });
+
+    required(schemaPath.s3_public_end_point, { message: 'Can not be empty' });
+    validate(schemaPath.s3_public_end_point, urlValidator);
+    maxLength(schemaPath.s3_public_end_point, 500, { message: 'Maximum 500 characters' });
   });
 }
 
+/**
+ * Залить дто в форму.
+ * После вызова форма в pristine/touched=false — считается "сохранённым" состоянием.
+ */
 export function applyDtoToForm({
-  form,
+  form: s3Form,
   dto,
 }: {
   form: S3ConfigEditForm;
   dto: S3ConfigResponse;
 }): S3ConfigEditForm {
-  form.patchValue({
-    configName: dto.config_name || null,
-    s3AccessKey: dto.s3_access_key || null,
-    s3AccessSecret: dto.s3_access_secret || null,
-    s3Endpoint: dto.s3_endpoint || null,
-    s3Region: dto.s3_region || null,
-    s3Bucket: dto.s3_bucket || null,
-    s3PublicEndPoint: dto.s3_public_end_point || null,
+  s3Form().reset({
+    config_name: dto.config_name || '',
+    s3_access_key: dto.s3_access_key || '',
+    s3_access_secret: dto.s3_access_secret || '',
+    s3_endpoint: dto.s3_endpoint || '',
+    s3_region: dto.s3_region || '',
+    s3_bucket: dto.s3_bucket || '',
+    s3_public_end_point: dto.s3_public_end_point || '',
   });
-  form.markAsPristine();
-  form.markAsUntouched();
-  return form;
+  return s3Form;
 }
 
-export function applyFormToDtoForCreate({
-  form,
+export function applyFormValueToDtoForCreate({
+  formValue,
 }: {
-  form: S3ConfigEditForm;
+  formValue: S3ConfigFormModel;
 }): CreateS3ConfigRequest {
-  const v = form.value;
   return {
-    config_name: v.configName || '',
-    s3_access_key: v.s3AccessKey || '',
-    s3_access_secret: v.s3AccessSecret || '',
-    s3_endpoint: v.s3Endpoint || null,
-    s3_region: v.s3Region || null,
-    s3_bucket: v.s3Bucket || '',
-    s3_public_end_point: v.s3PublicEndPoint || '',
+    ...formValue,
+    s3_endpoint: formValue.s3_endpoint || null,
+    s3_region: formValue.s3_region || null,
   };
 }
 
-export function applyFormToDtoForUpdate({
-  form,
+export function applyFormValueToDtoForUpdate({
+  formValue,
 }: {
-  form: S3ConfigEditForm;
+  formValue: S3ConfigFormModel;
 }): UpdateS3ConfigRequest {
-  const v = form.value;
   return {
-    config_name: v.configName || null,
-    s3_access_key: v.s3AccessKey || null,
-    s3_access_secret: v.s3AccessSecret || null,
-    s3_endpoint: v.s3Endpoint || null,
-    s3_region: v.s3Region || null,
-    s3_bucket: v.s3Bucket || '',
-    s3_public_end_point: v.s3PublicEndPoint || '',
+    ...formValue,
+    config_name: formValue.config_name || null,
+    s3_access_key: formValue.s3_access_key || null,
+    s3_access_secret: formValue.s3_access_secret || null,
+    s3_endpoint: formValue.s3_endpoint || null,
+    s3_region: formValue.s3_region || null,
   };
 }

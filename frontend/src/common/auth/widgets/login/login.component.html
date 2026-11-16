@@ -3,9 +3,9 @@
     appearance="floating"
     tuiCardLarge
     tuiForm="m"
-    [formGroup]="form"
+    [formRoot]="form"
     class="login-card"
-    (ngSubmit)="login()"
+    (submit)="login()"
   >
     <header tuiHeader>
       <h2 tuiTitle>Enter</h2>
@@ -14,13 +14,12 @@
     <tui-textfield>
       <label tuiLabel>Login</label>
       <input
-        formControlName="login"
+        [formField]="form.login"
         placeholder="Enter login"
         tuiInput
-        name="login"
       />
     </tui-textfield>
-    <tui-error formControlName="login"/>
+    <tui-error [formField]="form.login"/>
 
     <tui-textfield>
       <label tuiLabel>Password</label>
@@ -28,12 +27,11 @@
         placeholder="Enter passord"
         tuiInput
         type="password"
-        formControlName="password"
-        name="password"
+        [formField]="form.password"
       />
       <tui-icon tuiPassword/>
     </tui-textfield>
-    <tui-error formControlName="password"/>
+    <tui-error [formField]="form.password"/>
 
     @if (warn()) {
       <div

@@ -1,44 +1,45 @@
-import { FormControl, FormGroup } from '@angular/forms';
-import { AppValidators } from '../../../utils/validators/app-validators';
+import { signal } from '@angular/core';
+import { FieldContext, form, minLength, required, validate } from '@angular/forms/signals';
 
-export type LoginForm = ReturnType<typeof createLoginForm>;
+/**
+ * Special password validation with a friendly message.
+ * Signal Forms pass a FieldContext instead of an AbstractControl.
+ */
+function passwordStrengthValidator(fieldContext: FieldContext<string>) {
+  const value = fieldContext.value();
+
+  if (value === 'changeme') {
+    // Это пароль админа по умолчанию. Разрешим, х. с ним.
+    return null;
+  }
+
+  const hasUpperCase = /[\p{Lu}]/u.test(value);
+  const hasLowerCase = /[\p{Ll}]/u.test(value);
+  const hasNumber = /[\p{N}]/u.test(value);
+  const hasSpecial = /[!@#$%^&*()_+\-=[\]{}|;':",.<>/?`~]/.test(value);
+
+  if (hasUpperCase && hasLowerCase && hasNumber && hasSpecial) {
+    return null;
+  }
+
+  return {
+    kind: 'password',
+    message: 'Password must contain uppercase letter, lowcase letter, number, special letter',
+  };
+}
 
 export function createLoginForm() {
-  return new FormGroup({
-    login: new FormControl<string | null>(null, {
-      validators: [AppValidators.required(), AppValidators.minLength({ minLength: 3 })],
-    }),
-    password: new FormControl<string | null>(null, {
-      validators: [
-        AppValidators.required(),
-        AppValidators.minLength({ minLength: 8 }),
-        (control) => {
-          // Special password validation
-          const controlValue = control.value || '';
-          if (typeof controlValue !== 'string') {
-            return null;
-          }
+  const model = signal({
+    login: '',
+    password: '',
+  });
 
-          if (controlValue === 'changeme') {
-            // Это пароль админа по умолчанию. Разрегим, х. с ним.
-            return null;
-          }
+  return form(model, (schemaPath) => {
+    required(schemaPath.login, { message: 'Can not be empty' });
+    minLength(schemaPath.login, 3, { message: 'Required at minimum 3 letters' });
 
-          const hasUpperCase = /[\p{Lu}]/u.test(controlValue);
-          const hasLowerCase = /[\p{Ll}]/u.test(controlValue);
-          const hasNumber = /[\p{N}]/u.test(controlValue);
-          const hasSpecial = /[!@#$%^&*()_+\-=[\]{}|;':",.<>/?`~]/.test(controlValue);
-
-          if (hasUpperCase && hasLowerCase && hasNumber && hasSpecial) {
-            return null;
-          }
-
-          return {
-            password:
-              'Password must contain uppercase letter, lowcase letter, number, special letter',
-          };
-        },
-      ],
-    }),
+    required(schemaPath.password, { message: 'Can not be empty' });
+    minLength(schemaPath.password, 8, { message: 'Required at minimum 8 letters' });
+    validate(schemaPath.password, passwordStrengthValidator);
   });
 }

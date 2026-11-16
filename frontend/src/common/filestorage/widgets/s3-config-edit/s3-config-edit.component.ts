@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, inject, computed, signal } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormField, FormRoot } from '@angular/forms/signals';
 import {
   TuiButton,
   TuiError,
   TuiIcon,
   TuiInputDirective,
+  TuiLabel,
   TuiNotificationDirective,
   TuiTextfield,
   TuiTitle,
@@ -18,8 +19,8 @@ import { S3ConfigService } from '../../s3config.service';
 import {
   createS3ConfigForm,
   applyDtoToForm,
-  applyFormToDtoForCreate,
-  applyFormToDtoForUpdate,
+  applyFormValueToDtoForCreate,
+  applyFormValueToDtoForUpdate,
 } from './s3-config-edit.form';
 import { S3Config } from '../../model/s3-config';
 
@@ -35,12 +36,14 @@ export interface S3ConfigEditOutputs {
 @Component({
   selector: 'app-s3-config-form',
   imports: [
-    ReactiveFormsModule,
+    FormField,
+    FormRoot,
     TuiCard,
     TuiForm,
     TuiHeader,
     TuiTitle,
     TuiTextfield,
+    TuiLabel,
     TuiError,
     TuiIcon,
     TuiPassword,
@@ -95,8 +98,8 @@ export class S3ConfigFormComponent {
   }
 
   protected submit(): void {
-    this.form.markAllAsTouched();
-    if (!this.form.valid) {
+    this.form().markAsTouched();
+    if (!this.form().valid()) {
       return;
     }
 
@@ -104,14 +107,15 @@ export class S3ConfigFormComponent {
     this.serverError.set(null);
 
     const configId = this.context?.data?.id;
+    const formValue = this.form().value();
 
     const save$ = configId
       ? this.s3ConfigService.update({
           id: configId,
-          request: applyFormToDtoForUpdate({ form: this.form }),
+          request: applyFormValueToDtoForUpdate({ formValue }),
         })
       : this.s3ConfigService.create({
-          request: applyFormToDtoForCreate({ form: this.form }),
+          request: applyFormValueToDtoForCreate({ formValue }),
         });
 
     save$.subscribe({

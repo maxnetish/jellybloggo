@@ -1,27 +1,20 @@
-import { AbstractControl, ValidationErrors } from '@angular/forms';
+import { FieldContext } from '@angular/forms/signals';
 
 /**
- * Validates that the control value is a valid URL.
- * Returns `null` for `null`, `undefined`, or empty values (optional field pattern).
- * Uses the built-in `URL` constructor for validation.
- *
- * @param params.message - Custom error message. Defaults to `"Invalid URL"`.
- * @returns A validator function that produces `{url: string}` error on failure.
+ * Validates that the field value is a valid URL.
+ * Returns `null` for empty values (optional field pattern).
  */
-export function url({ message }: { message?: string } = {}) {
-  return function (control: AbstractControl): ValidationErrors | null {
-    const value = control.value;
-    if (value === null || value === undefined || value === '') {
-      return null;
-    }
+export function urlValidator(fieldContext: FieldContext<string>) {
+  const value = fieldContext.value();
 
-    try {
-      new URL(value);
-      return null;
-    } catch {
-      return {
-        url: message || 'Invalid URL',
-      };
-    }
-  };
+  if (!value) {
+    return null;
+  }
+
+  try {
+    new URL(value);
+    return null;
+  } catch {
+    return { kind: 'url', message: 'Invalid URL' };
+  }
 }

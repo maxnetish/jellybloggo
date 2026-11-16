@@ -1,26 +1,22 @@
-import { AbstractControl, ValidationErrors } from '@angular/forms';
+import { FieldContext } from '@angular/forms/signals';
 
 /**
- * Validates that the control value contains at least one non-whitespace character.
- * Returns `null` for `null`, `undefined`, or empty values (optional field pattern).
- * Rejects values that consist entirely of whitespace (spaces, tabs, newlines, etc.).
- *
- * @param params.message - Custom error message. Defaults to `"Must contain at least one non-whitespace character"`.
- * @returns A validator function that produces `{notBlank: string}` error on failure.
+ * Validates that the field value contains at least one non-whitespace character.
+ * Returns `null` for empty values (optional field pattern).
  */
-export function notBlank({ message }: { message?: string } = {}) {
-  return function (control: AbstractControl): ValidationErrors | null {
-    const value = control.value;
-    if (value === null || value === undefined || value === '') {
-      return null;
-    }
+export function notBlankValidator(fieldContext: FieldContext<string>) {
+  const value = fieldContext.value();
 
-    if (typeof value !== 'string' || !/\S/.test(value)) {
-      return {
-        notBlank: message || 'Must contain at least one non-whitespace character',
-      };
-    }
-
+  if (!value) {
     return null;
-  };
+  }
+
+  if (!/\S/.test(value)) {
+    return {
+      kind: 'notBlank',
+      message: 'Must contain at least one non-whitespace character',
+    };
+  }
+
+  return null;
 }
