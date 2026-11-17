@@ -34,6 +34,9 @@ export class AuthService {
       // Но это толком не работает.
       this.loadCurrentUser();
     }
+
+    // We should apply empty subscribe else toSignal() in components will not receive any updates.
+    this.currentUser$.subscribe();
   }
 
   /**
