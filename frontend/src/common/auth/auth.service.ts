@@ -147,6 +147,11 @@ export class AuthService {
       next: (response) => {
         this.currentUserStream$.next(response.user || null);
       },
+      error: () => {
+        // Сеть/бэкенд недоступны — считаем, что пользователь не авторизован,
+        // иначе currentUser$ никогда не эмитит и authGuard «подвисает».
+        this.currentUserStream$.next(null);
+      },
     });
   }
 }

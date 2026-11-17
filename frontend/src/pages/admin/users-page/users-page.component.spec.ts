@@ -54,12 +54,14 @@ describe('UsersPageComponent delete', () => {
       setRoles: () => of(undefined),
       deleteUser,
     };
+    const authService = { createInvite: vi.fn() };
 
     await TestBed.configureTestingModule({
       imports: [Host],
       providers: [
         provideTaiga(),
         { provide: UsersService, useValue: usersService },
+        { provide: AuthService, useValue: authService },
         { provide: TuiDialogService, useValue: { open } },
         { provide: TuiNotificationService, useValue: { open: () => EMPTY } },
       ],
