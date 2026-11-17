@@ -29,20 +29,27 @@
       <tui-loader />
     } @else {
       <table class="users-table" tuiTable>
+        <colgroup>
+          <col/>
+          <col/>
+          <col/>
+          <col/>
+          <col [style.width.px]="54"/>
+        </colgroup>
         <thead>
           <tr>
-            <th tuiTh [style.width.rem]="14">Login</th>
-            <th tuiTh [style.width.rem]="18">Full name</th>
-            <th tuiTh [style.width.rem]="14">Roles</th>
-            <th tuiTh [style.width.rem]="12">Created at</th>
-            <th tuiTh [style.width.rem]="4"></th>
+            <th tuiTh>Login</th>
+            <th tuiTh>Full name</th>
+            <th tuiTh>Roles</th>
+            <th tuiTh>Created at</th>
+            <th tuiTh></th>
           </tr>
         </thead>
         <tbody tuiTbody>
           @for (user of store.content(); track user.id) {
             <tr>
-              <td class="ellipsis" tuiTd>{{ user.login }}</td>
-              <td class="ellipsis" tuiTd>{{ user.full_name || '—' }}</td>
+              <td tuiTd>{{ user.login }}</td>
+              <td tuiTd>{{ user.full_name || '—' }}</td>
               <td tuiTd>
                 <app-user-roles [user]="user" (rolesChange)="onRolesChange(user.login, $event)" />
               </td>
@@ -80,15 +87,15 @@
   />
 
   <ng-template #inviteDialog let-observer>
-    <tui-textfield>
+    <tui-textfield tuiTextfieldSize="m">
       <label tuiLabel>Link</label>
-      <input [value]="inviteLink" [readOnly]="true" tuiInput />
+      <input [ngModel]="inviteLink" [readonly]="true" tuiInput />
     </tui-textfield>
     <p class="invite-hint">
       Share this link to invite a new user. The link expires in 24 hours and can only be used once.
     </p>
     <footer>
-      <button appearance="primary" tuiButton type="button" (click)="observer.complete()">
+      <button appearance="primary" tuiButton size="m" type="button" (click)="observer.complete()">
         Close
       </button>
     </footer>

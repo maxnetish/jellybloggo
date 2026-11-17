@@ -27,7 +27,7 @@ const ALL_ROLES = Object.values(Role);
   template: `
     <button
       iconStart="@tui.user-round-pen"
-      appearance="outline"
+      appearance="flat"
       size="s"
       tuiIconButton
       type="button"
@@ -70,9 +70,6 @@ const ALL_ROLES = Object.values(Role);
     .roles {
       flex: 0 1 auto;
       min-inline-size: 0;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
     }
 
     .option {

@@ -11,13 +11,14 @@ import {
   TuiNotificationService,
   TuiTextfield,
 } from '@taiga-ui/core';
-import { TUI_CONFIRM, TuiConfirmData } from '@taiga-ui/kit';
+import { TUI_CONFIRM, TuiConfirmData, TuiCopy } from '@taiga-ui/kit';
 import { TuiElasticContainer } from '@taiga-ui/layout';
 import { catchError, filter, of, switchMap } from 'rxjs';
 import { AuthService } from '../../../common/auth/auth.service';
 import { Role } from '../../../common/auth/model/user-role';
 import { UserRolesComponent } from './user-roles.component';
 import { UsersStore } from './users.store';
+import { FormsModule } from '@angular/forms';
 
 /**
  * TuiConfirm рендерит content через innerHTML, поэтому данные пользователя
@@ -40,6 +41,8 @@ function escapeHtml(value: string): string {
     TuiTablePagination,
     TuiTextfield,
     UserRolesComponent,
+    TuiCopy,
+    FormsModule,
   ],
   templateUrl: './users-page.component.html',
   styleUrl: './users-page.component.scss',
