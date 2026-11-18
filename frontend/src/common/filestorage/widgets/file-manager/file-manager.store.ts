@@ -63,7 +63,7 @@ export const FileManagerStore = signalStore(
         patchState(store, (state) => {
           const existentConfigs = state.s3Configs;
           const existentIndex = existentConfigs.findIndex((entry) => entry.id === config.id);
-          if (existentIndex) {
+          if (existentIndex > -1) {
             // Отредактирован существующий конфиг -> заменяем существующий
             return {
               s3Configs: [
