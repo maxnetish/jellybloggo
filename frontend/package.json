@@ -21,6 +21,7 @@
     "@angular/platform-server": "^22.2.6",
     "@angular/router": "^22.2.6",
     "@angular/ssr": "^22.2.7",
+    "@bradenmacdonald/s3-lite-client": "^1.0.1",
     "@ng-web-apis/universal": "^5.3.0",
     "@ngrx/operators": "^22.0.1",
     "@ngrx/signals": "^22.0.1",

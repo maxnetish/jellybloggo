@@ -76,10 +76,22 @@
         size="m"
         tuiButton
         type="button"
-        [disabled]="loading()"
+        [disabled]="loading() || isChecking()"
         (click)="cancel()"
       >
         Cancel
+      </button>
+      <button
+        appearance="flat"
+        iconStart="@tui.wifi"
+        size="m"
+        tuiButton
+        type="button"
+        [disabled]="loading() || isChecking()"
+        [loading]="isChecking()"
+        (click)="checkConnection()"
+      >
+        Check connection
       </button>
       <button
         appearance="primary"

@@ -7,6 +7,7 @@ import {
   TuiInputDirective,
   TuiLabel,
   TuiNotificationDirective,
+  TuiNotificationService,
   TuiTextfield,
   TuiTitle,
 } from '@taiga-ui/core';
@@ -25,6 +26,7 @@ import {
 import { S3ConfigEditInputs, S3ConfigEditOutputs } from './s3-config-edit.model';
 import { submit } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
+import { S3Client } from '@bradenmacdonald/s3-lite-client';
 
 @Component({
   selector: 'app-s3-config-form',
@@ -51,6 +53,7 @@ import { firstValueFrom } from 'rxjs';
 })
 export class S3ConfigFormComponent implements OnInit {
   private readonly s3ConfigService = inject(S3ConfigService);
+  private readonly notificationService = inject(TuiNotificationService);
 
   protected readonly context = inject<TuiDialogContext<S3ConfigEditOutputs, S3ConfigEditInputs>>(
     POLYMORPHEUS_CONTEXT,
@@ -60,6 +63,7 @@ export class S3ConfigFormComponent implements OnInit {
   protected readonly form = createS3ConfigForm();
   protected readonly loading = signal(false);
   protected readonly serverError = signal<string | null>(null);
+  protected readonly isChecking = signal(false);
 
   private get initialConfig() {
     return this.context?.data.config || null;
@@ -114,5 +118,47 @@ export class S3ConfigFormComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  protected async checkConnection(): Promise<void> {
+    this.form().markAsTouched();
+
+    if (!this.form().valid) {
+      return;
+    }
+
+    const formValue = this.form().value();
+    this.isChecking.set(true);
+
+    try {
+      const client = new S3Client({
+        endPoint: formValue.s3_endpoint,
+        region: formValue.s3_region || 'us-east-1',
+        bucket: formValue.s3_bucket,
+        accessKey: formValue.s3_access_key,
+        secretKey: formValue.s3_access_secret,
+      });
+
+      await client.bucketExists(formValue.s3_bucket);
+
+      this.notificationService
+        .open('Connection successful! The bucket exists and is accessible.', {
+          appearance: 'positive',
+          label: 'Success',
+        })
+        .subscribe();
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'An unknown error occurred';
+
+      this.notificationService
+        .open(message, {
+          appearance: 'negative',
+          label: 'Connection failed',
+        })
+        .subscribe();
+    } finally {
+      this.isChecking.set(false);
+    }
   }
 }
