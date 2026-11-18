@@ -1,8 +1,9 @@
 import { inject, Injectable, Injector } from '@angular/core';
-import { S3ConfigEditInputs, S3ConfigEditOutputs, S3ConfigFormComponent } from './s3-config-edit.component';
+import { S3ConfigFormComponent } from './s3-config-edit.component';
 import { TuiDialogService } from '@taiga-ui/core';
 import { PolymorpheusComponent } from '@taiga-ui/polymorpheus';
 import { defaultIfEmpty } from 'rxjs';
+import { S3ConfigEditInputs, S3ConfigEditOutputs } from './s3-config-edit.model';
 
 @Injectable({
   providedIn: 'root',

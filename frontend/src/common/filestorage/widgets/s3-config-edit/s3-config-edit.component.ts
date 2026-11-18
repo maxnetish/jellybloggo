@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, computed, signal, OnInit } from '@angular/core';
 import { FormField, FormRoot } from '@angular/forms/signals';
 import {
   TuiButton,
@@ -10,7 +10,7 @@ import {
   TuiTextfield,
   TuiTitle,
 } from '@taiga-ui/core';
-import { TuiCard, TuiForm, TuiHeader } from '@taiga-ui/layout';
+import { TuiForm, TuiHeader } from '@taiga-ui/layout';
 import { TuiPassword, TuiButtonLoading } from '@taiga-ui/kit';
 import { TuiPlatform } from '@taiga-ui/cdk';
 import { TuiDialogContext } from '@taiga-ui/core';
@@ -22,23 +22,15 @@ import {
   applyFormValueToDtoForCreate,
   applyFormValueToDtoForUpdate,
 } from './s3-config-edit.form';
-import { S3Config } from '../../model/s3-config';
-
-export interface S3ConfigEditInputs {
-  id?: string;
-}
-
-export interface S3ConfigEditOutputs {
-  option: 'ok' | 'cancel';
-  config?: S3Config | null;
-}
+import { S3ConfigEditInputs, S3ConfigEditOutputs } from './s3-config-edit.model';
+import { submit } from '@angular/forms/signals';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-s3-config-form',
   imports: [
     FormField,
     FormRoot,
-    TuiCard,
     TuiForm,
     TuiHeader,
     TuiTitle,
@@ -57,7 +49,7 @@ export interface S3ConfigEditOutputs {
   styleUrl: './s3-config-edit.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class S3ConfigFormComponent {
+export class S3ConfigFormComponent implements OnInit {
   private readonly s3ConfigService = inject(S3ConfigService);
 
   protected readonly context = inject<TuiDialogContext<S3ConfigEditOutputs, S3ConfigEditInputs>>(
@@ -69,25 +61,21 @@ export class S3ConfigFormComponent {
   protected readonly loading = signal(false);
   protected readonly serverError = signal<string | null>(null);
 
-  protected readonly isEdit = computed(() => !!this.context?.data?.id);
+  private get initialConfig() {
+    return this.context?.data.config || null;
+  }
+
+  private get isEdit() {
+    return !!this.initialConfig?.id;
+  }
+
   protected readonly dialogTitle = computed(() =>
-    this.isEdit() ? 'Edit storage bucket' : 'Add storage bucket',
+    this.isEdit ? 'Edit storage bucket' : 'Add storage bucket',
   );
 
-  constructor() {
-    if (this.isEdit()) {
-      const id = this.context!.data!.id!;
-      this.loading.set(true);
-      this.s3ConfigService.getById({ id }).subscribe({
-        next: (dto) => {
-          applyDtoToForm({ form: this.form, dto });
-          this.loading.set(false);
-        },
-        error: () => {
-          this.serverError.set('Failed to load configuration');
-          this.loading.set(false);
-        },
-      });
+  ngOnInit() {
+    if (this.isEdit && this.initialConfig) {
+      applyDtoToForm({ form: this.form, dto: this.initialConfig });
     }
   }
 
@@ -97,38 +85,32 @@ export class S3ConfigFormComponent {
     });
   }
 
-  protected submit(): void {
-    this.form().markAsTouched();
-    if (!this.form().valid()) {
-      return;
-    }
-
+  protected async submit() {
     this.loading.set(true);
     this.serverError.set(null);
 
-    const configId = this.context?.data?.id;
-    const formValue = this.form().value();
+    const success = await submit(this.form, async () => {
+      const configId = this.initialConfig?.id;
+      const formValue = this.form().value();
 
-    const save$ = configId
-      ? this.s3ConfigService.update({
+      const save$ = configId
+        ? this.s3ConfigService.update({
           id: configId,
           request: applyFormValueToDtoForUpdate({ formValue }),
         })
-      : this.s3ConfigService.create({
+        : this.s3ConfigService.create({
           request: applyFormValueToDtoForCreate({ formValue }),
         });
-
-    save$.subscribe({
-      next: (response) => {
+      try {
+        const response = await firstValueFrom(save$);
         this.context?.completeWith({
           option: 'ok',
           config: response,
         });
-      },
-      error: (err: { error?: { error?: string; code?: string } }) => {
-        this.serverError.set(err.error?.error || err.error?.code || 'Something went wrong');
+      } catch (error: any) {
+        this.serverError.set(error.error?.error || error.error?.code || 'Something went wrong');
         this.loading.set(false);
-      },
+      }
     });
   }
 }

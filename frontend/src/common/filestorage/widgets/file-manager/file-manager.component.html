@@ -21,11 +21,7 @@
 
   <div>
     <div>
-      @for (rootNode of treeRootNodes$ | async; track rootNode.id) {
-        <tui-tree
-          [value]="rootNode"
-        ></tui-tree>
-      }
+      loaded: {{ store.s3Configs().length }} entities.
     </div>
   </div>
 
