@@ -55,6 +55,20 @@
 
     @if (store.chosenBucket(); as chosenBucket) {
       <button
+        appearance="flat"
+        iconStart="@tui.folder-pen"
+        tuiIconButton
+        size="s"
+        type="button"
+        (click)="onEditConfig(chosenBucket)"
+        title="Edit storage bucket"
+      >
+        Edit storage bucket
+      </button>
+    }
+
+    @if (store.chosenBucket(); as chosenBucket) {
+      <button
       appearance="flat-destructive"
       iconStart="@tui.circle-minus"
       tuiIconButton

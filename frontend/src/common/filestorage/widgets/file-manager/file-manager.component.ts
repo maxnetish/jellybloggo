@@ -55,6 +55,19 @@ export class FileManagerComponent implements OnInit {
     });
   }
 
+  protected onEditConfig(config: S3Config) {
+    this.s3ConfigEditModal.show({inputs: {config}}).subscribe({
+      next: (outputs) => {
+        if (outputs.option === 'ok' && outputs.config) {
+          this.store.updateOrAddS3Config(outputs.config);
+        }
+      },
+      error: (err) => {
+        console.warn(err);
+      },
+    });
+  }
+
   protected onRemoveConfig(config: S3Config) {
     this.dialogs
       .open<boolean>(TUI_CONFIRM, {
