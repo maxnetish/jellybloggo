@@ -827,12 +827,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/validation.ErrorResponse"
                         }
                     },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/validation.ErrorResponse"
-                        }
-                    },
                     "404": {
                         "description": "Not found",
                         "schema": {

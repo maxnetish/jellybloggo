@@ -14,15 +14,15 @@ import (
 )
 
 var (
-	ErrEncryptFailed    = errors.New("encryption failed")
-	ErrDecryptFailed    = errors.New("decryption failed")
-	ErrNotAuthorized    = errors.New("not authorized to access this config")
+	ErrEncryptFailed = errors.New("encryption failed")
+	ErrDecryptFailed = errors.New("decryption failed")
+	ErrNotAuthorized = errors.New("not authorized to access this config")
 )
 
 type S3ConfigService struct {
-	repo      S3ConfigRepository
-	key       []byte
-	idGen     func() string
+	repo  S3ConfigRepository
+	key   []byte
+	idGen func() string
 }
 
 func NewS3ConfigService(repo S3ConfigRepository, encryptionKey string) (*S3ConfigService, error) {
@@ -61,7 +61,16 @@ func (s *S3ConfigService) Create(ctx context.Context, userID string, req CreateS
 		S3PublicEndPoint: req.S3PublicEndPoint,
 	}
 
-	return s.repo.Create(ctx, config)
+	created, err := s.repo.Create(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.decryptConfig(created); err != nil {
+		return nil, err
+	}
+
+	return created, nil
 }
 
 func (s *S3ConfigService) GetByID(ctx context.Context, userID, configID string) (*S3Config, error) {
@@ -70,20 +79,12 @@ func (s *S3ConfigService) GetByID(ctx context.Context, userID, configID string) 
 		return nil, err
 	}
 	if config == nil {
-		return nil, ErrNotAuthorized
+		return nil, nil
 	}
 
-	decryptedKey, err := s.decrypt(config.S3AccessKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decrypt access key: %w", err)
+	if err := s.decryptConfig(config); err != nil {
+		return nil, err
 	}
-	config.S3AccessKey = decryptedKey
-
-	decryptedSecret, err := s.decrypt(config.S3AccessSecret)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decrypt secret: %w", err)
-	}
-	config.S3AccessSecret = decryptedSecret
 
 	return config, nil
 }
@@ -95,17 +96,9 @@ func (s *S3ConfigService) ListByUserID(ctx context.Context, userID string) ([]*S
 	}
 
 	for _, config := range configs {
-		decryptedKey, err := s.decrypt(config.S3AccessKey)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decrypt access key: %w", err)
+		if err := s.decryptConfig(config); err != nil {
+			return nil, err
 		}
-		config.S3AccessKey = decryptedKey
-
-		decryptedSecret, err := s.decrypt(config.S3AccessSecret)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decrypt secret: %w", err)
-		}
-		config.S3AccessSecret = decryptedSecret
 	}
 
 	return configs, nil
@@ -120,7 +113,7 @@ func (s *S3ConfigService) Update(ctx context.Context, userID, configID string, r
 		return nil, ErrNotAuthorized
 	}
 
-if req.ConfigName != nil {
+	if req.ConfigName != nil {
 		config.ConfigName = *req.ConfigName
 	}
 	if req.S3Endpoint != nil {
@@ -152,7 +145,16 @@ if req.ConfigName != nil {
 		config.S3AccessSecret = encryptedSecret
 	}
 
-	return s.repo.Update(ctx, config)
+	updated, err := s.repo.Update(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.decryptConfig(updated); err != nil {
+		return nil, err
+	}
+
+	return updated, nil
 }
 
 func (s *S3ConfigService) Delete(ctx context.Context, userID, configID string) error {
@@ -165,6 +167,24 @@ func (s *S3ConfigService) Delete(ctx context.Context, userID, configID string) e
 	}
 
 	return s.repo.Delete(ctx, configID)
+}
+
+// decryptConfig replaces encrypted credentials with their plaintext values
+// so the returned config can be sent to the client.
+func (s *S3ConfigService) decryptConfig(config *S3Config) error {
+	decryptedKey, err := s.decrypt(config.S3AccessKey)
+	if err != nil {
+		return fmt.Errorf("failed to decrypt access key: %w", err)
+	}
+	config.S3AccessKey = decryptedKey
+
+	decryptedSecret, err := s.decrypt(config.S3AccessSecret)
+	if err != nil {
+		return fmt.Errorf("failed to decrypt secret: %w", err)
+	}
+	config.S3AccessSecret = decryptedSecret
+
+	return nil
 }
 
 func (s *S3ConfigService) encrypt(plaintext string) (string, error) {

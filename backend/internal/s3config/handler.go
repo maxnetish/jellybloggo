@@ -62,7 +62,6 @@ func (h *S3ConfigHandler) ListConfigs(w http.ResponseWriter, r *http.Request) {
 // @Param id path string true "Config ID"
 // @Success 200 {object} S3ConfigResponse "S3 configuration"
 // @Failure 401 {object} validation.ErrorResponse "Not authenticated"
-// @Failure 403 {object} validation.ErrorResponse "Forbidden"
 // @Failure 404 {object} validation.ErrorResponse "Not found"
 // @Failure 500 {object} validation.ErrorResponse "Internal server error"
 // @Router /api/s3-configs/{id} [get]
@@ -87,13 +86,6 @@ func (h *S3ConfigHandler) GetConfig(w http.ResponseWriter, r *http.Request) {
 
 	config, err := h.service.GetByID(r.Context(), userID, configID)
 	if err != nil {
-		if errors.Is(err, ErrNotAuthorized) {
-			validation.RespondJSON(w, http.StatusForbidden, validation.ErrorResponse{
-				Error: "forbidden",
-				Code:  "FORBIDDEN",
-			})
-			return
-		}
 		validation.RespondJSON(w, http.StatusInternalServerError, validation.ErrorResponse{
 			Error: "internal error",
 			Code:  "INTERNAL_ERROR",
