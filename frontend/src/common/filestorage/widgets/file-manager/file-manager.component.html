@@ -6,18 +6,68 @@
     <h2 tuiTitle>File manager</h2>
   </header>
 
-  <div
-    tuiAppearance="secondary"
-    tuiButtonGroup
-  >
+  <div>
+
     <button
+      tuiButton
+      tuiChevron
+      type="button"
+      size="s"
+      appearance="flat"
+      [attr.aria-expanded]="store.bucketMenuOpen()"
+      [tuiDropdown]="bucketMenuContent"
+      [tuiDropdownManual]="store.bucketMenuOpen()"
+      [tuiObscuredEnabled]="store.bucketMenuOpen()"
+      (click)="store.bucketMenuToggle()"
+      (tuiActiveZoneChange)="!$event ? store.bucketMenuToggle(false) : undefined"
+      (tuiObscured)="$event ? store.bucketMenuToggle(false) : undefined"
+    >
+      {{ store.chooseBucketLabel() }}
+      <ng-template #bucketMenuContent>
+        <tui-data-list>
+          @for (bucketConfig of store.s3Configs(); track bucketConfig.id) {
+            <button
+              tuiOption
+              type="button"
+              (click)="store.chooseBucket(bucketConfig)"
+            >
+              <span tuiTitle>
+                {{ bucketConfig.config_name }}
+                <span tuiSubtitle>{{ bucketConfig.s3_endpoint }} {{ bucketConfig.s3_bucket }}</span>
+              </span>
+            </button>
+          }
+        </tui-data-list>
+      </ng-template>
+    </button>
+
+    <button
+      appearance="flat"
+      iconStart="@tui.circle-plus"
+      tuiIconButton
+      size="s"
       type="button"
       (click)="openAddDialog()"
+      title="Add storage bucket"
     >
-      <tui-icon icon="@tui.circle-plus" />
       Add storage bucket
     </button>
+
+    @if (store.chosenBucket(); as chosenBucket) {
+      <button
+      appearance="flat-destructive"
+      iconStart="@tui.circle-minus"
+      tuiIconButton
+      size="s"
+      type="button"
+      (click)="onRemoveConfig(chosenBucket)"
+      title="Remove storage bucket"
+    >
+      Remove storage bucket
+    </button>
+    }
   </div>
+
 
   <div>
     <div>

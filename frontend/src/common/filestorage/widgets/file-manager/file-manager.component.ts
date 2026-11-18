@@ -1,13 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { TuiCardLarge, TuiHeader } from '@taiga-ui/layout';
-import { TuiAppearance, TuiButton, TuiIcon, TuiTitle } from '@taiga-ui/core';
-import { TuiButtonGroup, TuiTreeComponent } from '@taiga-ui/kit';
-import { S3ConfigService } from '../../s3config.service';
-import { BehaviorSubject } from 'rxjs';
-import { S3Treenode } from '../../model/s3-treenode';
-import { AsyncPipe } from '@angular/common';
+import { TuiButton, TuiDataList, TuiDialogService, TuiDropdown, TuiTitle } from '@taiga-ui/core';
+import { TUI_CONFIRM, TuiChevron, TuiConfirmData } from '@taiga-ui/kit';
 import { S3ConfigEditModal } from '../s3-config-edit/s3-config-edit.modal';
 import { FileManagerStore } from './file-manager.store';
+import { TuiActiveZone, TuiObscured } from '@taiga-ui/cdk';
+import { S3Config } from '../../model/s3-config';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-file-manager',
@@ -15,11 +14,13 @@ import { FileManagerStore } from './file-manager.store';
     TuiCardLarge,
     TuiHeader,
     TuiTitle,
-    TuiButtonGroup,
-    TuiAppearance,
-    TuiIcon,
-    TuiTreeComponent,
-    AsyncPipe,
+    TuiButton,
+    TuiChevron,
+    TuiDropdown,
+    TuiObscured,
+    TuiActiveZone,
+    TuiObscured,
+    TuiDataList,
   ],
   templateUrl: './file-manager.component.html',
   styleUrl: './file-manager.component.scss',
@@ -29,6 +30,7 @@ import { FileManagerStore } from './file-manager.store';
   ],
 })
 export class FileManagerComponent implements OnInit {
+  private readonly dialogs = inject(TuiDialogService);
   protected readonly store = inject(FileManagerStore);
 
   private readonly s3ConfigEditModal = inject(S3ConfigEditModal);
@@ -50,6 +52,24 @@ export class FileManagerComponent implements OnInit {
       error: (err) => {
         console.warn(err);
       },
+    });
+  }
+
+  protected onRemoveConfig(config: S3Config) {
+    this.dialogs
+      .open<boolean>(TUI_CONFIRM, {
+        label: 'Delete bucket',
+        size: 's',
+        data: {
+          content: `You are about to delete storage bucket config <strong>${config.config_name}</strong>. This action will not remove any files in cloud storage, but only remove corresponding record in application.`,
+          yes: 'Delete',
+          no: 'Cancel',
+          appearance: 'primary-destructive',
+        } satisfies TuiConfirmData,
+      }).pipe(
+      filter(Boolean),
+    ).subscribe(() => {
+      this.store.removeS3Config(config);
     });
   }
 

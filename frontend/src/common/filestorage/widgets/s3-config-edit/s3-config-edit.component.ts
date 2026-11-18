@@ -86,12 +86,12 @@ export class S3ConfigFormComponent implements OnInit {
   }
 
   protected async submit() {
-    this.loading.set(true);
-    this.serverError.set(null);
-
     const success = await submit(this.form, async () => {
       const configId = this.initialConfig?.id;
       const formValue = this.form().value();
+
+      this.loading.set(true);
+      this.serverError.set(null);
 
       const save$ = configId
         ? this.s3ConfigService.update({
@@ -109,6 +109,8 @@ export class S3ConfigFormComponent implements OnInit {
         });
       } catch (error: any) {
         this.serverError.set(error.error?.error || error.error?.code || 'Something went wrong');
+        this.loading.set(false);
+      } finally {
         this.loading.set(false);
       }
     });
