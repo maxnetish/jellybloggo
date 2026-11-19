@@ -7,6 +7,7 @@ import { FileManagerStore } from './file-manager.store';
 import { TuiActiveZone, TuiObscured } from '@taiga-ui/cdk';
 import { S3Config } from '../../model/s3-config';
 import { filter } from 'rxjs';
+import { S3DirectoryBrowser } from '../s3-directory-browser/s3-directory-browser';
 
 @Component({
   selector: 'app-file-manager',
@@ -21,6 +22,7 @@ import { filter } from 'rxjs';
     TuiActiveZone,
     TuiObscured,
     TuiDataList,
+    S3DirectoryBrowser,
   ],
   templateUrl: './file-manager.component.html',
   styleUrl: './file-manager.component.scss',
