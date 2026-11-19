@@ -1,13 +1,13 @@
 import { Component, inject, input } from '@angular/core';
 import { S3BucketBrowserStore } from './s3-bucket-browser.store';
 import { S3Config } from '../../model/s3-config';
-import { JsonPipe } from '@angular/common';
 import { TuiButton } from '@taiga-ui/core';
+import { FuncToPipePipe } from '../../../utils/func-to-pipe';
 
 @Component({
   imports: [
-    JsonPipe,
     TuiButton,
+    FuncToPipePipe,
   ],
   selector: 'app-s3-bucket-browser',
   styleUrl: './s3-bucket-browser.scss',
@@ -23,6 +23,10 @@ export class S3BucketBrowser {
 
   constructor() {
     this.store.wireBucket(this.bucket);
+  }
+
+  protected lastSegmentOf(path: string): string {
+    return path.replace(/\/+$/, '').split('/').pop() ?? '';
   }
 
 }

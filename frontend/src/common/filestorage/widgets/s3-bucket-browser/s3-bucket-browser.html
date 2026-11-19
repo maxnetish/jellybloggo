@@ -27,8 +27,13 @@
         size="s"
         (click)="store.choosePrefix(entry.prefix)"
       >
-        {{ entry.prefix }}
+        {{ entry.prefix | funcToPipe : lastSegmentOf }}
       </button>
+    </div>
+  }
+  @for (entry of store.files(); track entry.key) {
+    <div>
+      {{ entry.key }} - {{ entry.size }}
     </div>
   }
 </div>

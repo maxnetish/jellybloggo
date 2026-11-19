@@ -20,8 +20,9 @@ export const S3BucketBrowserStore = signalStore(
         });
       }),
       files: computed(() => {
-        return store.entries().filter((entry) => {
-          return entry.type === 'Object';
+        return store.entries().filter((entry): entry is S3Object => {
+          // Exclude 0-length files. Actually such files creates to place empty prefix
+          return entry.type === 'Object' && entry.size > 0;
         });
       }),
     }
