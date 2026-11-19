@@ -1,18 +1,17 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
-import { TuiCardLarge, TuiHeader } from '@taiga-ui/layout';
-import { TuiButton, TuiDataList, TuiDialogService, TuiDropdown, TuiTitle } from '@taiga-ui/core';
+import { TuiCard, TuiHeader, TuiSurface } from '@taiga-ui/layout';
+import { TuiAppearance, TuiButton, TuiDataList, TuiDialogService, TuiDropdown, TuiTitle } from '@taiga-ui/core';
 import { TUI_CONFIRM, TuiChevron, TuiConfirmData } from '@taiga-ui/kit';
 import { S3ConfigEditModal } from '../s3-config-edit/s3-config-edit.modal';
 import { FileManagerStore } from './file-manager.store';
 import { TuiActiveZone, TuiObscured } from '@taiga-ui/cdk';
 import { S3Config } from '../../model/s3-config';
 import { filter } from 'rxjs';
-import { S3DirectoryBrowser } from '../s3-directory-browser/s3-directory-browser';
+import { S3BucketBrowser } from '../s3-bucket-browser/s3-bucket-browser';
 
 @Component({
   selector: 'app-file-manager',
   imports: [
-    TuiCardLarge,
     TuiHeader,
     TuiTitle,
     TuiButton,
@@ -22,7 +21,10 @@ import { S3DirectoryBrowser } from '../s3-directory-browser/s3-directory-browser
     TuiActiveZone,
     TuiObscured,
     TuiDataList,
-    S3DirectoryBrowser,
+    S3BucketBrowser,
+    TuiCard,
+    TuiSurface,
+    TuiAppearance,
   ],
   templateUrl: './file-manager.component.html',
   styleUrl: './file-manager.component.scss',

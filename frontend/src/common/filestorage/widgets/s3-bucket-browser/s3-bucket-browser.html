@@ -1,0 +1,34 @@
+<!--<div>store.bucket: {{ store.bucket()?.config_name }}</div>-->
+<!--<div>input.bucket: {{ bucket()?.config_name }}</div>-->
+<!--<div>{{ store.entries() | json }}</div>-->
+<!--<div>current prefix: {{ store.currentPrefix() }}</div>-->
+
+<div>
+  @if (store.currentPrefix()) {
+    <div>
+      <button
+        type="button"
+        tuiButton
+        appearance="flat"
+        size="s"
+        (click)="store.chooseParentPrefix()"
+        iconStart="@tui.circle-arrow-up"
+      >
+        &nldr;
+      </button>
+    </div>
+  }
+  @for (entry of store.directories(); track entry.prefix) {
+    <div>
+      <button
+        type="button"
+        tuiButton
+        appearance="flat"
+        size="s"
+        (click)="store.choosePrefix(entry.prefix)"
+      >
+        {{ entry.prefix }}
+      </button>
+    </div>
+  }
+</div>

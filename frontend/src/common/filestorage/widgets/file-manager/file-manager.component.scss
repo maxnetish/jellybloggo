@@ -1,3 +1,30 @@
 :host {
   display: block;
 }
+
+.page-grid {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0 1rem;
+}
+
+.header {
+  // same as header menu
+  padding: 0.5rem 1rem;
+}
+
+.bucket-area {
+  display: flex;
+}
+
+.bucket-box {
+  border-radius: var(--tui-radius-m);
+}
+
+.directory-browser-area {
+  display: flex;
+}
+
+.directory-browser-box {
+  border-radius: var(--tui-radius-m);
+}
