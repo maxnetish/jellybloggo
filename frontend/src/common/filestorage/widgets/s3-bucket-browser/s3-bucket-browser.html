@@ -1,39 +1,47 @@
-<!--<div>store.bucket: {{ store.bucket()?.config_name }}</div>-->
-<!--<div>input.bucket: {{ bucket()?.config_name }}</div>-->
-<!--<div>{{ store.entries() | json }}</div>-->
-<!--<div>current prefix: {{ store.currentPrefix() }}</div>-->
-
-<div>
-  @if (store.currentPrefix()) {
-    <div>
-      <button
-        type="button"
-        tuiButton
-        appearance="flat"
-        size="s"
-        (click)="store.chooseParentPrefix()"
-        iconStart="@tui.circle-arrow-up"
-      >
-        &nldr;
-      </button>
-    </div>
-  }
-  @for (entry of store.directories(); track entry.prefix) {
-    <div>
-      <button
-        type="button"
-        tuiButton
-        appearance="flat"
-        size="s"
-        (click)="store.choosePrefix(entry.prefix)"
-      >
-        {{ entry.prefix | funcToPipe : lastSegmentOf }}
-      </button>
-    </div>
-  }
-  @for (entry of store.files(); track entry.key) {
-    <div>
-      {{ entry.key }} - {{ entry.size }}
-    </div>
-  }
-</div>
+<tui-elastic-container>
+  <table class="s3-table" tuiTable>
+    <thead>
+      <tr>
+        <th tuiTh>Name</th>
+        <th tuiTh>Size</th>
+        <th tuiTh>Date</th>
+        <th tuiTh>Url</th>
+      </tr>
+    </thead>
+    <tbody tuiTbody>
+      @if (store.currentPrefix()) {
+        <tr class="parent-row" (click)="store.chooseParentPrefix()">
+          <td tuiTd>
+            <tui-icon icon="@tui.arrow-go-back" />
+            ..
+          </td>
+          <td tuiTd></td>
+          <td tuiTd></td>
+          <td tuiTd></td>
+        </tr>
+      }
+      @for (dir of store.directories(); track dir.prefix) {
+        <tr class="directory-row" (click)="store.choosePrefix(dir.prefix)">
+          <td tuiTd>
+            <tui-icon icon="@tui.folder" />
+            {{ dir.prefix | funcToPipe : lastSegmentOf }}
+          </td>
+          <td tuiTd></td>
+          <td tuiTd></td>
+          <td tuiTd></td>
+        </tr>
+      }
+      @for (file of store.files(); track file.key) {
+        <tr class="file-row">
+          <td tuiTd>
+            <tui-icon icon="@tui.file" />
+            {{ file.key | funcToPipe : lastSegmentOf }}
+          </td>
+          <td tuiTd>{{ file.size | number }}</td>
+          <td tuiTd>{{ file.lastModified | date: 'short' }}</td>
+          <td tuiTd>{{ file | funcToPipe : getFileUrl }}</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</tui-elastic-container>
