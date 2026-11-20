@@ -29,7 +29,6 @@ import { TuiCopy } from '@taiga-ui/kit';
   styleUrl: './s3-bucket-browser.scss',
   templateUrl: './s3-bucket-browser.html',
   providers: [
-    S3BucketBrowserStore,
     tuiBreadcrumbsOptionsProvider({icon: '/'}),
   ]
 })

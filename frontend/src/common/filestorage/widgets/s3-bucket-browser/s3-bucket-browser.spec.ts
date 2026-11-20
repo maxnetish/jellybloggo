@@ -14,11 +14,13 @@ describe('S3DirectoryBrowser', () => {
       imports: [S3BucketBrowser],
     }).compileComponents();
 
+    // Resolve the root store first and mock wireBucket so the component
+    // constructor does not trigger S3 loading and TuiNotificationService.
+    store = TestBed.inject(S3BucketBrowserStore);
+    vi.spyOn(store, 'wireBucket').mockReturnValue({destroy: () => undefined});
+
     fixture = TestBed.createComponent(S3BucketBrowser);
     component = fixture.componentInstance;
-    // The store is provided on the component level, so it must be resolved
-    // through the component injector.
-    store = fixture.debugElement.injector.get(S3BucketBrowserStore);
     await fixture.whenStable();
   });
 
@@ -40,7 +42,11 @@ describe('S3DirectoryBrowser', () => {
   });
 
   it('should render root as text without buttons', () => {
-    patchState(unprotected(store), {currentPrefix: ''});
+    patchState(unprotected(store), {
+      bucket: null,
+      currentPrefix: '',
+      entries: [],
+    });
     fixture.detectChanges();
 
     const breadcrumbs: HTMLElement = fixture.nativeElement.querySelector('tui-breadcrumbs');
@@ -50,7 +56,11 @@ describe('S3DirectoryBrowser', () => {
   });
 
   it('should render buttons for parent segments and text for current one', () => {
-    patchState(unprotected(store), {currentPrefix: 'path/to/folder/'});
+    patchState(unprotected(store), {
+      bucket: null,
+      currentPrefix: 'path/to/folder/',
+      entries: [],
+    });
     fixture.detectChanges();
 
     const breadcrumbs: HTMLElement = fixture.nativeElement.querySelector('tui-breadcrumbs');
@@ -65,7 +75,11 @@ describe('S3DirectoryBrowser', () => {
   });
 
   it('should navigate to a parent prefix on breadcrumb click', () => {
-    patchState(unprotected(store), {currentPrefix: 'path/to/folder/'});
+    patchState(unprotected(store), {
+      bucket: null,
+      currentPrefix: 'path/to/folder/',
+      entries: [],
+    });
     fixture.detectChanges();
 
     const choosePrefix = vi

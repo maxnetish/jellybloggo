@@ -8,6 +8,7 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { TuiNotificationService } from '@taiga-ui/core';
 
 export const S3BucketBrowserStore = signalStore(
+  {providedIn: 'root'},
   withState({
     bucket: null as S3Config | null,
     currentPrefix: '',
