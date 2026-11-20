@@ -7,6 +7,9 @@ import { TuiTable } from '@taiga-ui/addon-table';
 import { FuncToPipePipe } from '../../../utils/func-to-pipe';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { S3Object } from '@bradenmacdonald/s3-lite-client';
+import { tuiBreadcrumbsOptionsProvider } from '@taiga-ui/kit';
+import { TuiBreadcrumbs } from '@taiga-ui/kit/components/breadcrumbs';
+import { TuiItem } from '@taiga-ui/cdk/directives/item';
 import { TuiCopy } from '@taiga-ui/kit';
 
 @Component({
@@ -19,12 +22,15 @@ import { TuiCopy } from '@taiga-ui/kit';
     DecimalPipe,
     TuiCopy,
     TuiLink,
+    TuiBreadcrumbs,
+    TuiItem,
   ],
   selector: 'app-s3-bucket-browser',
   styleUrl: './s3-bucket-browser.scss',
   templateUrl: './s3-bucket-browser.html',
   providers: [
     S3BucketBrowserStore,
+    tuiBreadcrumbsOptionsProvider({icon: '/'}),
   ]
 })
 export class S3BucketBrowser {

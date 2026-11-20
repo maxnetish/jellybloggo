@@ -1,6 +1,7 @@
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { computed, inject } from '@angular/core';
 import { S3Config } from '../../model/s3-config';
+import { S3Breadcrumb } from '../../model/s3-breadcrumb';
 import { S3Client, S3CommonPrefix, S3Object } from '@bradenmacdonald/s3-lite-client';
 import { catchError, filter, from, map, pipe, switchMap, tap } from 'rxjs';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
@@ -25,6 +26,9 @@ export const S3BucketBrowserStore = signalStore(
           return entry.type === 'Object' && entry.size > 0;
         });
       }),
+      breadcrumbs: computed<S3Breadcrumb[]>(() =>
+        buildBreadcrumbs(store.currentPrefix()),
+      ),
     }
   }),
   withMethods((store, notificationService = inject(TuiNotificationService)) => {
@@ -163,4 +167,19 @@ function extractParentPrefix(prefix: string) {
   const parts = prefix.replace(/\/+$/, '').split('/');
   parts.pop();
   return parts.join('/');
+}
+
+export function buildBreadcrumbs(currentPrefix: string): S3Breadcrumb[] {
+  const segments = currentPrefix.split('/').filter(Boolean);
+
+  const breadcrumbs: S3Breadcrumb[] = [{label: 'Root', prefix: ''}];
+  let acc = '';
+
+  for (const segment of segments) {
+    acc = acc ? `${acc}/${segment}` : segment;
+    // Trailing slash is the prefix format expected by listObjectsGrouped
+    breadcrumbs.push({label: segment, prefix: `${acc}/`});
+  }
+
+  return breadcrumbs;
 }

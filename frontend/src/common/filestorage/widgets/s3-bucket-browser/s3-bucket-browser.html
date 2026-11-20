@@ -1,3 +1,20 @@
+<tui-breadcrumbs class="path-breadcrumbs">
+  @for (crumb of store.breadcrumbs(); track crumb.prefix) {
+    @if ($last) {
+      <span *tuiItem class="path-current" aria-current="page">{{ crumb.label }}</span>
+    } @else {
+      <button
+        *tuiItem
+        tuiLink
+        type="button"
+        (click)="store.choosePrefix(crumb.prefix)"
+      >
+        {{ crumb.label }}
+      </button>
+    }
+  }
+</tui-breadcrumbs>
+
 <tui-elastic-container>
   <table class="s3-table" tuiTable>
     <thead>

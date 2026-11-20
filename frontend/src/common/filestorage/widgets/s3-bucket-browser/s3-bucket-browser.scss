@@ -1,3 +1,13 @@
+.path-breadcrumbs {
+  margin-block-end: 0.5rem;
+  overflow-x: auto;
+}
+
+.path-current {
+  color: var(--tui-text-primary);
+  font-weight: 600;
+}
+
 .s3-table {
   width: 100%;
   table-layout: fixed;
