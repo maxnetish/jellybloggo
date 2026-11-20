@@ -1,4 +1,36 @@
 .s3-table {
   width: 100%;
   table-layout: fixed;
+
+  td {
+    word-break: break-word;
+  }
+
+  .hover-highlight:hover {
+    td {
+      background-color: var(--tui-background-base-alt);
+    }
+  }
+}
+
+.with-icon {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.icon-up, .icon-folder, .icon-file {
+  color: var(--tui-text-secondary);
+}
+
+.icon-up, .icon-folder {
+  color: var(--tui-status-positive);
+}
+
+.icon-file {
+  color: var(--tui-status-info);
+}
+
+.pointer {
+  cursor: pointer;
 }

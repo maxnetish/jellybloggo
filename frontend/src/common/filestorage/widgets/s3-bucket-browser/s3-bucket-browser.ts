@@ -1,12 +1,13 @@
 import { Component, inject, input } from '@angular/core';
 import { S3BucketBrowserStore } from './s3-bucket-browser.store';
 import { S3Config } from '../../model/s3-config';
-import { TuiIcon } from '@taiga-ui/core';
+import { TuiIcon, TuiLink } from '@taiga-ui/core';
 import { TuiElasticContainer } from '@taiga-ui/layout';
 import { TuiTable } from '@taiga-ui/addon-table';
 import { FuncToPipePipe } from '../../../utils/func-to-pipe';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { S3Object } from '@bradenmacdonald/s3-lite-client';
+import { TuiCopy } from '@taiga-ui/kit';
 
 @Component({
   imports: [
@@ -16,6 +17,8 @@ import { S3Object } from '@bradenmacdonald/s3-lite-client';
     FuncToPipePipe,
     DatePipe,
     DecimalPipe,
+    TuiCopy,
+    TuiLink,
   ],
   selector: 'app-s3-bucket-browser',
   styleUrl: './s3-bucket-browser.scss',

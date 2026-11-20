@@ -1,19 +1,21 @@
 <tui-elastic-container>
   <table class="s3-table" tuiTable>
     <thead>
-      <tr>
-        <th tuiTh>Name</th>
-        <th tuiTh>Size</th>
-        <th tuiTh>Date</th>
-        <th tuiTh>Url</th>
-      </tr>
+    <tr>
+      <th tuiTh>Name</th>
+      <th tuiTh>Size</th>
+      <th tuiTh>Date</th>
+      <th tuiTh>Url</th>
+    </tr>
     </thead>
     <tbody tuiTbody>
       @if (store.currentPrefix()) {
-        <tr class="parent-row" (click)="store.chooseParentPrefix()">
+        <tr class="parent-row hover-highlight pointer" (click)="store.chooseParentPrefix()">
           <td tuiTd>
-            <tui-icon icon="@tui.arrow-go-back" />
-            ..
+            <div class="with-icon">
+              <tui-icon class="icon-up" icon="@tui.folder-open"/>
+              &nldr;
+            </div>
           </td>
           <td tuiTd></td>
           <td tuiTd></td>
@@ -21,10 +23,12 @@
         </tr>
       }
       @for (dir of store.directories(); track dir.prefix) {
-        <tr class="directory-row" (click)="store.choosePrefix(dir.prefix)">
+        <tr class="directory-row hover-highlight pointer" (click)="store.choosePrefix(dir.prefix)">
           <td tuiTd>
-            <tui-icon icon="@tui.folder" />
-            {{ dir.prefix | funcToPipe : lastSegmentOf }}
+            <div class="with-icon">
+              <tui-icon class="icon-folder" icon="@tui.folder-closed"/>
+              {{ dir.prefix | funcToPipe : lastSegmentOf }}
+            </div>
           </td>
           <td tuiTd></td>
           <td tuiTd></td>
@@ -32,14 +36,25 @@
         </tr>
       }
       @for (file of store.files(); track file.key) {
-        <tr class="file-row">
+        <tr class="file-row hover-highlight">
           <td tuiTd>
-            <tui-icon icon="@tui.file" />
-            {{ file.key | funcToPipe : lastSegmentOf }}
+            <div class="with-icon">
+              <tui-icon class="icon-file" icon="@tui.file"/>
+              {{ file.key | funcToPipe : lastSegmentOf }}
+            </div>
           </td>
           <td tuiTd>{{ file.size | number }}</td>
           <td tuiTd>{{ file.lastModified | date: 'short' }}</td>
-          <td tuiTd>{{ file | funcToPipe : getFileUrl }}</td>
+          <td tuiTd>
+
+            <a tuiLink [href]="file | funcToPipe : getFileUrl" target="_blank" rel="noopener noreferrer">
+              <div class="with-icon">
+                <tui-icon [style.font-size.rem]="1.25" icon="@tui.external-link"/>
+                <tui-copy>{{ file | funcToPipe : getFileUrl }}</tui-copy>
+              </div>
+            </a>
+
+          </td>
         </tr>
       }
     </tbody>

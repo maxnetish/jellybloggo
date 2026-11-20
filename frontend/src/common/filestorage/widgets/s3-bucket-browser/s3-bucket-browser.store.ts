@@ -34,7 +34,7 @@ export const S3BucketBrowserStore = signalStore(
           filter((bucketOrNull): bucketOrNull is S3Config => !!bucketOrNull),
           tap({
             next: (bucket) => {
-              patchState(store, {entries: [], bucket});
+              patchState(store, {bucket, entries: []});
             },
           }),
           switchMap((bucket) => {
@@ -51,6 +51,7 @@ export const S3BucketBrowserStore = signalStore(
           // We have to restart stream, else next emit from wireBucket will not pass in stream
           catchError((error, caught) => {
             errorToast({notificationService, error});
+            patchState(store, {entries: []});
             return caught;
           }),
         ),
@@ -59,7 +60,7 @@ export const S3BucketBrowserStore = signalStore(
         pipe(
           tap({
             next: (prefix) => {
-              patchState(store, {entries: [], currentPrefix: prefix});
+              patchState(store, {currentPrefix: prefix, entries: []});
             },
           }),
           switchMap((prefix) => {
@@ -81,6 +82,7 @@ export const S3BucketBrowserStore = signalStore(
           // We have to restart stream, else next emit from wireBucket will not pass in stream
           catchError((error, caught) => {
             errorToast({notificationService, error});
+            patchState(store, {entries: []});
             return caught;
           }),
         ),
@@ -93,7 +95,7 @@ export const S3BucketBrowserStore = signalStore(
           }),
           tap({
             next: (prefix) => {
-              patchState(store, {entries: [], currentPrefix: prefix});
+              patchState(store, {currentPrefix: prefix, entries: []});
             },
           }),
           switchMap((prefix) => {
@@ -115,6 +117,7 @@ export const S3BucketBrowserStore = signalStore(
           // We have to restart stream, else next emit from wireBucket will not pass in stream
           catchError((error, caught) => {
             errorToast({notificationService, error});
+            patchState(store, {entries: []});
             return caught;
           }),
         ),
