@@ -9,6 +9,7 @@ import { tapResponse } from '@ngrx/operators';
 import { TuiNotificationService } from '@taiga-ui/core';
 
 export const FileManagerStore = signalStore(
+  {providedIn: 'root'},
   withState({
     s3Configs: [] as S3ConfigResponse[],
     s3ConfigLoadingStatus: LoadingStatus.INITIAL,
@@ -62,15 +63,15 @@ export const FileManagerStore = signalStore(
           }),
           tapResponse({
             next: (response) => {
-              patchState(store, {
+              patchState(store, (state) => ({
                 s3ConfigLoadingStatus: LoadingStatus.SUCCESS,
                 s3Configs: response,
-              });
-              if (response.length) {
-                patchState(store, {
-                  chosenConfigId: response[0].id,
-                });
-              }
+                // Keep the previously chosen bucket if it still exists in the
+                // loaded list, otherwise fall back to the first one.
+                chosenConfigId: response.some((config) => config.id === state.chosenConfigId)
+                  ? state.chosenConfigId
+                  : response[0]?.id ?? null,
+              }));
             },
             error: (error: any) => {
               patchState(store, {

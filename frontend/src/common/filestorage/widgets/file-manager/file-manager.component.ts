@@ -29,9 +29,6 @@ import { S3BucketBrowser } from '../s3-bucket-browser/s3-bucket-browser';
   templateUrl: './file-manager.component.html',
   styleUrl: './file-manager.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [
-    FileManagerStore,
-  ],
 })
 export class FileManagerComponent implements OnInit {
   private readonly dialogs = inject(TuiDialogService);
