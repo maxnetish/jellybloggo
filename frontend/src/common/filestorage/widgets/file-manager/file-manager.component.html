@@ -4,11 +4,7 @@
 
 <div class="page-grid">
   <div class="bucket-area">
-    <div
-      tuiSurface
-      tuiAppearance="floating"
-      class="bucket-box"
-    >
+    <div class="bucket-box">
       <button
         tuiButton
         tuiChevron
@@ -45,7 +41,7 @@
       <button
         appearance="flat"
         iconStart="@tui.circle-plus"
-        tuiIconButton
+        tuiButton
         size="s"
         type="button"
         (click)="openAddDialog()"
@@ -58,7 +54,7 @@
         <button
           appearance="flat"
           iconStart="@tui.folder-pen"
-          tuiIconButton
+          tuiButton
           size="s"
           type="button"
           (click)="onEditConfig(chosenBucket)"
@@ -72,7 +68,7 @@
         <button
           appearance="flat-destructive"
           iconStart="@tui.circle-minus"
-          tuiIconButton
+          tuiButton
           size="s"
           type="button"
           (click)="onRemoveConfig(chosenBucket)"

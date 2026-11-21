@@ -1,0 +1,32 @@
+<div tuiPlatform="web">
+  <form tuiForm="m" [formRoot]="form" (submit)="submit()">
+    <tui-textfield>
+      <label tuiLabel>Folder name</label>
+      <input placeholder="Example: my-folder" tuiInput tuiAutoFocus [formField]="form.name" />
+    </tui-textfield>
+    <tui-error [formField]="form.name" />
+
+    <footer>
+      <button
+        appearance="secondary"
+        size="m"
+        tuiButton
+        type="button"
+        [disabled]="loading()"
+        (click)="cancel()"
+      >
+        Cancel
+      </button>
+      <button
+        appearance="primary"
+        size="m"
+        tuiButton
+        type="submit"
+        [loading]="loading()"
+        [disabled]="loading()"
+      >
+        OK
+      </button>
+    </footer>
+  </form>
+</div>

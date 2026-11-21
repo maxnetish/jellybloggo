@@ -1,6 +1,22 @@
-.path-breadcrumbs {
+.path-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   margin-block-end: 0.5rem;
+}
+
+.path-breadcrumbs {
   overflow-x: auto;
+  min-inline-size: 0;
+}
+
+.path-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-inline-start: auto;
 }
 
 .path-current {

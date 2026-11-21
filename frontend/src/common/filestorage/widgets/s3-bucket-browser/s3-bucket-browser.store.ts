@@ -2,10 +2,11 @@ import { patchState, signalStore, withComputed, withMethods, withState } from '@
 import { computed, inject } from '@angular/core';
 import { S3Config } from '../../model/s3-config';
 import { S3Breadcrumb } from '../../model/s3-breadcrumb';
-import { S3Client, S3CommonPrefix, S3Object } from '@bradenmacdonald/s3-lite-client';
-import { catchError, filter, from, map, pipe, switchMap, tap } from 'rxjs';
+import { S3CommonPrefix, S3Object } from '@bradenmacdonald/s3-lite-client';
+import { catchError, filter, map, pipe, switchMap, tap } from 'rxjs';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { TuiNotificationService } from '@taiga-ui/core';
+import { createS3Client } from '../../s3-client';
 
 export const S3BucketBrowserStore = signalStore(
   {providedIn: 'root'},
@@ -13,6 +14,7 @@ export const S3BucketBrowserStore = signalStore(
     bucket: null as S3Config | null,
     currentPrefix: '',
     entries: [] as (S3CommonPrefix | S3Object)[],
+    folderBusy: false,
   }),
   withComputed((store) => {
     return {
@@ -23,14 +25,20 @@ export const S3BucketBrowserStore = signalStore(
       }),
       files: computed(() => {
         return store.entries().filter((entry): entry is S3Object => {
-          // Exclude 0-length files. Actually such files creates to place empty prefix
+          // Exclude 0-length files. Actually such files creates to place empty prefix,
+          // that is "directory marker"
           return entry.type === 'Object' && entry.size > 0;
         });
       }),
-      breadcrumbs: computed<S3Breadcrumb[]>(() =>
-        buildBreadcrumbs(store.currentPrefix()),
-      ),
+      breadcrumbs: computed(() => buildBreadcrumbs(store.currentPrefix())),
     }
+  }),
+  withComputed((store) => {
+    return {
+      canDeleteCurrentFolder: computed(
+        () => store.currentPrefix() !== '' && store.directories().length === 0 && store.files().length === 0,
+      ),
+    };
   }),
   withMethods((store, notificationService = inject(TuiNotificationService)) => {
     return {
@@ -39,7 +47,7 @@ export const S3BucketBrowserStore = signalStore(
           filter((bucketOrNull): bucketOrNull is S3Config => !!bucketOrNull),
           tap({
             next: (bucket) => {
-              patchState(store, {bucket, entries: []});
+              patchState(store, {bucket});
             },
           }),
           switchMap((bucket) => {
@@ -48,9 +56,10 @@ export const S3BucketBrowserStore = signalStore(
               bucket,
             });
           }),
+          map((entries) => entries),
           tap({
-            next: (entry) => {
-              patchState(store, {entries: [...store.entries(), entry]});
+            next: (entries) => {
+              patchState(store, {entries});
             },
           }),
           // We have to restart stream, else next emit from wireBucket will not pass in stream
@@ -63,25 +72,22 @@ export const S3BucketBrowserStore = signalStore(
       ),
       choosePrefix: rxMethod<string>(
         pipe(
-          tap({
-            next: (prefix) => {
-              patchState(store, {currentPrefix: prefix, entries: []});
-            },
-          }),
-          switchMap((prefix) => {
+          switchMap(async (prefix) => {
             const bucket = store.bucket();
             if (!bucket) {
               throw new Error('Missing s3 bucket config');
             }
 
-            return loadEntries({
+            const entries = await loadEntries({
               currentPrefix: prefix,
               bucket,
             });
+
+            return {entries, prefix};
           }),
           tap({
-            next: (entry) => {
-              patchState(store, {entries: [...store.entries(), entry]});
+            next: ({entries, prefix}) => {
+              patchState(store, {entries, currentPrefix: prefix});
             },
           }),
           // We have to restart stream, else next emit from wireBucket will not pass in stream
@@ -95,28 +101,24 @@ export const S3BucketBrowserStore = signalStore(
       chooseParentPrefix: rxMethod<void>(
         pipe(
           map(() => {
-            const prefix = extractParentPrefix(store.currentPrefix());
-            return prefix;
+            return extractParentPrefix(store.currentPrefix());
           }),
-          tap({
-            next: (prefix) => {
-              patchState(store, {currentPrefix: prefix, entries: []});
-            },
-          }),
-          switchMap((prefix) => {
+          switchMap(async (prefix) => {
             const bucket = store.bucket();
             if (!bucket) {
               throw new Error('Missing s3 bucket config');
             }
 
-            return loadEntries({
+            const entries = await loadEntries({
               currentPrefix: prefix,
               bucket,
             });
+
+            return {entries, prefix}
           }),
           tap({
-            next: (entry) => {
-              patchState(store, {entries: [...store.entries(), entry]});
+            next: ({entries, prefix}) => {
+              patchState(store, {entries, currentPrefix: prefix});
             },
           }),
           // We have to restart stream, else next emit from wireBucket will not pass in stream
@@ -126,33 +128,83 @@ export const S3BucketBrowserStore = signalStore(
             return caught;
           }),
         ),
-      )
+      ),
+    };
+  }),
+  // Second withMethods block, so these methods can call methods from the block above.
+  withMethods((store, notificationService = inject(TuiNotificationService)) => {
+    return {
+      createFolder: async (name: string): Promise<boolean> => {
+        const bucket = store.bucket();
+        if (!bucket) {
+          return false;
+        }
+
+        const trimmedName = name.trim();
+        if (!trimmedName) {
+          return false;
+        }
+
+        patchState(store, {folderBusy: true});
+
+        try {
+          const client = createS3Client(bucket);
+          const newPrefix = store.currentPrefix() + trimmedName + '/';
+          await client.putObject(newPrefix, '');
+
+          const newEntry: S3CommonPrefix = {type: 'CommonPrefix', prefix: newPrefix};
+          patchState(store, {entries: [newEntry, ...store.entries()]});
+          return true;
+        } catch (error: unknown) {
+          errorToast({notificationService, error});
+          return false;
+        } finally {
+          patchState(store, {folderBusy: false});
+        }
+      },
+      deleteCurrentFolder: async (): Promise<boolean> => {
+        const bucket = store.bucket();
+        if (!bucket || store.currentPrefix() === '') {
+          return false;
+        }
+
+        patchState(store, {folderBusy: true});
+
+        try {
+          const client = createS3Client(bucket);
+          await client.deleteObject(store.currentPrefix());
+
+          store.chooseParentPrefix();
+          return true;
+        } catch (error: unknown) {
+          errorToast({notificationService, error});
+          return false;
+        } finally {
+          patchState(store, {folderBusy: false});
+        }
+      },
     };
   }),
 );
 
 function loadEntries({bucket, currentPrefix}: { bucket: S3Config, currentPrefix?: string }) {
-  if (!bucket.s3_endpoint) {
-    throw new Error('Missing s3_endpoint');
-  }
+  const client = createS3Client(bucket);
 
-  const client = new S3Client({
-    endPoint: bucket.s3_endpoint,
-    region: bucket.s3_region || 'us-east-1',
-    bucket: bucket.s3_bucket,
-    accessKey: bucket.s3_access_key,
-    secretKey: bucket.s3_access_secret,
-  });
-
-  return from(
-    client.listObjectsGrouped({
-      prefix: currentPrefix,
-      delimiter: '/',
-    }),
-  );
+  return (
+    async () => {
+      const entries: (S3CommonPrefix | S3Object)[] = [];
+      for await (const entry of client.listObjectsGrouped({
+        prefix: currentPrefix,
+        delimiter: '/',
+      })) {
+        entries.push(entry);
+      }
+      return entries;
+    }
+  )();
 }
 
-function errorToast({error, notificationService}: { error: any, notificationService: TuiNotificationService }) {
+function errorToast({error, notificationService}: { error: unknown, notificationService: TuiNotificationService }) {
   const message =
     error instanceof Error
       ? error.message
@@ -167,7 +219,7 @@ function errorToast({error, notificationService}: { error: any, notificationServ
 function extractParentPrefix(prefix: string) {
   const parts = prefix.replace(/\/+$/, '').split('/');
   parts.pop();
-  return parts.join('/');
+  return parts.length ? `${parts.join('/')}/` : '';
 }
 
 export function buildBreadcrumbs(currentPrefix: string): S3Breadcrumb[] {

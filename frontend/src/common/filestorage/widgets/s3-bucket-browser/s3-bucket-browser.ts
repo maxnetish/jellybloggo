@@ -1,7 +1,8 @@
 import { Component, inject, input } from '@angular/core';
 import { S3BucketBrowserStore } from './s3-bucket-browser.store';
 import { S3Config } from '../../model/s3-config';
-import { TuiIcon, TuiLink } from '@taiga-ui/core';
+import { lastSegmentOf } from '../../model/s3-path';
+import { TuiButton, TuiIcon, TuiLink } from '@taiga-ui/core';
 import { TuiElasticContainer } from '@taiga-ui/layout';
 import { TuiTable } from '@taiga-ui/addon-table';
 import { FuncToPipePipe } from '../../../utils/func-to-pipe';
@@ -10,7 +11,8 @@ import { S3Object } from '@bradenmacdonald/s3-lite-client';
 import { tuiBreadcrumbsOptionsProvider } from '@taiga-ui/kit';
 import { TuiBreadcrumbs } from '@taiga-ui/kit/components/breadcrumbs';
 import { TuiItem } from '@taiga-ui/cdk/directives/item';
-import { TuiCopy } from '@taiga-ui/kit';
+import { TuiButtonLoading, TuiCopy } from '@taiga-ui/kit';
+import { S3FolderCreateModal } from '../s3-folder-create/s3-folder-create.modal';
 
 @Component({
   imports: [
@@ -24,6 +26,8 @@ import { TuiCopy } from '@taiga-ui/kit';
     TuiLink,
     TuiBreadcrumbs,
     TuiItem,
+    TuiButton,
+    TuiButtonLoading,
   ],
   selector: 'app-s3-bucket-browser',
   styleUrl: './s3-bucket-browser.scss',
@@ -34,6 +38,7 @@ import { TuiCopy } from '@taiga-ui/kit';
 })
 export class S3BucketBrowser {
   private readonly store = inject(S3BucketBrowserStore);
+  private readonly folderCreateModal = inject(S3FolderCreateModal);
 
   readonly bucket = input<S3Config | null>();
 
@@ -41,9 +46,11 @@ export class S3BucketBrowser {
     this.store.wireBucket(this.bucket);
   }
 
-  protected lastSegmentOf(path: string): string {
-    return path.replace(/\/+$/, '').split('/').pop() ?? '';
+  protected openCreateFolder(): void {
+    this.folderCreateModal.show().subscribe();
   }
+
+  protected readonly lastSegmentOf = lastSegmentOf;
 
   protected readonly getFileUrl = (entry: S3Object): string => {
     const bucket = this.store.bucket();

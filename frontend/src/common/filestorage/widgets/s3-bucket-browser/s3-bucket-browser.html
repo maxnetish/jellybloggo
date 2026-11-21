@@ -1,19 +1,45 @@
-<tui-breadcrumbs class="path-breadcrumbs">
-  @for (crumb of store.breadcrumbs(); track crumb.prefix) {
-    @if ($last) {
-      <span *tuiItem class="path-current" aria-current="page">{{ crumb.label }}</span>
-    } @else {
+<div class="path-row">
+  <tui-breadcrumbs class="path-breadcrumbs">
+    @for (crumb of store.breadcrumbs(); track crumb.prefix) {
+      @if ($last) {
+        <span *tuiItem class="path-current" aria-current="page">{{ crumb.label }}</span>
+      } @else {
+        <button *tuiItem tuiLink type="button" (click)="store.choosePrefix(crumb.prefix)">
+          {{ crumb.label }}
+        </button>
+      }
+    }
+  </tui-breadcrumbs>
+
+  <div class="path-actions">
+    <button
+      appearance="flat"
+      iconStart="@tui.circle-plus"
+      size="s"
+      tuiButton
+      type="button"
+      [disabled]="store.folderBusy()"
+      (click)="openCreateFolder()"
+    >
+      Create folder
+    </button>
+
+    @if (store.canDeleteCurrentFolder()) {
       <button
-        *tuiItem
-        tuiLink
+        appearance="flat-destructive"
+        iconStart="@tui.circle-minus"
+        size="s"
+        tuiButton
         type="button"
-        (click)="store.choosePrefix(crumb.prefix)"
+        [disabled]="store.folderBusy()"
+        [loading]="store.folderBusy()"
+        (click)="store.deleteCurrentFolder()"
       >
-        {{ crumb.label }}
+        Delete empty folder
       </button>
     }
-  }
-</tui-breadcrumbs>
+  </div>
+</div>
 
 <tui-elastic-container>
   <table class="s3-table" tuiTable>
