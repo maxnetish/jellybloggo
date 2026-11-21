@@ -2,7 +2,7 @@ import { Component, inject, input } from '@angular/core';
 import { S3BucketBrowserStore } from './s3-bucket-browser.store';
 import { S3Config } from '../../model/s3-config';
 import { lastSegmentOf } from '../../model/s3-path';
-import { TuiButton, TuiIcon, TuiLink } from '@taiga-ui/core';
+import { TuiButton, TuiDialogService, TuiIcon, TuiLink } from '@taiga-ui/core';
 import { TuiElasticContainer } from '@taiga-ui/layout';
 import { TuiTable } from '@taiga-ui/addon-table';
 import { FuncToPipePipe } from '../../../utils/func-to-pipe';
@@ -12,8 +12,11 @@ import { tuiBreadcrumbsOptionsProvider } from '@taiga-ui/kit';
 import { TuiBreadcrumbs } from '@taiga-ui/kit/components/breadcrumbs';
 import { TuiItem } from '@taiga-ui/cdk/directives/item';
 import { TuiButtonLoading, TuiCopy } from '@taiga-ui/kit';
+import { TUI_CONFIRM, TuiConfirmData } from '@taiga-ui/kit';
 import { S3FolderCreateModal } from '../s3-folder-create/s3-folder-create.modal';
 import { FileSizeForHumanPipe } from '../../file-size';
+import { filter } from 'rxjs';
+import { S3FileActionsDropdownComponent } from './s3-file-actions-dropdown.component';
 
 @Component({
   imports: [
@@ -29,6 +32,7 @@ import { FileSizeForHumanPipe } from '../../file-size';
     TuiButton,
     TuiButtonLoading,
     FileSizeForHumanPipe,
+    S3FileActionsDropdownComponent,
   ],
   selector: 'app-s3-bucket-browser',
   styleUrl: './s3-bucket-browser.scss',
@@ -40,6 +44,7 @@ import { FileSizeForHumanPipe } from '../../file-size';
 export class S3BucketBrowser {
   private readonly store = inject(S3BucketBrowserStore);
   private readonly folderCreateModal = inject(S3FolderCreateModal);
+  private readonly dialogs = inject(TuiDialogService);
 
   readonly bucket = input<S3Config | null>();
 
@@ -49,6 +54,22 @@ export class S3BucketBrowser {
 
   protected openCreateFolder(): void {
     this.folderCreateModal.show().subscribe();
+  }
+
+  protected deleteFile(file: S3Object): void {
+    const fileName = lastSegmentOf(file.key);
+    this.dialogs.open<boolean>(TUI_CONFIRM, {
+      label: 'Delete file',
+      size: 's',
+      data: {
+        content: `Are you sure you want to permanently delete the file <strong>${fileName}</strong>?`,
+        yes: 'Delete',
+        no: 'Cancel',
+        appearance: 'primary-destructive',
+      } satisfies TuiConfirmData,
+    }).pipe(filter(Boolean)).subscribe(() => {
+      this.store.deleteFile(file.key);
+    });
   }
 
   protected readonly lastSegmentOf = lastSegmentOf;

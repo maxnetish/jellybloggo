@@ -136,10 +136,40 @@ describe('S3DirectoryBrowser', () => {
 
     it('disables the create button while a folder operation is in progress', () => {
       render({currentPrefix: 'path/'});
-      patchState(unprotected(store), {folderBusy: true});
+      patchState(unprotected(store), {busy: true});
       fixture.detectChanges();
 
       expect(findButton('Create folder')?.disabled).toBe(true);
+    });
+  });
+
+  describe('file actions', () => {
+    it('renders the actions dropdown for file rows', () => {
+      render({
+        currentPrefix: 'path/',
+        entries: [{
+          type: 'Object',
+          key: 'path/file.txt',
+          etag: '',
+          size: 10,
+          lastModified: new Date(),
+        }],
+      });
+
+      const fileRow = fixture.nativeElement.querySelector('.file-row') as HTMLElement;
+
+      expect(fileRow.querySelector('app-s3-file-actions-dropdown')).toBeTruthy();
+    });
+
+    it('does not render the actions dropdown for directory rows', () => {
+      render({
+        currentPrefix: 'path/',
+        entries: [{type: 'CommonPrefix', prefix: 'path/nested/'}],
+      });
+
+      const dirRow = fixture.nativeElement.querySelector('.directory-row') as HTMLElement;
+
+      expect(dirRow.querySelector('app-s3-file-actions-dropdown')).toBeFalsy();
     });
   });
 
@@ -184,7 +214,7 @@ describe('S3DirectoryBrowser', () => {
 
     it('disables the delete button while a folder operation is in progress', () => {
       render({currentPrefix: 'path/to/'});
-      patchState(unprotected(store), {folderBusy: true});
+      patchState(unprotected(store), {busy: true});
       fixture.detectChanges();
 
       expect(findButton('Delete empty folder')?.disabled).toBe(true);

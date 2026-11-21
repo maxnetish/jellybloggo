@@ -55,13 +55,13 @@ describe('S3BucketBrowserStore', () => {
     bucket?: S3Config | null;
     currentPrefix?: string;
     entries?: (S3CommonPrefix | S3Object)[];
-    folderBusy?: boolean;
+    busy?: boolean;
   }) {
     patchState(unprotected(store), {
       bucket: partial.bucket ?? null,
       currentPrefix: partial.currentPrefix ?? '',
       entries: partial.entries ?? [],
-      folderBusy: partial.folderBusy ?? false,
+      busy: partial.busy ?? false,
     });
   }
 
@@ -188,15 +188,15 @@ describe('S3BucketBrowserStore', () => {
       );
     });
 
-    it('sets folderBusy during the operation', async () => {
+    it('sets busy during the operation', async () => {
       setState({ bucket: mockBucket, currentPrefix: 'photos/', entries: [] });
 
       const promise = store.createFolder('new');
-      expect(store.folderBusy()).toBe(true);
+      expect(store.busy()).toBe(true);
 
       await promise;
 
-      expect(store.folderBusy()).toBe(false);
+      expect(store.busy()).toBe(false);
     });
   });
 
@@ -248,15 +248,99 @@ describe('S3BucketBrowserStore', () => {
       );
     });
 
-    it('sets folderBusy during the operation', async () => {
+    it('sets busy during the operation', async () => {
       setState({ bucket: mockBucket, currentPrefix: 'photos/', entries: [] });
 
       const promise = store.deleteCurrentFolder();
-      expect(store.folderBusy()).toBe(true);
+      expect(store.busy()).toBe(true);
 
       await promise;
 
-      expect(store.folderBusy()).toBe(false);
+      expect(store.busy()).toBe(false);
+    });
+  });
+
+  describe('deleteFile', () => {
+    it('returns false when no bucket is configured', async () => {
+      setState({ bucket: null, entries: [] });
+
+      await expect(store.deleteFile('photos/vacation/image.jpg')).rejects.toThrow('Missing bucket config');
+    });
+
+    it('deletes the file from entries on success', async () => {
+      const entries: (S3CommonPrefix | S3Object)[] = [
+        {
+          type: 'Object',
+          key: 'photos/vacation/image.jpg',
+          etag: '',
+          size: 100,
+          lastModified: new Date(),
+        },
+        {
+          type: 'Object',
+          key: 'photos/vacation/thumb.png',
+          etag: '',
+          size: 50,
+          lastModified: new Date(),
+        },
+      ];
+      setState({ bucket: mockBucket, currentPrefix: 'photos/vacation/', entries });
+
+      const result = await store.deleteFile('photos/vacation/image.jpg');
+
+      expect(result).toBe(true);
+      expect(mockDeleteObject).toHaveBeenCalledWith('photos/vacation/image.jpg');
+      expect(store.entries()).toHaveLength(1);
+      expect(store.entries()[0]).toEqual({
+        type: 'Object',
+        key: 'photos/vacation/thumb.png',
+        etag: '',
+        size: 50,
+        lastModified: expect.any(Date),
+      });
+    });
+
+    it('keeps remaining entries when S3 returns error', async () => {
+      mockDeleteObject.mockRejectedValueOnce(new Error('S3 Error: Access Denied'));
+      const entries: (S3CommonPrefix | S3Object)[] = [
+        {
+          type: 'Object',
+          key: 'photos/vacation/image.jpg',
+          etag: '',
+          size: 100,
+          lastModified: new Date(),
+        },
+      ];
+      setState({ bucket: mockBucket, currentPrefix: 'photos/vacation/', entries });
+
+      const result = await store.deleteFile('photos/vacation/image.jpg');
+
+      expect(result).toBe(false);
+      expect(store.entries()).toEqual(entries);
+      expect(notificationOpen).toHaveBeenCalledWith(
+        'S3 Error: Access Denied',
+        expect.objectContaining({ appearance: 'negative', label: 'S3 Error' }),
+      );
+    });
+
+    it('sets busy during the operation', async () => {
+      const entries: (S3CommonPrefix | S3Object)[] = [
+        {
+          type: 'Object',
+          key: 'photos/vacation/image.jpg',
+          etag: '',
+          size: 100,
+          lastModified: new Date(),
+        },
+      ];
+      setState({ bucket: mockBucket, currentPrefix: 'photos/vacation/', entries });
+
+      const promise = store.deleteFile('photos/vacation/image.jpg');
+      expect(store.busy()).toBe(true);
+
+      await promise;
+
+      expect(store.busy()).toBe(false);
     });
   });
 });

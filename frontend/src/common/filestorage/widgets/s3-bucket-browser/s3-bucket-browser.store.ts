@@ -14,7 +14,7 @@ export const S3BucketBrowserStore = signalStore(
     bucket: null as S3Config | null,
     currentPrefix: '',
     entries: [] as (S3CommonPrefix | S3Object)[],
-    folderBusy: false,
+    busy: false,
   }),
   withComputed((store) => {
     return {
@@ -145,7 +145,7 @@ export const S3BucketBrowserStore = signalStore(
           return false;
         }
 
-        patchState(store, {folderBusy: true});
+        patchState(store, {busy: true});
 
         try {
           const client = createS3Client(bucket);
@@ -159,7 +159,7 @@ export const S3BucketBrowserStore = signalStore(
           errorToast({notificationService, error});
           return false;
         } finally {
-          patchState(store, {folderBusy: false});
+          patchState(store, {busy: false});
         }
       },
       deleteCurrentFolder: async (): Promise<boolean> => {
@@ -168,7 +168,7 @@ export const S3BucketBrowserStore = signalStore(
           return false;
         }
 
-        patchState(store, {folderBusy: true});
+        patchState(store, {busy: true});
 
         try {
           const client = createS3Client(bucket);
@@ -180,7 +180,30 @@ export const S3BucketBrowserStore = signalStore(
           errorToast({notificationService, error});
           return false;
         } finally {
-          patchState(store, {folderBusy: false});
+          patchState(store, {busy: false});
+        }
+      },
+      deleteFile: async (fileKey: string): Promise<boolean> => {
+        const bucket = store.bucket();
+        if (!bucket) {
+          throw new Error('Missing bucket config');
+        }
+
+        patchState(store, {busy: true});
+        try {
+          const client = createS3Client(bucket);
+          await client.deleteObject(fileKey);
+          patchState(store, {
+            entries: store.entries().filter(
+              (e) => !(e.type === 'Object' && e.key === fileKey),
+            ),
+          });
+          return true;
+        } catch (error: unknown) {
+          errorToast({notificationService, error});
+          return false;
+        } finally {
+          patchState(store, {busy: false});
         }
       },
     };

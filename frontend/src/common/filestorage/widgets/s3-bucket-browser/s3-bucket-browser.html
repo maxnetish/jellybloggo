@@ -18,7 +18,7 @@
       size="s"
       tuiButton
       type="button"
-      [disabled]="store.folderBusy()"
+      [disabled]="store.busy()"
       (click)="openCreateFolder()"
     >
       Create folder
@@ -31,8 +31,8 @@
         size="s"
         tuiButton
         type="button"
-        [disabled]="store.folderBusy()"
-        [loading]="store.folderBusy()"
+        [disabled]="store.busy()"
+        [loading]="store.busy()"
         (click)="store.deleteCurrentFolder()"
       >
         Delete empty folder
@@ -49,6 +49,7 @@
       <th tuiTh>Size</th>
       <th tuiTh>Date</th>
       <th tuiTh>Url</th>
+      <th tuiTh></th>
     </tr>
     </thead>
     <tbody tuiTbody>
@@ -63,6 +64,7 @@
           <td tuiTd></td>
           <td tuiTd></td>
           <td tuiTd></td>
+          <td tuiTd></td>
         </tr>
       }
       @for (dir of store.directories(); track dir.prefix) {
@@ -73,6 +75,7 @@
               {{ dir.prefix | funcToPipe : lastSegmentOf }}
             </div>
           </td>
+          <td tuiTd></td>
           <td tuiTd></td>
           <td tuiTd></td>
           <td tuiTd></td>
@@ -97,6 +100,12 @@
               </div>
             </a>
 
+          </td>
+          <td tuiTd>
+            <app-s3-file-actions-dropdown
+              [file]="file"
+              (delete)="deleteFile($event)"
+            />
           </td>
         </tr>
       }
