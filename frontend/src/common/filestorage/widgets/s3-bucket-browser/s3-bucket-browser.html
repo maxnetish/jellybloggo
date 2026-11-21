@@ -86,7 +86,7 @@
               {{ file.key | funcToPipe : lastSegmentOf }}
             </div>
           </td>
-          <td tuiTd>{{ file.size | number }}</td>
+          <td tuiTd>{{ file.size | fileSizeForHuman }}</td>
           <td tuiTd>{{ file.lastModified | date: 'short' }}</td>
           <td tuiTd>
 

@@ -6,13 +6,14 @@ import { TuiButton, TuiIcon, TuiLink } from '@taiga-ui/core';
 import { TuiElasticContainer } from '@taiga-ui/layout';
 import { TuiTable } from '@taiga-ui/addon-table';
 import { FuncToPipePipe } from '../../../utils/func-to-pipe';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { S3Object } from '@bradenmacdonald/s3-lite-client';
 import { tuiBreadcrumbsOptionsProvider } from '@taiga-ui/kit';
 import { TuiBreadcrumbs } from '@taiga-ui/kit/components/breadcrumbs';
 import { TuiItem } from '@taiga-ui/cdk/directives/item';
 import { TuiButtonLoading, TuiCopy } from '@taiga-ui/kit';
 import { S3FolderCreateModal } from '../s3-folder-create/s3-folder-create.modal';
+import { FileSizeForHumanPipe } from '../../file-size';
 
 @Component({
   imports: [
@@ -21,13 +22,13 @@ import { S3FolderCreateModal } from '../s3-folder-create/s3-folder-create.modal'
     TuiTable,
     FuncToPipePipe,
     DatePipe,
-    DecimalPipe,
     TuiCopy,
     TuiLink,
     TuiBreadcrumbs,
     TuiItem,
     TuiButton,
     TuiButtonLoading,
+    FileSizeForHumanPipe,
   ],
   selector: 'app-s3-bucket-browser',
   styleUrl: './s3-bucket-browser.scss',
