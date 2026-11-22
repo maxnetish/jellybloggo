@@ -1,12 +1,15 @@
 import { TestBed } from '@angular/core/testing';
-import { createFolderForm, collectExistingNames } from './s3-folder-create.form';
+import { collectExistingNames } from '../../model/s3-path';
+import { createNameForm } from './s3-name-dialog.form';
 
-describe('createFolderForm', () => {
-  let form: ReturnType<typeof createFolderForm>;
+describe('createNameForm', () => {
+  let form: ReturnType<typeof createNameForm>;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    form = TestBed.runInInjectionContext(() => createFolderForm(new Set()));
+    form = TestBed.runInInjectionContext(() =>
+      createNameForm({existingNames: new Set()}),
+    );
   });
 
   function errorKinds() {
@@ -16,8 +19,16 @@ describe('createFolderForm', () => {
       .map((error) => error.kind);
   }
 
-  it('starts with an empty name', () => {
+  it('starts with an empty name by default', () => {
     expect(form().value()).toEqual({ name: '' });
+  });
+
+  it('starts with the provided initial value', () => {
+    const initialForm = TestBed.runInInjectionContext(() =>
+      createNameForm({existingNames: new Set(), initialValue: 'image.jpg'}),
+    );
+
+    expect(initialForm().value()).toEqual({ name: 'image.jpg' });
   });
 
   it('rejects an empty name', () => {
@@ -58,7 +69,7 @@ describe('createFolderForm', () => {
 
   it('rejects a duplicate name', () => {
     const duplicateForm = TestBed.runInInjectionContext(() =>
-      createFolderForm(new Set(['existing-folder'])),
+      createNameForm({existingNames: new Set(['existing-folder'])}),
     );
     duplicateForm.name().value.set('existing-folder');
 
@@ -72,7 +83,7 @@ describe('createFolderForm', () => {
 
   it('rejects a duplicate name with surrounding whitespace', () => {
     const duplicateForm = TestBed.runInInjectionContext(() =>
-      createFolderForm(new Set(['existing'])),
+      createNameForm({existingNames: new Set(['existing'])}),
     );
     duplicateForm.name().value.set('  existing  ');
 
@@ -85,7 +96,9 @@ describe('createFolderForm', () => {
   });
 
   it('allows a name that differs only in case', () => {
-    const caseForm = TestBed.runInInjectionContext(() => createFolderForm(new Set(['MyFolder'])));
+    const caseForm = TestBed.runInInjectionContext(() =>
+      createNameForm({existingNames: new Set(['MyFolder'])}),
+    );
     caseForm.name().value.set('myfolder');
 
     expect(
@@ -94,6 +107,19 @@ describe('createFolderForm', () => {
         .errors()
         .map((error) => error.kind),
     ).not.toContain('duplicate');
+  });
+
+  it('rejects the initial value when it already exists', () => {
+    const copyForm = TestBed.runInInjectionContext(() =>
+      createNameForm({existingNames: new Set(['image.jpg']), initialValue: 'image.jpg'}),
+    );
+
+    expect(
+      copyForm
+        .name()
+        .errors()
+        .map((error) => error.kind),
+    ).toContain('duplicate');
   });
 });
 

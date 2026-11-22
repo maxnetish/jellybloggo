@@ -12,11 +12,11 @@ import { TuiForm } from '@taiga-ui/layout';
 import { POLYMORPHEUS_CONTEXT } from '@taiga-ui/polymorpheus';
 import { TuiAutoFocus } from '@taiga-ui/cdk';
 import { TuiButtonLoading } from '@taiga-ui/kit';
-import { createFolderForm } from './s3-folder-create.form';
-import { S3FolderCreateInputs, S3FolderCreateOutputs } from './s3-folder-create.model';
+import { createNameForm } from './s3-name-dialog.form';
+import { S3NameDialogInputs, S3NameDialogOutputs } from './s3-name-dialog.model';
 
 @Component({
-  selector: 'app-s3-folder-create',
+  selector: 'app-s3-name-dialog',
   imports: [
     FormField,
     FormRoot,
@@ -29,14 +29,17 @@ import { S3FolderCreateInputs, S3FolderCreateOutputs } from './s3-folder-create.
     TuiAutoFocus,
     TuiButtonLoading,
   ],
-  templateUrl: './s3-folder-create.component.html',
+  templateUrl: './s3-name-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class S3FolderCreateComponent {
+export class S3NameDialogComponent {
   protected readonly context =
-    inject<TuiDialogContext<S3FolderCreateOutputs, S3FolderCreateInputs>>(POLYMORPHEUS_CONTEXT);
+    inject<TuiDialogContext<S3NameDialogOutputs, S3NameDialogInputs>>(POLYMORPHEUS_CONTEXT);
 
-  protected readonly form = createFolderForm(this.context.data.existingNames);
+  protected readonly form = createNameForm({
+    existingNames: this.context.data.existingNames,
+    initialValue: this.context.data.initialValue,
+  });
   protected readonly loading = signal(false);
 
   protected cancel(): void {
@@ -48,9 +51,9 @@ export class S3FolderCreateComponent {
       this.loading.set(true);
 
       try {
-        const created = await this.context.data.store.createFolder(this.form().value().name);
+        const accepted = await this.context.data.submit(this.form().value().name);
 
-        if (created) {
+        if (accepted) {
           this.context.completeWith({ option: 'ok' });
         }
       } finally {

@@ -7,6 +7,7 @@ import { catchError, filter, map, pipe, switchMap, tap } from 'rxjs';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { TuiNotificationService } from '@taiga-ui/core';
 import { createS3Client } from '../../s3-client';
+import { lastSegmentOf } from '../../model/s3-path';
 
 export const S3BucketBrowserStore = signalStore(
   {providedIn: 'root'},
@@ -197,6 +198,39 @@ export const S3BucketBrowserStore = signalStore(
             entries: store.entries().filter(
               (e) => !(e.type === 'Object' && e.key === fileKey),
             ),
+          });
+          return true;
+        } catch (error: unknown) {
+          errorToast({notificationService, error});
+          return false;
+        } finally {
+          patchState(store, {busy: false});
+        }
+      },
+      copyFile: async (file: S3Object, newName: string): Promise<boolean> => {
+        const bucket = store.bucket();
+        if (!bucket) {
+          throw new Error('Missing bucket config');
+        }
+
+        const fileName = lastSegmentOf(file.key);
+        const newKey = file.key.slice(0, file.key.length - fileName.length) + newName.trim();
+
+        patchState(store, {busy: true});
+        try {
+          const client = createS3Client(bucket);
+          const copied = await client.copyObject({sourceKey: file.key}, newKey);
+          patchState(store, {
+            entries: [
+              ...store.entries(),
+              {
+                type: 'Object',
+                key: newKey,
+                size: file.size,
+                etag: copied.etag,
+                lastModified: copied.lastModified,
+              },
+            ],
           });
           return true;
         } catch (error: unknown) {

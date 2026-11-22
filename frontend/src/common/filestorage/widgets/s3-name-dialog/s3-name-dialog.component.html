@@ -1,8 +1,13 @@
 <div tuiPlatform="web">
   <form tuiForm="m" [formRoot]="form" (submit)="submit()">
     <tui-textfield>
-      <label tuiLabel>Folder name</label>
-      <input placeholder="Example: my-folder" tuiInput tuiAutoFocus [formField]="form.name" />
+      <label tuiLabel>{{ context.data.fieldLabel }}</label>
+      <input
+        tuiInput
+        tuiAutoFocus
+        [formField]="form.name"
+        [placeholder]="context.data.placeholder"
+      />
     </tui-textfield>
     <tui-error [formField]="form.name" />
 

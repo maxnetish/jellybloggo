@@ -104,6 +104,7 @@
           <td tuiTd>
             <app-s3-file-actions-dropdown
               [file]="file"
+              (copy)="copyFile($event)"
               (delete)="deleteFile($event)"
             />
           </td>

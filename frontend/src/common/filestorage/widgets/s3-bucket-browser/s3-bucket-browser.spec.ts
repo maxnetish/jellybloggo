@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
 import { of } from 'rxjs';
@@ -6,20 +7,25 @@ import type { S3CommonPrefix, S3Object } from '@bradenmacdonald/s3-lite-client';
 import { S3BucketBrowser } from './s3-bucket-browser';
 import { S3BucketBrowserStore, buildBreadcrumbs } from './s3-bucket-browser.store';
 import { S3FolderCreateModal } from '../s3-folder-create/s3-folder-create.modal';
+import { S3FileCopyModal } from '../s3-file-copy/s3-file-copy.modal';
+import { S3FileActionsDropdownComponent } from './s3-file-actions-dropdown.component';
 
 describe('S3DirectoryBrowser', () => {
   let component: S3BucketBrowser;
   let fixture: ComponentFixture<S3BucketBrowser>;
   let store: InstanceType<typeof S3BucketBrowserStore>;
   let folderCreateShow: ReturnType<typeof vi.fn>;
+  let fileCopyShow: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     folderCreateShow = vi.fn(() => of({option: 'cancel'}));
+    fileCopyShow = vi.fn(() => of({option: 'cancel'}));
 
     await TestBed.configureTestingModule({
       imports: [S3BucketBrowser],
       providers: [
         {provide: S3FolderCreateModal, useValue: {show: folderCreateShow}},
+        {provide: S3FileCopyModal, useValue: {show: fileCopyShow}},
       ],
     }).compileComponents();
 
@@ -159,6 +165,24 @@ describe('S3DirectoryBrowser', () => {
       const fileRow = fixture.nativeElement.querySelector('.file-row') as HTMLElement;
 
       expect(fileRow.querySelector('app-s3-file-actions-dropdown')).toBeTruthy();
+    });
+
+    it('opens the copy dialog with the file on copy action', () => {
+      const file: S3Object = {
+        type: 'Object',
+        key: 'path/file.txt',
+        etag: '',
+        size: 10,
+        lastModified: new Date(),
+      };
+      render({currentPrefix: 'path/', entries: [file]});
+
+      const dropdown = fixture.debugElement.query(
+        By.directive(S3FileActionsDropdownComponent),
+      ).componentInstance as S3FileActionsDropdownComponent;
+      dropdown.copy.emit(file);
+
+      expect(fileCopyShow).toHaveBeenCalledWith(file);
     });
 
     it('does not render the actions dropdown for directory rows', () => {

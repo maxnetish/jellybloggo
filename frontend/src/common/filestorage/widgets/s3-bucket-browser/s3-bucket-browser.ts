@@ -14,6 +14,7 @@ import { TuiItem } from '@taiga-ui/cdk/directives/item';
 import { TuiButtonLoading, TuiCopy } from '@taiga-ui/kit';
 import { TUI_CONFIRM, TuiConfirmData } from '@taiga-ui/kit';
 import { S3FolderCreateModal } from '../s3-folder-create/s3-folder-create.modal';
+import { S3FileCopyModal } from '../s3-file-copy/s3-file-copy.modal';
 import { FileSizeForHumanPipe } from '../../file-size';
 import { filter } from 'rxjs';
 import { S3FileActionsDropdownComponent } from './s3-file-actions-dropdown.component';
@@ -44,6 +45,7 @@ import { S3FileActionsDropdownComponent } from './s3-file-actions-dropdown.compo
 export class S3BucketBrowser {
   private readonly store = inject(S3BucketBrowserStore);
   private readonly folderCreateModal = inject(S3FolderCreateModal);
+  private readonly fileCopyModal = inject(S3FileCopyModal);
   private readonly dialogs = inject(TuiDialogService);
 
   readonly bucket = input<S3Config | null>();
@@ -54,6 +56,10 @@ export class S3BucketBrowser {
 
   protected openCreateFolder(): void {
     this.folderCreateModal.show().subscribe();
+  }
+
+  protected copyFile(file: S3Object): void {
+    this.fileCopyModal.show(file).subscribe();
   }
 
   protected deleteFile(file: S3Object): void {

@@ -11,6 +11,7 @@ type Store = InstanceType<typeof S3BucketBrowserStore>;
 // Create mock client methods at module level so they survive across test runs.
 const mockPutObject = vi.fn();
 const mockDeleteObject = vi.fn();
+const mockCopyObject = vi.fn();
 const mockListObjectsGrouped = vi.fn().mockImplementation(async function* () {});
 
 // Mock the S3Client class at the npm-module level (Angular allows vi.mock for non-relative imports).
@@ -18,6 +19,7 @@ vi.mock('@bradenmacdonald/s3-lite-client', () => ({
   S3Client: class {
     putObject = mockPutObject;
     deleteObject = mockDeleteObject;
+    copyObject = mockCopyObject;
     listObjectsGrouped = mockListObjectsGrouped as unknown as () => AsyncGenerator<S3CommonPrefix | S3Object, string | undefined>;
   },
 }));
@@ -68,6 +70,12 @@ describe('S3BucketBrowserStore', () => {
   beforeEach(() => {
     mockPutObject.mockReset().mockResolvedValue({ etag: '"mock"' });
     mockDeleteObject.mockReset().mockResolvedValue(undefined);
+    mockCopyObject.mockReset().mockResolvedValue({
+      etag: '"copied"',
+      versionId: null,
+      lastModified: new Date('2026-02-01T00:00:00Z'),
+      copySourceVersionId: null,
+    });
     mockListObjectsGrouped.mockReset().mockImplementation(async function* () {});
     store = createStore();
   });
@@ -336,6 +344,80 @@ describe('S3BucketBrowserStore', () => {
       setState({ bucket: mockBucket, currentPrefix: 'photos/vacation/', entries });
 
       const promise = store.deleteFile('photos/vacation/image.jpg');
+      expect(store.busy()).toBe(true);
+
+      await promise;
+
+      expect(store.busy()).toBe(false);
+    });
+  });
+
+  describe('copyFile', () => {
+    const sourceFile: S3Object = {
+      type: 'Object',
+      key: 'photos/vacation/image.jpg',
+      etag: '',
+      size: 100,
+      lastModified: new Date('2026-01-01T00:00:00Z'),
+    };
+
+    it('throws when no bucket is configured', async () => {
+      setState({ bucket: null, entries: [] });
+
+      await expect(store.copyFile(sourceFile, 'copy.jpg')).rejects.toThrow('Missing bucket config');
+    });
+
+    it('copies the file and appends the new entry', async () => {
+      setState({ bucket: mockBucket, currentPrefix: 'photos/vacation/', entries: [sourceFile] });
+
+      const result = await store.copyFile(sourceFile, 'copy.jpg');
+
+      expect(result).toBe(true);
+      expect(mockCopyObject).toHaveBeenCalledWith(
+        { sourceKey: 'photos/vacation/image.jpg' },
+        'photos/vacation/copy.jpg',
+      );
+      expect(store.entries()).toEqual([
+        sourceFile,
+        {
+          type: 'Object',
+          key: 'photos/vacation/copy.jpg',
+          size: 100,
+          etag: '"copied"',
+          lastModified: new Date('2026-02-01T00:00:00Z'),
+        },
+      ]);
+    });
+
+    it('trims the new name', async () => {
+      setState({ bucket: mockBucket, currentPrefix: 'photos/vacation/', entries: [sourceFile] });
+
+      await store.copyFile(sourceFile, '  copy.jpg  ');
+
+      expect(mockCopyObject).toHaveBeenCalledWith(
+        { sourceKey: 'photos/vacation/image.jpg' },
+        'photos/vacation/copy.jpg',
+      );
+    });
+
+    it('keeps entries untouched and shows a toast on S3 failure', async () => {
+      mockCopyObject.mockRejectedValueOnce(new Error('S3 Error: Access Denied'));
+      setState({ bucket: mockBucket, currentPrefix: 'photos/vacation/', entries: [sourceFile] });
+
+      const result = await store.copyFile(sourceFile, 'copy.jpg');
+
+      expect(result).toBe(false);
+      expect(store.entries()).toEqual([sourceFile]);
+      expect(notificationOpen).toHaveBeenCalledWith(
+        'S3 Error: Access Denied',
+        expect.objectContaining({ appearance: 'negative', label: 'S3 Error' }),
+      );
+    });
+
+    it('sets busy during the operation', async () => {
+      setState({ bucket: mockBucket, currentPrefix: 'photos/vacation/', entries: [sourceFile] });
+
+      const promise = store.copyFile(sourceFile, 'copy.jpg');
       expect(store.busy()).toBe(true);
 
       await promise;
