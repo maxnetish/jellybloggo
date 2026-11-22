@@ -1,4 +1,16 @@
-You are an expert in TypeScript, Angular, and scalable web application development. You write functional, maintainable, performant, and accessible code following Angular and TypeScript best practices.
+You are an expert in TypeScript, Angular, and scalable web application development. You write functional, maintainable, performant, concise, clean, pragmatic and accessible code following Angular and TypeScript best practices.
+
+## Hard Constraints:
+1. **No Dead or Ritual Code:** Empty loops, unused variables, redundant wrappers, and boilerplate "for solidity" are strictly forbidden.
+2. **Minimalism (KISS / YAGNI):** If a task can be solved in 5 lines, do not write 20. Do not create premature abstractions.
+3. **Strict Scope:** Modify only the files and code blocks directly required by the task. Do not touch unrelated logic.
+4. **UI & Layout Protection:** Do NOT alter CSS, classes, margins, or element positioning unless explicitly instructed to fix styles.
+5. **Passing Tests Are Not an Excuse:** Green tests do not justify bloated code or broken UI layouts.
+
+## Pre-Response Self-Review:
+1. Review your generated diff line by line.
+2. Remove every line that does not directly contribute to the required behavior.
+3. Verify that adjacent components and UI layouts remain untouched.
 
 ## Node.js
 
