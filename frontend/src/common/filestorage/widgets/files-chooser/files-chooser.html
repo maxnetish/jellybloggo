@@ -1,0 +1,10 @@
+<label tuiInputFiles>
+  <input
+    #validator="tuiInputFilesValidator"
+    [accept]="accepted()"
+    [maxFileSize]="maxFileSize()"
+    tuiInputFiles
+    [multiple]="multiple()"
+    [formControl]="inputControl"
+  />
+</label>

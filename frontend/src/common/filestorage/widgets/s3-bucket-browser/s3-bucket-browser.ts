@@ -8,7 +8,7 @@ import { TuiTable } from '@taiga-ui/addon-table';
 import { FuncToPipePipe } from '../../../utils/func-to-pipe';
 import { DatePipe } from '@angular/common';
 import { S3Object } from '@bradenmacdonald/s3-lite-client';
-import { tuiBreadcrumbsOptionsProvider } from '@taiga-ui/kit';
+import { tuiBreadcrumbsOptionsProvider, TuiFiles } from '@taiga-ui/kit';
 import { TuiBreadcrumbs } from '@taiga-ui/kit/components/breadcrumbs';
 import { TuiItem } from '@taiga-ui/cdk/directives/item';
 import { TuiButtonLoading, TuiCopy } from '@taiga-ui/kit';
@@ -18,6 +18,8 @@ import { S3FileCopyModal } from '../s3-file-copy/s3-file-copy.modal';
 import { FileSizeForHumanPipe } from '../../file-size';
 import { filter } from 'rxjs';
 import { S3FileActionsDropdownComponent } from './s3-file-actions-dropdown.component';
+import { FilesChooser } from '../files-chooser/files-chooser';
+import { S3UploadStore } from '../../s3-upload.store';
 
 @Component({
   imports: [
@@ -32,21 +34,24 @@ import { S3FileActionsDropdownComponent } from './s3-file-actions-dropdown.compo
     TuiItem,
     TuiButton,
     TuiButtonLoading,
+    TuiFiles,
     FileSizeForHumanPipe,
     S3FileActionsDropdownComponent,
+    FilesChooser,
   ],
   selector: 'app-s3-bucket-browser',
   styleUrl: './s3-bucket-browser.scss',
   templateUrl: './s3-bucket-browser.html',
   providers: [
     tuiBreadcrumbsOptionsProvider({icon: '/'}),
-  ]
+  ],
 })
 export class S3BucketBrowser {
   private readonly store = inject(S3BucketBrowserStore);
   private readonly folderCreateModal = inject(S3FolderCreateModal);
   private readonly fileCopyModal = inject(S3FileCopyModal);
   private readonly dialogs = inject(TuiDialogService);
+  protected readonly uploadStore = inject(S3UploadStore);
 
   readonly bucket = input<S3Config | null>();
 
@@ -91,4 +96,17 @@ export class S3BucketBrowser {
     return `${endpoint}/${bucketName}/${key}`;
   };
 
+  protected handleChooseFileToUpload($event: File) {
+    const bucket = this.store.bucket();
+
+    if (!bucket) {
+      throw new Error('Missing s3 bucket');
+    }
+
+    const res = this.uploadStore.add({
+      file: $event,
+      prefix: this.store.currentPrefix(),
+      bucket,
+    });
+  }
 }

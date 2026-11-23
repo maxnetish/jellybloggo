@@ -39,6 +39,15 @@
       </button>
     }
   </div>
+
+</div>
+
+<div class="file-chooser">
+  <app-files-chooser
+    accepted="image/*"
+    [multiple]="true"
+    (fileChosen)="handleChooseFileToUpload($event)"
+  ></app-files-chooser>
 </div>
 
 <tui-elastic-container>

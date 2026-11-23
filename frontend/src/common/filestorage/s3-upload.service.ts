@@ -30,7 +30,13 @@ export class S3UploadService {
    *
    * @returns Reactive progress/status
    */
-  upload({bucket, file, prefix, overrideFileName, destroyRef}: {bucket: S3Config; file: File; prefix: string; overrideFileName?: string; destroyRef?: DestroyRef}) {
+  upload({bucket, file, prefix, overrideFileName, destroyRef}: {
+    bucket: S3Config;
+    file: File;
+    prefix: string;
+    overrideFileName?: string;
+    destroyRef?: DestroyRef
+  }) {
     const cancel$ = new Subject<void>();
     const percents = signal(0);
     const status = signal<FileUploadStatus>('presign');
@@ -58,7 +64,7 @@ export class S3UploadService {
         });
       }),
       takeUntil(cancel$),
-      takeUntilDestroyed(destroyRef),
+      // takeUntilDestroyed(destroyRef),
       shareReplay(1),
     );
 
@@ -66,7 +72,9 @@ export class S3UploadService {
       next: (event) => {
         if (event.type === HttpEventType.UploadProgress) {
           // event.total может отсутствовать, если размер тела неизвестен
-          const percent = event.total ? Math.round((100 * event.loaded) / event.total) : 0;
+          const percent = event.total ? Math.round((
+            100 * event.loaded
+          ) / event.total) : 0;
           percents.set(percent);
         } else if (event.type === HttpEventType.Response) {
           percents.set(100);
@@ -99,16 +107,19 @@ export class S3UploadService {
     };
   }
 
-  private createPresignedData({bucket, file, prefix, overrideFileName}: {bucket: S3Config, file: File, prefix: string; overrideFileName?: string;}) {
+  private createPresignedData({bucket, file, prefix, overrideFileName}: {
+    bucket: S3Config,
+    file: File,
+    prefix: string;
+    overrideFileName?: string;
+  }) {
     const s3Client = createS3Client(bucket);
-    const objectName = `${prefix}/${overrideFileName || file.name}`;
-    // const stream = file.stream();
-    // const res = s3Client.putObject(objectName, file.stream(), {
-    //   metadata: {
-    //
-    //   },
-    //
-    // });
+    const objectName = [
+      prefix,
+      overrideFileName || file.name,
+    ]
+      .filter((part) => !!part)
+      .join('/');
     return s3Client.presignedPostObject(objectName);
   }
 }
