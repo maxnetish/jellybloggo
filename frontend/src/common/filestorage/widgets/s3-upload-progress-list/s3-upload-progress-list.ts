@@ -4,8 +4,6 @@ import { TuiProgress } from '@taiga-ui/kit';
 import { TuiTable } from '@taiga-ui/addon-table';
 import { FileSizeForHumanPipe } from '../../file-size';
 import { S3UploadStore } from '../../s3-upload.store';
-import { JsonPipe } from '@angular/common';
-
 /**
  * Показывает очередь загрузки файлов из S3UploadStore
  */
@@ -15,7 +13,6 @@ import { JsonPipe } from '@angular/common';
     TuiProgress,
     TuiTable,
     FileSizeForHumanPipe,
-    JsonPipe,
   ],
   selector: 'app-s3-upload-progress-list',
   styleUrl: './s3-upload-progress-list.scss',

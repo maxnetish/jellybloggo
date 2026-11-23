@@ -114,7 +114,7 @@
             <a tuiLink [href]="file | funcToPipe : getFileUrl" target="_blank" rel="noopener noreferrer">
               <div class="with-icon">
                 <tui-icon [style.font-size.rem]="1.25" icon="@tui.external-link"/>
-                <tui-copy>{{ file | funcToPipe : getFileUrl }}</tui-copy>
+                {{ file | funcToPipe : getFileUrl }}
               </div>
             </a>
 

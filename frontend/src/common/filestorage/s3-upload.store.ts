@@ -129,7 +129,15 @@ export const S3UploadStore = signalStore(
         } else {
           throw new Error(`Missing upload progress at id: ${id}`);
         }
-      }
+      },
+      /**
+       * Remove completed/canceled/failed entry from queue
+       */
+      removeById(id: string) {
+        patchState(store, {
+          queue: store.queue().filter((entry) => entry.id !== id),
+        });
+      },
     };
   }),
 );

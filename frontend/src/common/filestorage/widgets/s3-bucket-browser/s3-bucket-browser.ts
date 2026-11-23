@@ -1,4 +1,4 @@
-import { Component, inject, input } from '@angular/core';
+import { Component, effect, inject, input } from '@angular/core';
 import { S3BucketBrowserStore } from './s3-bucket-browser.store';
 import { S3Config } from '../../model/s3-config';
 import { lastSegmentOf } from '../../model/s3-path';
@@ -59,6 +59,42 @@ export class S3BucketBrowser {
 
   constructor() {
     this.store.wireBucket(this.bucket);
+
+    // Когда загрузка успешно завершается — вставить файл в таблицу и убрать из очереди
+    effect(() => {
+      // Явно читаем status() каждого progress — Angular отслеживает эти сигналы,
+      // чтобы effect срабатывал при изменении статуса (queue при этом не мутируется).
+      const queue = this.uploadStore.queue();
+      for (const entry of queue) {
+        if (entry.progress) {
+          entry.progress.status();
+        }
+      }
+
+      const currentPrefix = this.store.currentPrefix();
+      const currentBucket = this.store.bucket();
+      if (!currentBucket) return;
+
+      // Ищем завершённые загрузки, которые ещё не обработаны
+      const completedEntries = this.uploadStore.queue().filter(
+        (e) =>
+          e.progress?.status() === 'success' &&
+          e.prefix === currentPrefix &&
+          e.bucket.id === currentBucket.id,
+      );
+
+      for (const completed of completedEntries) {
+        const newObject: S3Object = {
+          type: 'Object',
+          key: `${completed.prefix}${completed.overrideFileName || completed.file.name}`,
+          size: completed.file.size,
+          etag: '',
+          lastModified: new Date(),
+        };
+        this.store.insertEntry(newObject);
+        this.uploadStore.removeById(completed.id);
+      }
+    });
   }
 
   protected openCreateFolder(): void {

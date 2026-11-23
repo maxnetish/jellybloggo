@@ -207,6 +207,9 @@ export const S3BucketBrowserStore = signalStore(
           patchState(store, {busy: false});
         }
       },
+      insertEntry: (entry: S3Object) => {
+        patchState(store, {entries: [entry, ...store.entries()]});
+      },
       copyFile: async (file: S3Object, newName: string): Promise<boolean> => {
         const bucket = store.bucket();
         if (!bucket) {
