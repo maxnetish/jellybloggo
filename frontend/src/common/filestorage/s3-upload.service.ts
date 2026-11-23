@@ -115,6 +115,14 @@ export class S3UploadService {
   }) {
     const s3Client = createS3Client(bucket);
     const objectName = `${prefix}${overrideFileName || file.name}`;
-    return s3Client.presignedPostObject(objectName);
+    // Content-Type в fields, а не в conditions — библиотека добавит его в policy
+    // до подписи. Это важно: S3 требует все поля формы в policy, иначе отклоняет
+    // с "InvalidPolicyDocument: Extra input fields". Поле добавляется в подпись
+    // через fields → policy conditions, а не после подписи.
+    return s3Client.presignedPostObject(objectName, {
+      fields: {
+        'Content-Type': file.type,
+      },
+    });
   }
 }
