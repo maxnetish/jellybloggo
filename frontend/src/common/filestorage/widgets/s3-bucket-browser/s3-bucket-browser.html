@@ -50,6 +50,15 @@
   ></app-files-chooser>
 </div>
 
+
+<tui-elastic-container>
+  @if (uploadStore.queue().length) {
+    <div class="file-uploads">
+      <app-s3-upload-progress-list/>
+    </div>
+  }
+</tui-elastic-container>
+
 <tui-elastic-container>
   <table class="s3-table" tuiTable>
     <thead>

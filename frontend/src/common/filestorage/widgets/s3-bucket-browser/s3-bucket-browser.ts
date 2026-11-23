@@ -20,6 +20,7 @@ import { filter } from 'rxjs';
 import { S3FileActionsDropdownComponent } from './s3-file-actions-dropdown.component';
 import { FilesChooser } from '../files-chooser/files-chooser';
 import { S3UploadStore } from '../../s3-upload.store';
+import { S3UploadProgressList } from '../s3-upload-progress-list/s3-upload-progress-list';
 
 @Component({
   imports: [
@@ -38,6 +39,7 @@ import { S3UploadStore } from '../../s3-upload.store';
     FileSizeForHumanPipe,
     S3FileActionsDropdownComponent,
     FilesChooser,
+    S3UploadProgressList,
   ],
   selector: 'app-s3-bucket-browser',
   styleUrl: './s3-bucket-browser.scss',

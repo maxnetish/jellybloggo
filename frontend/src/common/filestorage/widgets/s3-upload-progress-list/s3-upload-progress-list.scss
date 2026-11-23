@@ -1,0 +1,14 @@
+.upload-table {
+  width: 100%;
+  table-layout: fixed;
+
+  border-block-start: 1px solid var(--tui-border-normal);
+
+  td {
+    word-break: break-word;
+  }
+}
+
+.error-message {
+  color: var(--tui-text-negative);
+}

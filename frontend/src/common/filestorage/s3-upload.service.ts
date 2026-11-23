@@ -114,12 +114,7 @@ export class S3UploadService {
     overrideFileName?: string;
   }) {
     const s3Client = createS3Client(bucket);
-    const objectName = [
-      prefix,
-      overrideFileName || file.name,
-    ]
-      .filter((part) => !!part)
-      .join('/');
+    const objectName = `${prefix}${overrideFileName || file.name}`;
     return s3Client.presignedPostObject(objectName);
   }
 }
