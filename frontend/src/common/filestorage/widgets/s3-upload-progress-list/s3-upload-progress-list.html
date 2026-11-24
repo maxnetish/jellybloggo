@@ -1,29 +1,38 @@
-<table class="upload-table" tuiTable>
-  <tbody tuiTbody>
-    @for (item of uploadStore.queue(); track item.id) {
-      <tr>
-        <td tuiTd>{{ item.bucket.config_name }}:{{ item.prefix }}{{ item.overrideFileName || item.file.name }}</td>
-        <td tuiTd>{{ item.file.size | fileSizeForHuman }}</td>
-        <td tuiTd>
-          @if (item.progress; as upload) {
-            @if (upload.error(); as error) {
-              <span class="error-message">{{ $any(error).message || 'Unknow error' }}</span>
-            } @else {
-              <progress max="100" tuiProgressBar [value]="upload.percents()"></progress>
+<div class="upload-table">
+  <table>
+    <colgroup>
+      <col />
+      <col [style.width.px]="96"/>
+      <col />
+      <col [style.width.px]="48"/>
+    </colgroup>
+    <tbody>
+      @for (item of uploadStore.queue(); track item.id) {
+        <tr>
+          <td>{{ item.bucket.config_name }}:{{ item.prefix }}{{ item.overrideFileName || item.file.name }}</td>
+          <td>{{ item.file.size | fileSizeForHuman }}</td>
+          <td>
+            @if (item.progress; as upload) {
+              @if (upload.error(); as error) {
+                <span class="error-message">{{ $any(error).message || 'Unknow error' }}</span>
+              } @else {
+                <progress max="100" tuiProgressBar [value]="upload.percents()"></progress>
+              }
             }
-          }
-        </td>
-        <td tuiTd>
-          <button
-            appearance="icon"
-            iconStart="@tui.x"
-            tuiButton
-            type="button"
-            aria-label="Cancel upload"
-            (click)="uploadStore.cancelById(item.id)"
-          ></button>
-        </td>
-      </tr>
-    }
-  </tbody>
-</table>
+          </td>
+          <td>
+            <button
+              appearance="icon"
+              iconStart="@tui.x"
+              tuiButton
+              type="button"
+              aria-label="Cancel upload"
+              size="s"
+              (click)="uploadStore.cancelById(item.id)"
+            ></button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

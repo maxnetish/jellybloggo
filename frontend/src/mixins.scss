@@ -1,0 +1,73 @@
+@mixin app-table-fixed-cells {
+  th,
+  td {
+    text-align: start;
+    padding: 1rem;
+  }
+
+  th,
+  td {
+    &:not(:last-child) {
+      border-right: 1px solid var(--tui-border-normal);
+    }
+  }
+
+  th {
+    text-align: start;
+    background-color: var(--tui-background-base-alt);
+  }
+
+  td {
+    //@include text-14-20-400($color-primary);
+  }
+}
+
+@mixin app-table-fixed {
+  @include app-table-fixed-cells;
+  border-radius: var(--tui-radius-l);
+  overflow: hidden;
+  border: 1px solid var(--tui-border-normal);
+
+  table {
+    table-layout: fixed;
+    border-collapse: collapse;
+    width: 100%;
+  }
+
+  caption {
+    //@include text-base($color-primary-2);
+    text-align: start;
+  }
+
+  tr {
+    &:not(:last-child) {
+      border-bottom: 1px solid var(--tui-border-normal);
+    }
+  }
+
+  thead {
+    tr {
+      border-bottom: 1px solid var(--tui-border-normal);
+    }
+  }
+}
+
+@mixin app-table-fixed-compact {
+  @include app-table-fixed;
+
+  th,
+  td {
+    text-align: start;
+    padding: 0.5rem;
+  }
+
+  th {
+    //@include text-12-14-400($color-primary-2);
+    text-align: start;
+    background-color: var(--tui-background-base-alt);
+  }
+
+  td {
+    //@include text-12-16-400($color-primary);
+  }
+}

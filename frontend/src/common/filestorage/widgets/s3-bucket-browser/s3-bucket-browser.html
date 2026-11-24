@@ -60,66 +60,74 @@
 </tui-elastic-container>
 
 <tui-elastic-container>
-  <table class="s3-table" tuiTable>
+  <div class="s3-table">
+    <table >
+      <colgroup>
+        <col />
+        <col [style.width.px]="96"/>
+        <col [style.width.px]="164"/>
+        <col />
+        <col [style.width.px]="48"/>
+      </colgroup>
     <thead>
     <tr>
-      <th tuiTh>Name</th>
-      <th tuiTh>Size</th>
-      <th tuiTh>Date</th>
-      <th tuiTh>Url</th>
-      <th tuiTh></th>
+      <th>Name</th>
+      <th>Size</th>
+      <th>Date</th>
+      <th>Url</th>
+      <th></th>
     </tr>
     </thead>
-    <tbody tuiTbody>
+    <tbody>
       @if (store.currentPrefix()) {
         <tr class="parent-row hover-highlight pointer" (click)="store.chooseParentPrefix()">
-          <td tuiTd>
+          <td>
             <div class="with-icon">
               <tui-icon class="icon-up" icon="@tui.folder-open"/>
               &nldr;
             </div>
           </td>
-          <td tuiTd></td>
-          <td tuiTd></td>
-          <td tuiTd></td>
-          <td tuiTd></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
         </tr>
       }
       @for (dir of store.directories(); track dir.prefix) {
         <tr class="directory-row hover-highlight pointer" (click)="store.choosePrefix(dir.prefix)">
-          <td tuiTd>
+          <td>
             <div class="with-icon">
               <tui-icon class="icon-folder" icon="@tui.folder-closed"/>
               {{ dir.prefix | funcToPipe : lastSegmentOf }}
             </div>
           </td>
-          <td tuiTd></td>
-          <td tuiTd></td>
-          <td tuiTd></td>
-          <td tuiTd></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
         </tr>
       }
       @for (file of store.files(); track file.key) {
         <tr class="file-row hover-highlight">
-          <td tuiTd>
+          <td>
             <div class="with-icon">
               <tui-icon class="icon-file" icon="@tui.file"/>
               {{ file.key | funcToPipe : lastSegmentOf }}
             </div>
           </td>
-          <td tuiTd>{{ file.size | fileSizeForHuman }}</td>
-          <td tuiTd>{{ file.lastModified | date: 'short' }}</td>
-          <td tuiTd>
+          <td>{{ file.size | fileSizeForHuman }}</td>
+          <td>{{ file.lastModified | date: 'short' }}</td>
+          <td>
 
             <a tuiLink [href]="file | funcToPipe : getFileUrl" target="_blank" rel="noopener noreferrer">
-              <div class="with-icon">
-                <tui-icon [style.font-size.rem]="1.25" icon="@tui.external-link"/>
+              <div>
                 {{ file | funcToPipe : getFileUrl }}
+                <tui-icon [style.font-size.rem]="1" icon="@tui.external-link"/>
               </div>
             </a>
 
           </td>
-          <td tuiTd>
+          <td>
             <app-s3-file-actions-dropdown
               [file]="file"
               (copy)="copyFile($event)"
@@ -128,6 +136,14 @@
           </td>
         </tr>
       }
+      @if (!store.currentPrefix() && !store.directories().length && !store.files().length) {
+        <tr>
+          <td colspan="5" class="cell-when-table-empty">
+            {{'<'}}EMPTY{{'>'}}
+          </td>
+        </tr>
+      }
     </tbody>
   </table>
+  </div>
 </tui-elastic-container>

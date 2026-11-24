@@ -93,11 +93,17 @@ export const S3UploadStore = signalStore(
                 return entry;
               })
             });
-            return progress.stream$;
+            return progress.stream$.pipe(
+              // Why? Because we have to complete stream, else next uploads cannot start after error
+              catchError((error, caught) => {
+                store._errorToast(error);
+                return of(null);
+              }),
+            );
             // concurrency: 3
           }, 3),
+          // restart rxMethod after error
           catchError((error, caught) => {
-            store._errorToast(error);
             return caught;
           }),
         ),

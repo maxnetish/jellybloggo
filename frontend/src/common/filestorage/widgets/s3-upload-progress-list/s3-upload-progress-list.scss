@@ -1,8 +1,12 @@
-.upload-table {
-  width: 100%;
-  table-layout: fixed;
+@import "./../../../../mixins";
 
-  border-block-start: 1px solid var(--tui-border-normal);
+.upload-table {
+  @include app-table-fixed-compact();
+
+  //width: 100%;
+  //table-layout: fixed;
+  //
+  //border-block-start: 1px solid var(--tui-border-normal);
 
   td {
     word-break: break-word;

@@ -1,3 +1,5 @@
+@import "./../../../../mixins";
+
 .path-row {
   display: flex;
   flex-wrap: wrap;
@@ -31,17 +33,34 @@
 }
 
 .s3-table {
-  width: 100%;
-  table-layout: fixed;
+  @include app-table-fixed-compact();
 
   td {
     word-break: break-word;
   }
 
+  .hover-highlight {
+
+    td {
+      transition-property: background;
+      transition-duration: var(--tui-duration, .3s);
+      transition-timing-function: var(--tui-curve-productive-standard);
+    }
+
+    &:hover {
+      td {
+        background-color: var(--tui-background-base-alt);
+      }
+    }
+  }
   .hover-highlight:hover {
     td {
       background-color: var(--tui-background-base-alt);
     }
+  }
+
+  .cell-when-table-empty {
+    text-align: center;
   }
 }
 
