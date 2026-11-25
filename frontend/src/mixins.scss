@@ -71,3 +71,9 @@
     //@include text-12-16-400($color-primary);
   }
 }
+
+@mixin app-tui-label-with-checkbox {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}

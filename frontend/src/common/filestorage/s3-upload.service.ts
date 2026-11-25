@@ -122,6 +122,9 @@ export class S3UploadService {
     return s3Client.presignedPostObject(objectName, {
       fields: {
         'Content-Type': file.type,
+        // x-amz-meta-originalname кодируется через encodeURIComponent, т.к. btoa() в библиотеке
+        // не работает с UTF-8. При чтении через statObject() нужно применить decodeURIComponent().
+        'x-amz-meta-originalname': encodeURIComponent(file.name),
       },
     });
   }

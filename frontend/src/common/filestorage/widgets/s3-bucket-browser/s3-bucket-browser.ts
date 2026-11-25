@@ -2,16 +2,15 @@ import { Component, effect, inject, input } from '@angular/core';
 import { S3BucketBrowserStore } from './s3-bucket-browser.store';
 import { S3Config } from '../../model/s3-config';
 import { lastSegmentOf } from '../../model/s3-path';
-import { TuiButton, TuiDialogService, TuiIcon, TuiLink } from '@taiga-ui/core';
+import { TuiButton, TuiCheckbox, TuiDialogService, TuiIcon, TuiLink } from '@taiga-ui/core';
 import { TuiElasticContainer } from '@taiga-ui/layout';
-import { TuiTable } from '@taiga-ui/addon-table';
 import { FuncToPipePipe } from '../../../utils/func-to-pipe';
 import { DatePipe } from '@angular/common';
 import { S3Object } from '@bradenmacdonald/s3-lite-client';
 import { tuiBreadcrumbsOptionsProvider, TuiFiles } from '@taiga-ui/kit';
 import { TuiBreadcrumbs } from '@taiga-ui/kit/components/breadcrumbs';
 import { TuiItem } from '@taiga-ui/cdk/directives/item';
-import { TuiButtonLoading, TuiCopy } from '@taiga-ui/kit';
+import { TuiButtonLoading } from '@taiga-ui/kit';
 import { TUI_CONFIRM, TuiConfirmData } from '@taiga-ui/kit';
 import { S3FolderCreateModal } from '../s3-folder-create/s3-folder-create.modal';
 import { S3FileCopyModal } from '../s3-file-copy/s3-file-copy.modal';
@@ -21,15 +20,17 @@ import { S3FileActionsDropdownComponent } from './s3-file-actions-dropdown.compo
 import { FilesChooser } from '../files-chooser/files-chooser';
 import { S3UploadStore } from '../../s3-upload.store';
 import { S3UploadProgressList } from '../s3-upload-progress-list/s3-upload-progress-list';
+import { FormsModule } from '@angular/forms';
+import { customAlphabet } from 'nanoid';
+
+const generateRandomKey = customAlphabet('qwertyuiopasdfghjklzxcvbnm', 16);
 
 @Component({
   imports: [
     TuiIcon,
     TuiElasticContainer,
-    TuiTable,
     FuncToPipePipe,
     DatePipe,
-    TuiCopy,
     TuiLink,
     TuiBreadcrumbs,
     TuiItem,
@@ -40,6 +41,8 @@ import { S3UploadProgressList } from '../s3-upload-progress-list/s3-upload-progr
     S3FileActionsDropdownComponent,
     FilesChooser,
     S3UploadProgressList,
+    TuiCheckbox,
+    FormsModule,
   ],
   selector: 'app-s3-bucket-browser',
   styleUrl: './s3-bucket-browser.scss',
@@ -141,10 +144,13 @@ export class S3BucketBrowser {
       throw new Error('Missing s3 bucket');
     }
 
-    const res = this.uploadStore.add({
+    this.uploadStore.add({
       file: $event,
       prefix: this.store.currentPrefix(),
       bucket,
+      overrideFileName: this.store.useRandomUploadFileName()
+        ? generateRandomKey()
+        : undefined,
     });
   }
 }

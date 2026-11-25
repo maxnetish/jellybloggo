@@ -19,6 +19,20 @@
   gap: 0.25rem;
 }
 
+.spacer {
+  flex-grow: 1
+}
+
+.upload-name-option-checkbox {
+  label {
+    @include app-tui-label-with-checkbox();
+
+    &:not(:has(:disabled)) {
+      cursor: pointer;
+    }
+  }
+}
+
 .file-chooser {
   margin-block-end: 0.5rem;
 }

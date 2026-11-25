@@ -40,6 +40,21 @@
     }
   </div>
 
+  <div class="spacer"></div>
+
+  <div class="upload-name-option-checkbox">
+    <label>
+      <input
+        size="s"
+        tuiCheckbox
+        type="checkbox"
+        [ngModel]="store.useRandomUploadFileName()"
+        (ngModelChange)="store.setUseRandomUploadFileName($event)"
+      />
+      Use random key instead of real file name
+    </label>
+  </div>
+
 </div>
 
 <div class="file-chooser">

@@ -16,6 +16,16 @@ export const S3BucketBrowserStore = signalStore(
     currentPrefix: '',
     entries: [] as (S3CommonPrefix | S3Object)[],
     busy: false,
+    useRandomUploadFileName: false,
+  }),
+  withMethods((store) => {
+    return {
+      setUseRandomUploadFileName(value: boolean) {
+        patchState(store, {
+          useRandomUploadFileName: value,
+        });
+      },
+    };
   }),
   withComputed((store) => {
     return {
