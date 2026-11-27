@@ -8,7 +8,7 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { TuiNotificationService } from '@taiga-ui/core';
 import { createS3Client } from '../../s3-client';
 import { lastSegmentOf } from '../../model/s3-path';
-import { UpwrapSignalType } from '../../../utils/upwrap-signal-type';
+import { UnwrapSignalType } from '../../../utils/unwrap-signal-type';
 import { UnwrapArrayType } from '../../../utils/unwrap-array-type';
 
 export const S3BucketBrowserStore = signalStore(
@@ -303,7 +303,7 @@ export const S3BucketBrowserStore = signalStore(
           patchState(store, {busy: false});
         }
       },
-      toggleFileDetails(fileEntry: UnwrapArrayType<UpwrapSignalType<typeof store.files>>) {
+      toggleFileDetails(fileEntry: UnwrapArrayType<UnwrapSignalType<typeof store.files>>) {
         if (!fileEntry.detailsExpanded && !fileEntry.details) {
           store.loadDetails(fileEntry);
         }

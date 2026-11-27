@@ -14,7 +14,7 @@ import { TUI_CONFIRM, TuiConfirmData } from '@taiga-ui/kit';
 import { filter } from 'rxjs';
 import { lastSegmentOf } from '../../model/s3-path';
 import { UnwrapArrayType } from '../../../utils/unwrap-array-type';
-import { UpwrapSignalType } from '../../../utils/upwrap-signal-type';
+import { UnwrapSignalType } from '../../../utils/unwrap-signal-type';
 
 @Component({
   selector: 'app-s3-file-actions-dropdown',
@@ -62,7 +62,7 @@ export class S3FileActionsDropdownComponent {
   private readonly dialogs = inject(TuiDialogService);
   private readonly store = inject(S3BucketBrowserStore);
   private readonly s3FileCopyModal = inject(S3FileCopyModal);
-  readonly file = input.required<UnwrapArrayType<UpwrapSignalType<typeof this.store.files>>>();
+  readonly file = input.required<UnwrapArrayType<UnwrapSignalType<typeof this.store.files>>>();
 
   protected readonly dropdownOpen = signal(false);
 
