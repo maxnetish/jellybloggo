@@ -1,0 +1,21 @@
+<tui-loader [loading]="!details()">
+  <div class="card">
+    @if (isImage()) {
+      <div class="media">
+        <img [src]="imageUrl()" class="image-preview" />
+      </div>
+    }
+    <div class="attributes">
+      @for (attribute of attributes(); track attribute.name) {
+        <div>
+      <span
+        appearance="neutral"
+        tuiChip
+      >
+        {{ attribute.name }}: {{ attribute.value }}
+      </span>
+        </div>
+      }
+    </div>
+  </div>
+</tui-loader>

@@ -1,20 +1,22 @@
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
-import { computed, inject } from '@angular/core';
+import { computed, inject, Signal } from '@angular/core';
 import { S3Config } from '../../model/s3-config';
 import { S3Breadcrumb } from '../../model/s3-breadcrumb';
-import { S3CommonPrefix, S3Object } from '@bradenmacdonald/s3-lite-client';
-import { catchError, filter, map, pipe, switchMap, tap } from 'rxjs';
+import { S3CommonPrefix, S3Object, S3ObjectStatus } from '@bradenmacdonald/s3-lite-client';
+import { catchError, distinctUntilChanged, filter, map, mergeMap, pipe, switchMap, tap } from 'rxjs';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { TuiNotificationService } from '@taiga-ui/core';
 import { createS3Client } from '../../s3-client';
 import { lastSegmentOf } from '../../model/s3-path';
+import { UpwrapSignalType } from '../../../utils/upwrap-signal-type';
+import { UnwrapArrayType } from '../../../utils/unwrap-array-type';
 
 export const S3BucketBrowserStore = signalStore(
   {providedIn: 'root'},
   withState({
     bucket: null as S3Config | null,
     currentPrefix: '',
-    entries: [] as (S3CommonPrefix | S3Object)[],
+    entries: [] as (S3CommonPrefix | S3Object & {detailsExpanded?: boolean; details?: S3ObjectStatus})[],
     busy: false,
     useRandomUploadFileName: false,
   }),
@@ -35,11 +37,12 @@ export const S3BucketBrowserStore = signalStore(
         });
       }),
       files: computed(() => {
-        return store.entries().filter((entry): entry is S3Object => {
-          // Exclude 0-length files. Actually such files creates to place empty prefix,
-          // that is "directory marker"
-          return entry.type === 'Object' && entry.size > 0;
-        });
+        return store.entries()
+          .filter((entry): entry is S3Object & {detailsExpanded?: false; details?: S3ObjectStatus} => {
+            // Exclude 0-length files. Actually such files creates to place empty prefix,
+            // that is "directory marker"
+            return entry.type === 'Object' && entry.size > 0;
+          });
       }),
       breadcrumbs: computed(() => buildBreadcrumbs(store.currentPrefix())),
     }
@@ -53,21 +56,66 @@ export const S3BucketBrowserStore = signalStore(
   }),
   withMethods((store, notificationService = inject(TuiNotificationService)) => {
     return {
+      /**
+       * Fetch details of s3 object
+       */
+      loadDetails: rxMethod<{key: string}>(
+        pipe(
+          mergeMap(({key}) => {
+            const bucket = store.bucket();
+            if(!bucket) {
+              throw new Error('Missing bucket');
+            }
+            const client = createS3Client(bucket);
+            return client.statObject(key);
+          }),
+          catchError((error, caught) => {
+            errorToast({notificationService, error});
+            return caught;
+          }),
+          tap({
+            next: (emit) => {
+              patchState(store, {
+                entries: store.entries().map((entry) => {
+                  if (entry.type === 'Object' && entry.key === emit.key) {
+                    return {
+                      ...entry,
+                      details: {...emit},
+                    };
+                  }
+                  return entry;
+                }),
+              });
+            }
+          }),
+        )
+      ),
+    };
+  }),
+  withMethods((store, notificationService = inject(TuiNotificationService)) => {
+    return {
       wireBucket: rxMethod<S3Config | null | undefined>(
         pipe(
-          filter((bucketOrNull): bucketOrNull is S3Config => !!bucketOrNull),
+          // Skip if bucket same as was
+          distinctUntilChanged((a, b) => {
+            return a?.id === b?.id;
+          }),
+          // Mutate bucket in store
           tap({
             next: (bucket) => {
               patchState(store, {bucket});
             },
           }),
+          // Skip if bucket not set
+          filter((bucketOrNull): bucketOrNull is S3Config => !!bucketOrNull),
+          // Call s3 api
           switchMap((bucket) => {
             return loadEntries({
               currentPrefix: store.currentPrefix(),
               bucket,
             });
           }),
-          map((entries) => entries),
+          // fill in arrived s3 objects
           tap({
             next: (entries) => {
               patchState(store, {entries});
@@ -206,7 +254,9 @@ export const S3BucketBrowserStore = signalStore(
           await client.deleteObject(fileKey);
           patchState(store, {
             entries: store.entries().filter(
-              (e) => !(e.type === 'Object' && e.key === fileKey),
+              (e) => !(
+                e.type === 'Object' && e.key === fileKey
+              ),
             ),
           });
           return true;
@@ -253,13 +303,28 @@ export const S3BucketBrowserStore = signalStore(
           patchState(store, {busy: false});
         }
       },
+      toggleFileDetails(fileEntry: UnwrapArrayType<UpwrapSignalType<typeof store.files>>) {
+        if (!fileEntry.detailsExpanded && !fileEntry.details) {
+          store.loadDetails(fileEntry);
+        }
+        patchState(store, {
+          entries: store.entries().map((entry) => {
+            if (entry.type === 'Object' && entry.key === fileEntry.key) {
+              return {
+                ...entry,
+                detailsExpanded: !entry.detailsExpanded,
+              };
+            }
+            return entry;
+          })
+        });
+      },
     };
   }),
 );
 
 function loadEntries({bucket, currentPrefix}: { bucket: S3Config, currentPrefix?: string }) {
   const client = createS3Client(bucket);
-
   return (
     async () => {
       const entries: (S3CommonPrefix | S3Object)[] = [];

@@ -143,13 +143,16 @@
 
           </td>
           <td>
-            <app-s3-file-actions-dropdown
-              [file]="file"
-              (copy)="copyFile($event)"
-              (delete)="deleteFile($event)"
-            />
+            <app-s3-file-actions-dropdown [file]="file"/>
           </td>
         </tr>
+        @if (file.detailsExpanded) {
+          <tr>
+            <td colspan="5">
+              <app-s3-object-details-mini-card [details]="file.details"></app-s3-object-details-mini-card>
+            </td>
+          </tr>
+        }
       }
       @if (!store.currentPrefix() && !store.directories().length && !store.files().length) {
         <tr>

@@ -2,7 +2,7 @@ import { Component, effect, inject, input } from '@angular/core';
 import { S3BucketBrowserStore } from './s3-bucket-browser.store';
 import { S3Config } from '../../model/s3-config';
 import { lastSegmentOf } from '../../model/s3-path';
-import { TuiButton, TuiCheckbox, TuiDialogService, TuiIcon, TuiLink } from '@taiga-ui/core';
+import { TuiButton, TuiCheckbox, TuiIcon, TuiLink } from '@taiga-ui/core';
 import { TuiElasticContainer } from '@taiga-ui/layout';
 import { FuncToPipePipe } from '../../../utils/func-to-pipe';
 import { DatePipe } from '@angular/common';
@@ -11,17 +11,15 @@ import { tuiBreadcrumbsOptionsProvider, TuiFiles } from '@taiga-ui/kit';
 import { TuiBreadcrumbs } from '@taiga-ui/kit/components/breadcrumbs';
 import { TuiItem } from '@taiga-ui/cdk/directives/item';
 import { TuiButtonLoading } from '@taiga-ui/kit';
-import { TUI_CONFIRM, TuiConfirmData } from '@taiga-ui/kit';
 import { S3FolderCreateModal } from '../s3-folder-create/s3-folder-create.modal';
-import { S3FileCopyModal } from '../s3-file-copy/s3-file-copy.modal';
 import { FileSizeForHumanPipe } from '../../file-size';
-import { filter } from 'rxjs';
 import { S3FileActionsDropdownComponent } from './s3-file-actions-dropdown.component';
 import { FilesChooser } from '../files-chooser/files-chooser';
 import { S3UploadStore } from '../../s3-upload.store';
 import { S3UploadProgressList } from '../s3-upload-progress-list/s3-upload-progress-list';
 import { FormsModule } from '@angular/forms';
 import { customAlphabet } from 'nanoid';
+import { S3ObjectDetailsMiniCard } from '../s3-object-details-mini-card/s3-object-details-mini-card';
 
 const generateRandomKey = customAlphabet('qwertyuiopasdfghjklzxcvbnm', 16);
 
@@ -43,6 +41,7 @@ const generateRandomKey = customAlphabet('qwertyuiopasdfghjklzxcvbnm', 16);
     S3UploadProgressList,
     TuiCheckbox,
     FormsModule,
+    S3ObjectDetailsMiniCard,
   ],
   selector: 'app-s3-bucket-browser',
   styleUrl: './s3-bucket-browser.scss',
@@ -54,8 +53,6 @@ const generateRandomKey = customAlphabet('qwertyuiopasdfghjklzxcvbnm', 16);
 export class S3BucketBrowser {
   private readonly store = inject(S3BucketBrowserStore);
   private readonly folderCreateModal = inject(S3FolderCreateModal);
-  private readonly fileCopyModal = inject(S3FileCopyModal);
-  private readonly dialogs = inject(TuiDialogService);
   protected readonly uploadStore = inject(S3UploadStore);
 
   readonly bucket = input<S3Config | null>();
@@ -102,26 +99,6 @@ export class S3BucketBrowser {
 
   protected openCreateFolder(): void {
     this.folderCreateModal.show().subscribe();
-  }
-
-  protected copyFile(file: S3Object): void {
-    this.fileCopyModal.show(file).subscribe();
-  }
-
-  protected deleteFile(file: S3Object): void {
-    const fileName = lastSegmentOf(file.key);
-    this.dialogs.open<boolean>(TUI_CONFIRM, {
-      label: 'Delete file',
-      size: 's',
-      data: {
-        content: `Are you sure you want to permanently delete the file <strong>${fileName}</strong>?`,
-        yes: 'Delete',
-        no: 'Cancel',
-        appearance: 'primary-destructive',
-      } satisfies TuiConfirmData,
-    }).pipe(filter(Boolean)).subscribe(() => {
-      this.store.deleteFile(file.key);
-    });
   }
 
   protected readonly lastSegmentOf = lastSegmentOf;

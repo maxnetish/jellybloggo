@@ -3,7 +3,6 @@ import { HttpClient, HttpEventType, provideHttpClient, withXhr } from '@angular/
 import { createS3Client } from './s3-client';
 import { S3Config } from './model/s3-config';
 import { from, shareReplay, Subject, switchMap, takeUntil, tap } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 export type FileUploadStatus = 'presign' | 'uploading' | 'success' | 'error' | 'cancelled';
 
