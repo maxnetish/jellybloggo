@@ -3,48 +3,67 @@ import {
   Component,
   CUSTOM_ELEMENTS_SCHEMA,
   ElementRef,
-  OnDestroy,
+  PLATFORM_ID,
   computed,
   effect,
+  inject,
   input,
-  output,
   signal,
   viewChild,
-  afterRenderEffect,
 } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TuiButton, TuiIcon, TuiSlider } from '@taiga-ui/core';
-import { ImageToUrlPipe } from './image-to-url.pipe';
 import type { CropperImage, CropperSelection } from 'cropperjs';
 import 'cropperjs';
 
 @Component({
   selector: 'app-image-cropper',
-  imports: [TuiButton, TuiIcon, FormsModule, ImageToUrlPipe, TuiSlider],
+  imports: [TuiButton, TuiIcon, FormsModule, TuiSlider],
   templateUrl: './image-cropper.html',
   styleUrl: './image-cropper.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   // We use webcomponents, so...
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
-export class ImageCropper implements OnDestroy {
+export class ImageCropper {
+  private readonly platformId = inject(PLATFORM_ID);
   private readonly cropperImageRef = viewChild<ElementRef<CropperImage>>('cropperImageRef');
   private readonly cropperSelectionRef = viewChild<ElementRef<CropperSelection>>('cropperSelectionRef');
 
   /**
-   * url
+   * Input image as url or `File`
    */
-  readonly source = input<string | null>(null);
+  readonly source = input<string | File | null>(null);
 
   readonly imageBoxWidth = input(200);
 
   readonly imageBoxHeight = input(200);
 
+  protected readonly imageSourceAsUrl = signal<string | null>(null);
+
   protected readonly hasSource = computed(() => this.source() !== null);
 
   protected readonly fineRotation = signal(0);
 
-  ngOnDestroy() {
+  constructor() {
+    effect(onCleanup => {
+      const source = this.source();
+
+      if (!(source instanceof File)) {
+        this.imageSourceAsUrl.set(source);
+        return;
+      }
+
+      if (!isPlatformBrowser(this.platformId)) {
+        this.imageSourceAsUrl.set(null);
+        return;
+      }
+
+      const url = URL.createObjectURL(source);
+      this.imageSourceAsUrl.set(url);
+      onCleanup(() => URL.revokeObjectURL(url));
+    });
   }
 
   /**

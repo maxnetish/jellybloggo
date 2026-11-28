@@ -171,9 +171,14 @@
     #imageCropperRef
     [imageBoxHeight]="400"
     [imageBoxWidth]="400"
-    source="https://storage.yandexcloud.net/jbl/Folder%20to%20test%20folder%20creation/smposjtidwrhmqhi"
+    [source]="cropperFile() ?? 'https://storage.yandexcloud.net/jbl/Folder%20to%20test%20folder%20creation/smposjtidwrhmqhi'"
   ></app-image-cropper>
 </div>
+
+<label>
+  Choose image
+  <input type="file" (change)="onCropperFileChosen($event)"/>
+</label>
 
 <button (click)="imageCropperFtechResult()">Fetch result</button>
 

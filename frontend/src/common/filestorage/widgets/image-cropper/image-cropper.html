@@ -7,7 +7,7 @@
       [style.height.px]="imageBoxHeight()"
     >
       <cropper-image
-        [attr.src]="source()"
+        [attr.src]="imageSourceAsUrl()"
         #cropperImageRef
         rotatable
         scalable

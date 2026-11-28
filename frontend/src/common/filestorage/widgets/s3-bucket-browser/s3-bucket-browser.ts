@@ -66,6 +66,11 @@ export class S3BucketBrowser {
 
   // DEBUG
   private readonly imageCropperRef = viewChild<ImageCropper>('imageCropperRef');
+  protected readonly cropperFile = signal<File | null>(null);
+
+  protected onCropperFileChosen(event: Event): void {
+    this.cropperFile.set((event.target as HTMLInputElement).files?.[0] ?? null);
+  }
 
   constructor() {
     this.store.wireBucket(this.bucket);
