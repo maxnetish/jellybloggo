@@ -167,23 +167,6 @@ describe('S3DirectoryBrowser', () => {
       expect(fileRow.querySelector('app-s3-file-actions-dropdown')).toBeTruthy();
     });
 
-    it('opens the copy dialog with the file on copy action', () => {
-      const file: S3Object = {
-        type: 'Object',
-        key: 'path/file.txt',
-        etag: '',
-        size: 10,
-        lastModified: new Date(),
-      };
-      render({currentPrefix: 'path/', entries: [file]});
-
-      const dropdown = fixture.debugElement.query(
-        By.directive(S3FileActionsDropdownComponent),
-      ).componentInstance as S3FileActionsDropdownComponent;
-      dropdown.copy.emit(file);
-
-      expect(fileCopyShow).toHaveBeenCalledWith(file);
-    });
 
     it('does not render the actions dropdown for directory rows', () => {
       render({

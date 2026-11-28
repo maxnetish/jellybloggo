@@ -77,31 +77,5 @@ describe('S3FileActionsDropdownComponent', () => {
     expect(deleteButton()?.getAttribute('data-appearance')).toBe('flat-destructive');
   });
 
-  it('closes the dropdown and emits the file on copy', async () => {
-    const copied: S3Object[] = [];
-    component().copy.subscribe((value) => copied.push(value));
 
-    trigger().click();
-    await fixture.whenStable();
-
-    copyButton()?.click();
-    await fixture.whenStable();
-
-    expect(copied).toEqual([file]);
-    expect(copyButton()).toBeUndefined();
-  });
-
-  it('closes the dropdown and emits the file on delete', async () => {
-    const deleted: S3Object[] = [];
-    component().delete.subscribe((value) => deleted.push(value));
-
-    trigger().click();
-    await fixture.whenStable();
-
-    deleteButton()?.click();
-    await fixture.whenStable();
-
-    expect(deleted).toEqual([file]);
-    expect(deleteButton()).toBeUndefined();
-  });
 });

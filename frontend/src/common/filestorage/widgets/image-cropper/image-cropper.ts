@@ -1,4 +1,17 @@
-import { ChangeDetectionStrategy, Component, CUSTOM_ELEMENTS_SCHEMA, ElementRef, OnDestroy, computed, effect, input, output, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  CUSTOM_ELEMENTS_SCHEMA,
+  ElementRef,
+  OnDestroy,
+  computed,
+  effect,
+  input,
+  output,
+  signal,
+  viewChild,
+  afterRenderEffect,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TuiButton, TuiIcon, TuiSlider } from '@taiga-ui/core';
 import { ImageToUrlPipe } from './image-to-url.pipe';
@@ -11,77 +24,71 @@ import 'cropperjs';
   templateUrl: './image-cropper.html',
   styleUrl: './image-cropper.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // We use webcomponents, so...
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
 })
 export class ImageCropper implements OnDestroy {
-  private readonly imageRef = viewChild<ElementRef<CropperImage>>('imageRef');
-  private readonly selectionRef = viewChild<ElementRef<CropperSelection>>('selectionRef');
-  private originalMimeType = 'image/jpeg';
-  private imageUrl: string | null = null;
-  private updateTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly cropperImageRef = viewChild<ElementRef<CropperImage>>('cropperImageRef');
+  private readonly cropperSelectionRef = viewChild<ElementRef<CropperSelection>>('cropperSelectionRef');
 
-  readonly source = input<string | File | null>(null);
-  readonly size = input<{ width: number; height: number }>({ width: 200, height: 200 });
+  /**
+   * url
+   */
+  readonly source = input<string | null>(null);
 
-  readonly result = output<Blob | null>();
+  readonly imageBoxWidth = input(200);
+
+  readonly imageBoxHeight = input(200);
 
   protected readonly hasSource = computed(() => this.source() !== null);
+
   protected readonly fineRotation = signal(0);
 
   ngOnDestroy() {
-    if (this.updateTimer) clearTimeout(this.updateTimer);
-    if (this.imageUrl) URL.revokeObjectURL(this.imageUrl);
   }
 
-  private getMimeTypeFromUrl(url: string): string {
-    const ext = url.split('.').pop()?.toLowerCase().split('?')[0];
-    const mimeTypes: Record<string, string> = {
-      jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
-      gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp',
-    };
-    return mimeTypes[ext || ''] || 'image/jpeg';
-  }
-
-  private scheduleResultUpdate() {
-    if (this.updateTimer) clearTimeout(this.updateTimer);
-    this.updateTimer = setTimeout(() => this.emitResult(), 300);
-  }
-
-  private async emitResult() {
-    const selection = this.selectionRef()?.nativeElement;
-    if (!selection) return;
+  /**
+   * Extract result as `Blob`.
+   *
+   * type, quality: same parameters as in `HTMLCanvasElement.toBlob`
+   */
+  async fetchResult({type, quality}: {
+    type?: Parameters<HTMLCanvasElement['toBlob']>[1];
+    quality?: Parameters<HTMLCanvasElement['toBlob']>[2];
+  } = {}): Promise<Blob | null> {
+    const selection = this.cropperSelectionRef()?.nativeElement;
+    const cropperImage = this.cropperImageRef()?.nativeElement;
+    if (!selection || !cropperImage) return null;
 
     try {
-      const croppedCanvas = await selection.$toCanvas();
-      if (!croppedCanvas) {
-        this.result.emit(null);
-        return;
-      }
+      // 1. Получаем нативный <img> внутри <cropper-image>, чтобы узнать реальные пиксели (naturalWidth)
+      const nativeImg = await cropperImage.$ready();
+      const imgRect = cropperImage.getBoundingClientRect();
 
-      const src = this.source();
-      if (src && !(src instanceof File)) {
-        this.originalMimeType = this.getMimeTypeFromUrl(src);
-      }
+      // 2. Считаем коэффициент масштабирования: сколько оригинальных пикселей в 1 экранном пикселе
+      // (учитываем поворот на 90°/270°, когда ширина и высота на экране меняются местами)
+      // const isRotated90 = Math.abs(this.baseAngle % 180) === 90;
+      // Не будем учитывать поворот
+      const isRotated90 = false;
+      const naturalW = isRotated90 ? nativeImg.naturalHeight : nativeImg.naturalWidth;
+      const scaleRatio = imgRect.width > 0 ? naturalW / imgRect.width : 1;
 
-      const blob = await new Promise<Blob | null>(resolve => {
-        croppedCanvas.toBlob(resolve, this.originalMimeType, 0.92);
+      // 3. Вычисляем итоговые размеры в оригинальных пикселях (но не меньше экранных)
+      const targetWidth = Math.round(selection.width * Math.max(1, scaleRatio));
+      const targetHeight = Math.round(selection.height * Math.max(1, scaleRatio));
+
+      const croppedCanvas = await selection.$toCanvas({
+        width: targetWidth,
+        height: targetHeight,
       });
-      this.result.emit(blob);
-    } catch {
-      this.result.emit(null);
-    }
-  }
-
-  async getResult(): Promise<Blob | null> {
-    const selection = this.selectionRef()?.nativeElement;
-    if (!selection) return null;
-
-    try {
-      const croppedCanvas = await selection.$toCanvas();
       if (!croppedCanvas) return null;
 
       return new Promise<Blob | null>(resolve => {
-        croppedCanvas.toBlob(resolve, this.originalMimeType, 0.92);
+        croppedCanvas.toBlob(
+          resolve,
+          type,
+          quality,
+        );
       });
     } catch {
       return null;
@@ -89,16 +96,15 @@ export class ImageCropper implements OnDestroy {
   }
 
   protected rotate90() {
-    const imageEl = this.imageRef()?.nativeElement;
+    const imageEl = this.cropperImageRef()?.nativeElement;
     if (!imageEl) return;
 
     imageEl.$rotate('90deg');
     imageEl.$center('contain');
-    this.scheduleResultUpdate();
   }
 
   protected onFineRotationChange(value: number) {
-    const imageEl = this.imageRef()?.nativeElement;
+    const imageEl = this.cropperImageRef()?.nativeElement;
     if (!imageEl) return;
 
     const delta = value - this.fineRotation();
@@ -107,43 +113,38 @@ export class ImageCropper implements OnDestroy {
       imageEl.$center('contain');
     }
     this.fineRotation.set(value);
-    this.scheduleResultUpdate();
   }
 
   protected zoomIn() {
-    const imageEl = this.imageRef()?.nativeElement;
+    const imageEl = this.cropperImageRef()?.nativeElement;
     if (!imageEl) return;
     imageEl.$zoom(0.1);
-    this.scheduleResultUpdate();
   }
 
   protected zoomOut() {
-    const imageEl = this.imageRef()?.nativeElement;
+    const imageEl = this.cropperImageRef()?.nativeElement;
     if (!imageEl) return;
     imageEl.$zoom(-0.1);
-    this.scheduleResultUpdate();
   }
 
   protected flipHorizontal() {
-    const imageEl = this.imageRef()?.nativeElement;
+    const imageEl = this.cropperImageRef()?.nativeElement;
     if (!imageEl) return;
     imageEl.$scale(-1, 1);
-    this.scheduleResultUpdate();
   }
 
   protected flipVertical() {
-    const imageEl = this.imageRef()?.nativeElement;
+    const imageEl = this.cropperImageRef()?.nativeElement;
     if (!imageEl) return;
     imageEl.$scale(1, -1);
-    this.scheduleResultUpdate();
   }
 
   protected resetAll() {
-    const imageEl = this.imageRef()?.nativeElement;
+    const imageEl = this.cropperImageRef()?.nativeElement;
     if (!imageEl) return;
     imageEl.$resetTransform();
     imageEl.$center('contain');
     this.fineRotation.set(0);
-    this.scheduleResultUpdate();
   }
+
 }

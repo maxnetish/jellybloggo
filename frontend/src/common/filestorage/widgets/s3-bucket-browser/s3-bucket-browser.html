@@ -76,94 +76,106 @@
 
 <tui-elastic-container>
   <div class="s3-table">
-    <table >
+    <table>
       <colgroup>
-        <col />
+        <col/>
         <col [style.width.px]="96"/>
         <col [style.width.px]="164"/>
-        <col />
+        <col/>
         <col [style.width.px]="48"/>
       </colgroup>
-    <thead>
-    <tr>
-      <th>Name</th>
-      <th>Size</th>
-      <th>Date</th>
-      <th>Url</th>
-      <th></th>
-    </tr>
-    </thead>
-    <tbody>
-      @if (store.currentPrefix()) {
-        <tr class="parent-row hover-highlight pointer" (click)="store.chooseParentPrefix()">
-          <td>
-            <div class="with-icon">
-              <tui-icon class="icon-up" icon="@tui.folder-open"/>
-              &nldr;
-            </div>
-          </td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-        </tr>
-      }
-      @for (dir of store.directories(); track dir.prefix) {
-        <tr class="directory-row hover-highlight pointer" (click)="store.choosePrefix(dir.prefix)">
-          <td>
-            <div class="with-icon">
-              <tui-icon class="icon-folder" icon="@tui.folder-closed"/>
-              {{ dir.prefix | funcToPipe : lastSegmentOf }}
-            </div>
-          </td>
-          <td></td>
-          <td></td>
-          <td></td>
-          <td></td>
-        </tr>
-      }
-      @for (file of store.files(); track file.key) {
-        <tr class="file-row hover-highlight">
-          <td>
-            <div class="with-icon">
-              <tui-icon class="icon-file" icon="@tui.file"/>
-              {{ file.key | funcToPipe : lastSegmentOf }}
-            </div>
-          </td>
-          <td>{{ file.size | fileSizeForHuman }}</td>
-          <td>{{ file.lastModified | date: 'short' }}</td>
-          <td>
-
-            <a tuiLink [href]="file | funcToPipe : getFileUrl" target="_blank" rel="noopener noreferrer">
-              <div>
-                {{ file | funcToPipe : getFileUrl }}
-                <tui-icon [style.font-size.rem]="1" icon="@tui.external-link"/>
+      <thead>
+      <tr>
+        <th>Name</th>
+        <th>Size</th>
+        <th>Date</th>
+        <th>Url</th>
+        <th></th>
+      </tr>
+      </thead>
+      <tbody>
+        @if (store.currentPrefix()) {
+          <tr class="parent-row hover-highlight pointer" (click)="store.chooseParentPrefix()">
+            <td>
+              <div class="with-icon">
+                <tui-icon class="icon-up" icon="@tui.folder-open"/>
+                &nldr;
               </div>
-            </a>
+            </td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+        }
+        @for (dir of store.directories(); track dir.prefix) {
+          <tr class="directory-row hover-highlight pointer" (click)="store.choosePrefix(dir.prefix)">
+            <td>
+              <div class="with-icon">
+                <tui-icon class="icon-folder" icon="@tui.folder-closed"/>
+                {{ dir.prefix | funcToPipe : lastSegmentOf }}
+              </div>
+            </td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+        }
+        @for (file of store.files(); track file.key) {
+          <tr class="file-row hover-highlight">
+            <td>
+              <div class="with-icon">
+                <tui-icon class="icon-file" icon="@tui.file"/>
+                {{ file.key | funcToPipe : lastSegmentOf }}
+              </div>
+            </td>
+            <td>{{ file.size | fileSizeForHuman }}</td>
+            <td>{{ file.lastModified | date: 'short' }}</td>
+            <td>
 
-          </td>
-          <td>
-            <app-s3-file-actions-dropdown [file]="file"/>
-          </td>
-        </tr>
-        @if (file.detailsExpanded) {
+              <a tuiLink [href]="file | funcToPipe : getFileUrl" target="_blank" rel="noopener noreferrer">
+                <div>
+                  {{ file | funcToPipe : getFileUrl }}
+                  <tui-icon [style.font-size.rem]="1" icon="@tui.external-link"/>
+                </div>
+              </a>
+
+            </td>
+            <td>
+              <app-s3-file-actions-dropdown [file]="file"/>
+            </td>
+          </tr>
+          @if (file.detailsExpanded) {
+            <tr>
+              <td colspan="5">
+                <app-s3-object-details-mini-card [details]="file.details"></app-s3-object-details-mini-card>
+              </td>
+            </tr>
+          }
+        }
+        @if (!store.currentPrefix() && !store.directories().length && !store.files().length) {
           <tr>
-            <td colspan="5">
-              <app-s3-object-details-mini-card [details]="file.details"></app-s3-object-details-mini-card>
+            <td colspan="5" class="cell-when-table-empty">
+              {{ '<' }}EMPTY{{ '>' }}
             </td>
           </tr>
         }
-      }
-      @if (!store.currentPrefix() && !store.directories().length && !store.files().length) {
-        <tr>
-          <td colspan="5" class="cell-when-table-empty">
-            {{'<'}}EMPTY{{'>'}}
-          </td>
-        </tr>
-      }
-    </tbody>
-  </table>
+      </tbody>
+    </table>
   </div>
 </tui-elastic-container>
 
-<app-image-cropper [size]="{height: 400, width: 400}" source="https://storage.yandexcloud.net/jbl/Folder%20to%20test%20folder%20creation/smposjtidwrhmqhi"></app-image-cropper>
+<div tuiCardLarge appearance="floating" style="width: fit-content">
+  <app-image-cropper
+    #imageCropperRef
+    [imageBoxHeight]="400"
+    [imageBoxWidth]="400"
+    source="https://storage.yandexcloud.net/jbl/Folder%20to%20test%20folder%20creation/smposjtidwrhmqhi"
+  ></app-image-cropper>
+</div>
+
+<button (click)="imageCropperFtechResult()">Fetch result</button>
+
+<img [src]="resultUrl()"/>
+

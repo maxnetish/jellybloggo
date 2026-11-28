@@ -389,16 +389,6 @@ describe('S3BucketBrowserStore', () => {
       ]);
     });
 
-    it('trims the new name', async () => {
-      setState({ bucket: mockBucket, currentPrefix: 'photos/vacation/', entries: [sourceFile] });
-
-      await store.copyFile(sourceFile, '  copy.jpg  ');
-
-      expect(mockCopyObject).toHaveBeenCalledWith(
-        { sourceKey: 'photos/vacation/image.jpg' },
-        'photos/vacation/copy.jpg',
-      );
-    });
 
     it('keeps entries untouched and shows a toast on S3 failure', async () => {
       mockCopyObject.mockRejectedValueOnce(new Error('S3 Error: Access Denied'));

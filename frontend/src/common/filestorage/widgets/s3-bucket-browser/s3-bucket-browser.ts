@@ -1,9 +1,9 @@
-import { Component, effect, inject, input } from '@angular/core';
+import { Component, effect, inject, input, signal, viewChild } from '@angular/core';
 import { S3BucketBrowserStore } from './s3-bucket-browser.store';
 import { S3Config } from '../../model/s3-config';
 import { lastSegmentOf } from '../../model/s3-path';
 import { TuiButton, TuiCheckbox, TuiIcon, TuiLink } from '@taiga-ui/core';
-import { TuiElasticContainer } from '@taiga-ui/layout';
+import { TuiCard, TuiElasticContainer } from '@taiga-ui/layout';
 import { FuncToPipePipe } from '../../../utils/func-to-pipe';
 import { AsyncPipe, DatePipe, JsonPipe } from '@angular/common';
 import { S3Object } from '@bradenmacdonald/s3-lite-client';
@@ -48,6 +48,7 @@ const generateRandomKey = customAlphabet('qwertyuiopasdfghjklzxcvbnm', 16);
     ImageCropper,
     AsyncPipe,
     JsonPipe,
+    TuiCard,
   ],
   selector: 'app-s3-bucket-browser',
   styleUrl: './s3-bucket-browser.scss',
@@ -62,6 +63,9 @@ export class S3BucketBrowser {
   protected readonly uploadStore = inject(S3UploadStore);
 
   readonly bucket = input<S3Config | null>();
+
+  // DEBUG
+  private readonly imageCropperRef = viewChild<ImageCropper>('imageCropperRef');
 
   constructor() {
     this.store.wireBucket(this.bucket);
@@ -135,5 +139,15 @@ export class S3BucketBrowser {
         ? generateRandomKey()
         : undefined,
     });
+  }
+
+  // DEBUG
+  protected readonly resultUrl = signal<string>('');
+  protected async imageCropperFtechResult() {
+    const result = await this.imageCropperRef()?.fetchResult();
+
+    if (result) {
+      this.resultUrl.set(URL.createObjectURL(result));
+    }
   }
 }

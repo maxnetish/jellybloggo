@@ -8,7 +8,8 @@
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
-  justify-content: center;
+  //justify-content: center;
+  justify-content: flex-start;
 }
 
 cropper-canvas {
@@ -16,18 +17,6 @@ cropper-canvas {
   border: 1px solid var(--tui-border);
   border-radius: var(--tui-radius-m);
   overflow: hidden;
-}
-
-.preview-box {
-  border: 1px solid var(--tui-border);
-  border-radius: var(--tui-radius-m);
-  overflow: hidden;
-
-  cropper-viewer {
-    display: block;
-    width: 100%;
-    height: 100%;
-  }
 }
 
 .controls {
@@ -38,8 +27,8 @@ cropper-canvas {
 
 .control-row {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
+  align-items: baseline;
+  gap: 1rem;
   flex-wrap: wrap;
 }
 
@@ -50,7 +39,7 @@ cropper-canvas {
 
 .slider-control {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 0.5rem;
   flex: 1;
   min-width: 200px;
@@ -78,7 +67,7 @@ cropper-canvas {
 }
 
 .slider-value {
-  min-width: 3rem;
+  min-width: 2rem;
   text-align: right;
   font-size: 0.875rem;
   color: var(--tui-text-secondary);

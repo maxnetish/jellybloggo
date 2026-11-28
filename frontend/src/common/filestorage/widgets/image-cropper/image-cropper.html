@@ -1,12 +1,28 @@
 <div class="image-cropper">
   <div class="preview-container">
-    <cropper-canvas #cropperCanvas background
-      [style.width.px]="size().width"
-      [style.height.px]="size().height">
-      <cropper-image #imageRef [attr.src]="source() | imageToUrl" alt="Image to crop" rotatable scalable translatable></cropper-image>
+    <cropper-canvas
+      #cropperCanvas
+      background
+      [style.width.px]="imageBoxWidth()"
+      [style.height.px]="imageBoxHeight()"
+    >
+      <cropper-image
+        [attr.src]="source()"
+        #cropperImageRef
+        rotatable
+        scalable
+        translatable
+        crossorigin="anonymous"
+      ></cropper-image>
       <cropper-shade hidden></cropper-shade>
       <cropper-handle action="select" plain></cropper-handle>
-      <cropper-selection #selectionRef id="cropperSelection" initial-coverage="0.5" movable resizable>
+      <cropper-selection
+        #cropperSelectionRef
+        id="cropperSelection"
+        initial-coverage="0.5"
+        movable
+        resizable
+      >
         <cropper-grid role="grid" covered></cropper-grid>
         <cropper-crosshair centered></cropper-crosshair>
         <cropper-handle action="move" theme-color="rgba(255, 255, 255, 0.35)"></cropper-handle>
@@ -20,30 +36,24 @@
         <cropper-handle action="sw-resize"></cropper-handle>
       </cropper-selection>
     </cropper-canvas>
-    <div class="preview-box">
-      <cropper-viewer selection="#cropperSelection"
-        [style.width.px]="size().width"
-        [style.height.px]="size().height"
-        resize="none"></cropper-viewer>
-    </div>
   </div>
 
   <div class="controls">
     <div class="control-row">
-      <button size="s" tuiButton appearance="secondary" (click)="rotate90()" [disabled]="!hasSource()">
-        <tui-icon icon="@tui.rotate-cw" />
+      <button title="Rotate right" size="s" tuiButton appearance="secondary" (click)="rotate90()" [disabled]="!hasSource()">
+        <tui-icon icon="@tui.rotate-cw"/>
       </button>
       <div class="slider-control">
         <span class="slider-label">Fine</span>
         <div class="slider-wrapper">
           <div class="ticks-labels">
-            <span>-45</span>
-            <span>-30</span>
-            <span>-15</span>
+            <span>-45&deg;</span>
+            <span>-30&deg;</span>
+            <span>-15&deg;</span>
             <span>0</span>
-            <span>&nbsp;15</span>
-            <span>&nbsp;30</span>
-            <span>&nbsp;45</span>
+            <span>&nbsp;15&deg;</span>
+            <span>&nbsp;30&deg;</span>
+            <span>&nbsp;45&deg;</span>
           </div>
           <input
             tuiSlider
@@ -55,28 +65,28 @@
             (ngModelChange)="onFineRotationChange($event)"
           />
         </div>
-        <span class="slider-value">{{ fineRotation() }}°</span>
+        <span class="slider-value">{{ fineRotation() }}&deg;</span>
       </div>
     </div>
     <div class="control-row">
       <div class="button-group">
-        <button size="s" tuiButton appearance="secondary" (click)="zoomIn()" [disabled]="!hasSource()">
-          <tui-icon icon="@tui.plus" />
+        <button title="Zoom in" size="s" tuiButton appearance="secondary" (click)="zoomIn()" [disabled]="!hasSource()">
+          <tui-icon icon="@tui.zoom-in"/>
         </button>
-        <button size="s" tuiButton appearance="secondary" (click)="zoomOut()" [disabled]="!hasSource()">
-          <tui-icon icon="@tui.minus" />
+        <button title="Zoom out" size="s" tuiButton appearance="secondary" (click)="zoomOut()" [disabled]="!hasSource()">
+          <tui-icon icon="@tui.zoom-out"/>
         </button>
       </div>
       <div class="button-group">
-        <button size="s" tuiButton appearance="secondary" (click)="flipHorizontal()" [disabled]="!hasSource()">
-          <tui-icon icon="@tui.flip-horizontal" />
+        <button title="Flip horizontal" size="s" tuiButton appearance="secondary" (click)="flipHorizontal()" [disabled]="!hasSource()">
+          <tui-icon icon="@tui.flip-horizontal"/>
         </button>
-        <button size="s" tuiButton appearance="secondary" (click)="flipVertical()" [disabled]="!hasSource()">
-          <tui-icon icon="@tui.flip-vertical" />
+        <button title="Flip vertical" size="s" tuiButton appearance="secondary" (click)="flipVertical()" [disabled]="!hasSource()">
+          <tui-icon icon="@tui.flip-vertical"/>
         </button>
       </div>
-      <button size="s" tuiButton appearance="secondary" (click)="resetAll()" [disabled]="!hasSource()">
-        <tui-icon icon="@tui.rotate-ccw" />
+      <button title="Reset" size="s" tuiButton appearance="secondary" (click)="resetAll()" [disabled]="!hasSource()">
+        <tui-icon icon="@tui.undo"/>
       </button>
     </div>
   </div>
