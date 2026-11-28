@@ -2,14 +2,10 @@
 
 .rotating-icon {
   animation: spin-center 2s linear infinite;
-  display: inline-block; /* Ensures the rotation context scales correctly */
+  display: inline-block;
 }
 
 @keyframes spin-center {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

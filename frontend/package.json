@@ -33,6 +33,7 @@
     "@taiga-ui/kit": "^5.33.0",
     "@taiga-ui/layout": "^5.33.0",
     "@types/http-proxy-middleware": "^0.19.3",
+    "cropperjs": "^2.3.1",
     "express": "^5.1.0",
     "http-proxy-middleware": "^3.0.5",
     "nanoid": "^5.1.11",

@@ -5,9 +5,9 @@ import { lastSegmentOf } from '../../model/s3-path';
 import { TuiButton, TuiCheckbox, TuiIcon, TuiLink } from '@taiga-ui/core';
 import { TuiElasticContainer } from '@taiga-ui/layout';
 import { FuncToPipePipe } from '../../../utils/func-to-pipe';
-import { DatePipe } from '@angular/common';
+import { AsyncPipe, DatePipe, JsonPipe } from '@angular/common';
 import { S3Object } from '@bradenmacdonald/s3-lite-client';
-import { tuiBreadcrumbsOptionsProvider, TuiFiles } from '@taiga-ui/kit';
+import { tuiBreadcrumbsOptionsProvider, TuiFiles, tuiFilesAccepted } from '@taiga-ui/kit';
 import { TuiBreadcrumbs } from '@taiga-ui/kit/components/breadcrumbs';
 import { TuiItem } from '@taiga-ui/cdk/directives/item';
 import { TuiButtonLoading } from '@taiga-ui/kit';
@@ -17,9 +17,11 @@ import { S3FileActionsDropdownComponent } from './s3-file-actions-dropdown.compo
 import { FilesChooser } from '../files-chooser/files-chooser';
 import { S3UploadStore } from '../../s3-upload.store';
 import { S3UploadProgressList } from '../s3-upload-progress-list/s3-upload-progress-list';
-import { FormsModule } from '@angular/forms';
+import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { customAlphabet } from 'nanoid';
 import { S3ObjectDetailsMiniCard } from '../s3-object-details-mini-card/s3-object-details-mini-card';
+import { ImageCropper } from '../image-cropper/image-cropper';
+import { distinct, map, mergeMap } from 'rxjs';
 
 const generateRandomKey = customAlphabet('qwertyuiopasdfghjklzxcvbnm', 16);
 
@@ -42,6 +44,10 @@ const generateRandomKey = customAlphabet('qwertyuiopasdfghjklzxcvbnm', 16);
     TuiCheckbox,
     FormsModule,
     S3ObjectDetailsMiniCard,
+    ReactiveFormsModule,
+    ImageCropper,
+    AsyncPipe,
+    JsonPipe,
   ],
   selector: 'app-s3-bucket-browser',
   styleUrl: './s3-bucket-browser.scss',
